@@ -80,7 +80,7 @@ system.time(
 fgseaRes <- fgsea(pathways = pathways, stats = ranks,
                   minSize=15,
                   maxSize=500,
-                  nperm=20,
+                  nperm=10,
                   nproc=1)
 )
 print(sum(fgseaRes$padj < 1e-2)) # 76

@@ -139,7 +139,7 @@ NumericVector gseaStats1(
     vector<int> stPrev(k + 2);
     vector<int> stNext(k + 2);
 
-    int k1 = 48;
+    int k1 = (int)(sqrt(k + 1));
     int k2 = (k + 1) / k1 + 1;
     vector<int> blockSummit(k2);
     vector<int> blockStart(k2);
