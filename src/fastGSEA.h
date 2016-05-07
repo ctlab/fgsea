@@ -5,9 +5,10 @@ using namespace Rcpp;
 using namespace std;
 
 
+//' @export
 // [[Rcpp::export]]
 NumericVector calcGseaStatCumulative(
-        NumericVector const& stats, 
+        NumericVector const& stats,
         IntegerVector const& selectedStats, // Indexes start from one!
         double gseaParam
         );

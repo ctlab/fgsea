@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // calcGseaStatCumulative
 NumericVector calcGseaStatCumulative(NumericVector const& stats, IntegerVector const& selectedStats, double gseaParam);
-RcppExport SEXP piano_calcGseaStatCumulative(SEXP statsSEXP, SEXP selectedStatsSEXP, SEXP gseaParamSEXP) {
+RcppExport SEXP fgsea_calcGseaStatCumulative(SEXP statsSEXP, SEXP selectedStatsSEXP, SEXP gseaParamSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
