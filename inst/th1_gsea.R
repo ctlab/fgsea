@@ -65,6 +65,27 @@ ranks <- read.table("./inst/naive.vs.th1.rnk",
                     header=T, colClasses = c("character", "numeric"))
 ranks <- structure(ranks$t, names=ranks$ID)
 
+set.seed(42)
+system.time(
+fgseaRes <- fgsea(pathways = pathways, stats = ranks,
+                  minSize=15,
+                  maxSize=500,
+                  nperm=2,
+                  nproc=1)
+)
+print(sum(fgseaRes$padj < 1e-2)) # 0
+
+set.seed(42)
+system.time(
+fgseaRes <- fgsea(pathways = pathways, stats = ranks,
+                  minSize=15,
+                  maxSize=500,
+                  nperm=20,
+                  nproc=1)
+)
+print(sum(fgseaRes$padj < 1e-2)) # 76
+
+set.seed(42)
 system.time(
 fgseaRes <- fgsea(pathways = pathways, stats = ranks,
                   minSize=15,
@@ -72,6 +93,8 @@ fgseaRes <- fgsea(pathways = pathways, stats = ranks,
                   nperm=200,
                   nproc=1)
 )
+print(sum(fgseaRes$padj < 1e-2)) # 78
+
 fgseaRes <- fgseaRes[order(pval)]
 write.table(fgseaRes, file="./inst/fgsea_res.tsv", sep="\t", quote = F, row.names = F)
 
