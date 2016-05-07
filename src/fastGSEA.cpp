@@ -42,7 +42,7 @@ class SegmentTree {
             for (; p < blockEnd; ++p) {
                 t[p] += delta;
             }
-            
+
             for (int p1 = (p >> logK); p1 < k; ++p1) {
                 b[p1] += delta;
             }
@@ -68,7 +68,7 @@ class IndirectCmp {
         return x[i] < x[j];
     }
     private:
-        T const & x; 
+        T const & x;
 };
 
 template<class T>
@@ -197,7 +197,7 @@ NumericVector gseaStats1(
                 double xa = xs.queryR(a);
                 double ya = ys.queryR(a);
 
-                
+
                 double pr = (xb - xa) * (yc - yb) - (yb - ya) * (xc - xb);
                 if (yc - ya < eps) {
                     pr = 0;
@@ -221,7 +221,7 @@ NumericVector gseaStats1(
                 break;
             }
         }
-        
+
         for (int j = bS; j < bE; ++j) {
             // cout << "assert: " << j << " " << stNext[j] << " " << stPrev[stNext[j]] << "\n";
             // assert(stNext[j] == -1 || stPrev[stNext[j]] == j);
@@ -230,44 +230,13 @@ NumericVector gseaStats1(
         double coef = (double)(n - m) / NR;
 
         // Finding farthest points for `curBlock` from scratch
-        
+
         int topSummit = 0;
         double maxP = 0;
 
-        if (stNext[blockSummit[curBlock]] == -1) {
-            double maxDist = -numeric_limits<double>::infinity();
-            maxDist = max(maxDist, ys.queryR(bS) * coef - xs.queryR(bS));
-            blockSummit[curBlock] = bS;
-            for (int cur = bE; stPrev[cur] != cur; cur = stPrev[cur]) {
-                double x = xs.queryR(cur);
-                double y = ys.queryR(cur) * coef;
-                double curDist = y - x;
-                if (curDist > maxDist) {
-                    maxDist = curDist;
-                    blockSummit[curBlock] = cur;
-                }
-            }
-
-            if (maxDist > maxP) {
-                topSummit = blockSummit[curBlock];
-            }
-            maxP = max(maxP, maxDist);
-        } else {
-            int curSummit = blockSummit[curBlock];
-            double curDist = ys.queryR(curSummit) * coef - xs.queryR(curSummit);
-            while (1) {
-                int nextSummit = stNext[curSummit];
-                double nextDist = 
-                    ys.queryR(nextSummit) * coef - 
-                    xs.queryR(nextSummit);
-                if (nextDist <= curDist) {
-                    break;
-                }
-                curDist = nextDist;
-                curSummit = nextSummit;
-            }
-            blockSummit[curBlock] = curSummit;
-        }
+        // So that blockSummit[curBlock] is to the right of
+        // actual summit as for every other block
+        blockSummit[curBlock] = max(curTop, blockSummit[curBlock]);
 
         // Updating farthest points in valid blocks
 
@@ -279,7 +248,7 @@ NumericVector gseaStats1(
 
             while (1) {
                 int nextSummit = stPrev[curSummit];
-                double nextDist = 
+                double nextDist =
                     ys.queryR(nextSummit) * coef -
                     xs.queryR(nextSummit);
 
@@ -289,7 +258,7 @@ NumericVector gseaStats1(
                 curDist = nextDist;
                 curSummit = nextSummit;
             }
-            
+
             blockSummit[block] = curSummit;
             if (curDist > maxP) {
                 topSummit = curSummit;
@@ -303,7 +272,7 @@ NumericVector gseaStats1(
         res[i] = maxP;
 
         // Checking correctness
-        
+
         /*
         double maxP1 = 0;
         int topSummit1 = 0;
@@ -313,7 +282,7 @@ NumericVector gseaStats1(
             double x = xs.queryR(c) / (double)(n - m);
             double y = ys.queryR(c) / NR;
 
-            
+
             if (y - x > maxP1) {
                 topSummit1 = j;
             }
@@ -329,7 +298,7 @@ NumericVector gseaStats1(
 }
 
 NumericVector calcGseaStatCumulative(
-        NumericVector const& stats, 
+        NumericVector const& stats,
         IntegerVector const& selectedStats, // Indexes start from one!
         double gseaParam
         ) {
