@@ -98,4 +98,103 @@ print(sum(fgseaRes$padj < 1e-2)) # 78
 fgseaRes <- fgseaRes[order(pval)]
 write.table(fgseaRes, file="./inst/fgsea_res.tsv", sep="\t", quote = F, row.names = F)
 
-system.time(x <- fgsea(pathways=pathways["5992313"], stats=ranks, nperm=1e6, nproc=4))
+system.time(x <- fgsea(pathways=pathways["5990988"], stats=ranks, nperm=1e6, nproc=4))
+
+plotGsea <- function(pathway, stats) {
+    stats <- sort(stats, decreasing = T)
+    S <- match(pathway, names(stats))
+    r <- stats
+    p <- 1
+
+    S <- sort(S)
+
+    m <- length(S)
+    N <- length(r)
+    NR <- (sum(abs(r[S])^p))
+    rAdj <- abs(r[S])^p
+    rCumSum <- cumsum(rAdj) / NR
+
+    tops <- rCumSum - (S - seq_along(S)) / (N - m)
+    bottoms <- tops - rAdj / NR
+    maxP <- max(tops)
+
+    xs1 <- S - seq_along(S)
+    xs2 <- xs1
+    x <- c(as.vector(rbind(xs1, xs2)), N-m)
+
+    ys1 <- cumsum(rAdj)
+    ys2 <- ys1 - rAdj
+    y <- c(as.vector(rbind(ys2, ys1)), NR)
+
+    qplot(x, y, geom="line") + theme_bw() +
+        xlab("rank") + ylab("stat") +
+        geom_abline(intercept=0, slope=NR/(N-m), linetype="dashed") +
+        geom_abline(intercept=NR*maxP, slope=NR/(N-m),
+                    linetype="dotted") +
+        geom_vline(x=xs1[which.max(tops)],
+                   linetype="dotted")
+}
+
+p <- plotGsea(pathways[["5991022"]], stats=ranks)
+
+plotGseaUpdate <- function(rsample, k, stats) {
+    stats <- sort(stats, decreasing = T)
+    r <- stats
+    p <- 1
+
+    prevMax <- -1
+
+    while (T) {
+        S <- rsample[1:k]
+        S <- sort(S)
+
+        m <- length(S)
+        N <- length(r)
+        NR <- (sum(abs(r[S])^p))
+        rAdj <- abs(r[S])^p
+        rCumSum <- cumsum(rAdj) / NR
+
+        tops <- rCumSum - (S - seq_along(S)) / (N - m)
+        bottoms <- tops - rAdj / NR
+        maxP <- max(tops)
+
+        xs1 <- S - seq_along(S)
+        xs2 <- xs1
+        x <- c(as.vector(rbind(xs1, xs2)), N-m)
+
+        ys1 <- cumsum(rAdj)
+        ys2 <- ys1 - rAdj
+        y <- c(as.vector(rbind(ys2, ys1)), NR)
+
+        message(which.max(tops))
+        if (prevMax - which.max(tops) > 3) {
+            p2 <- p1 +
+                geom_line(data=data.frame(x=x, y=y), aes(x=x, y=y), color="black") +
+                geom_abline(intercept=0, slope=NR/(N-m),
+                            linetype="dashed", color="black") +
+                geom_abline(intercept=NR*maxP, slope=NR/(N-m),
+                            linetype="dotted", color="black") +
+                geom_vline(x=xs1[which.max(tops)],
+                           linetype="dotted", color="black")
+            break
+        }
+        prevMax <- which.max(tops)
+        p1 <- ggplot() +
+            geom_line(data=data.frame(x=x, y=y), aes(x=x, y=y), color="#777777") +
+            geom_abline(intercept=0, slope=NR/(N-m),
+                        linetype="dashed", color="#777777") +
+            geom_abline(intercept=NR*maxP, slope=NR/(N-m),
+                        linetype="dotted", color="#777777") +
+            geom_vline(x=xs1[which.max(tops)],
+                       linetype="dotted", color="#777777")
+        k <- k-1
+    }
+
+    message(sprintf("k - 1  = %s", k))
+    p2 + theme_bw() + xlab("rank") + ylab("stat")
+}
+
+set.seed(42)
+p <- plotGseaUpdate(rsample=sample(seq_along(ranks), size=400), k=200, stats=ranks)
+pp <- p + xlim(0, 2500) + ylim(0, 450)
+
