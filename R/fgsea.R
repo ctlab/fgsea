@@ -1,6 +1,11 @@
 #' @useDynLib fgsea
 NULL
 
+#' Calculates GSEA statistics for a given query gene set
+#' @param stats Named numeric vector with gene-level statistics
+#' @param selectedStats indexes of selected genes in a 'stats' array
+#' @param gseaParam GSEA weight parameter (0 is unweighted, suggested value is 1)
+#' @return value of GSEA statistic
 #' @export
 calcGseaStat <- function(stats, selectedStats, gseaParam=1) {
     S <- selectedStats
@@ -13,17 +18,31 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1) {
     N <- length(r)
     NR <- (sum(abs(r[S])^p))
     rAdj <- abs(r[S])^p
-    rCumSum <- cumsum(rAdj) / NR
+    if (NR == 0) {
+        # this is equivalent to rAdj being rep(eps, m)
+        rCumSum <- seq_along(rAdj) / length(rAdj)
+    } else {
+        rCumSum <- cumsum(rAdj) / NR
+    }
+
 
     tops <- rCumSum - (S - seq_along(S)) / (N - m)
-    bottoms <- tops - rAdj / NR
+    if (NR == 0) {
+        # this is equivalent to rAdj being rep(eps, m)
+        bottoms <- tops - 1 / m
+    } else {
+        bottoms <- tops - rAdj / NR
+    }
+
     maxP <- max(tops)
     minP <- min(bottoms)
 
     if(maxP > -minP) {
         geneSetStatistic <- maxP
-    } else {
+    } else if (maxP < -minP) {
         geneSetStatistic <- minP
+    } else {
+        geneSetStatistic <- 0
     }
     geneSetStatistic
 }

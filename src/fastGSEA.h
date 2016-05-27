@@ -9,6 +9,7 @@ using namespace std;
 //' @param stats Named numeric vector with gene-level statistics
 //' @param selectedStats indexes of selected genes in a 'stats' array
 //' @param gseaParam GSEA weight parameter (0 is unweighted, suggested value is 1)
+//' @return numeric vector of GSEA statistics for all prefixes of selectedStats
 //' @export
 // [[Rcpp::export]]
 NumericVector calcGseaStatCumulative(

@@ -166,6 +166,8 @@ NumericVector gseaStats1(
         int tRank = selectedRanks[i];
         // cout << tRank << ":\n";
         double adjStat = pow(abs(stats[t]), gseaParam);
+        // 0 values make problems, replacing with epsilon
+        adjStat = max(adjStat, eps);
         xs.inc(tRank, -1);
         ys.inc(tRank, adjStat);
         NR += adjStat;
@@ -310,7 +312,9 @@ NumericVector calcGseaStatCumulative(
     NumericVector resDown = gseaStats1(stats, selectedStats, selectedOrder, gseaParam, true);
 
     for (int i = 0; i < selectedStats.size(); ++i) {
-        if (res[i] < resDown[i]) {
+        if (res[i] == resDown[i]) {
+            res[i] = 0;
+        } else if (res[i] < resDown[i]) {
             res[i] = -resDown[i];
         }
     }
