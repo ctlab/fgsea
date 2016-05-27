@@ -161,13 +161,23 @@ NumericVector gseaStats1(
 
     int xxx = 0;
 
+    double statEps = 1/0.;
+
+    for (int i = 0; i < n; ++i) {
+        double xx = abs(stats[i]);
+        if (xx > 0) {
+            statEps = min(xx, statEps);
+        }
+    }
+    statEps /= 1024;
+
     for (int i = 0; i < k; ++i) {
         int t = selectedStats[i] - 1;
         int tRank = selectedRanks[i];
         // cout << tRank << ":\n";
-        double adjStat = pow(abs(stats[t]), gseaParam);
         // 0 values make problems, replacing with epsilon
-        adjStat = max(adjStat, eps);
+        double adjStat = pow(max(abs(stats[t]), statEps), gseaParam);
+        
         xs.inc(tRank, -1);
         ys.inc(tRank, adjStat);
         NR += adjStat;
