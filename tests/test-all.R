@@ -1,4 +1,3 @@
 library(testthat)
-
-library(rUtils)
+library(fgsea)
 test_package("fgsea")
