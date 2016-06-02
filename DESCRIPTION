@@ -2,12 +2,17 @@ Package: fgsea
 Title: Fast Gene Set Entrichment Analysis
 Version: 0.1
 Authors@R: person("Alexey", "Sergushichev", email = "alsergbox@gmail.com", role = c("aut", "cre"))
-Description:
+Description: The package implements an algorithm for fast gene set enrichment 
+    analysis. Using the fast algorithm allows to make more permutations and
+    get more fine grained p-values, which allows to use accurate stantard approaches 
+    to multiple hypothesis correction.
 Depends:
-    R (>= 3.2.4),
+    R (>= 3.0),
     Rcpp,
     data.table
-License: MIT
+Suggests:
+    testthat
+License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp
 RoxygenNote: 5.0.0

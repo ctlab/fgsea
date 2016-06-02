@@ -3,6 +3,7 @@
 export(calcGseaStat)
 export(calcGseaStatCumulative)
 export(fgsea)
+import(Rcpp)
 import(data.table)
 import(parallel)
 useDynLib(fgsea)

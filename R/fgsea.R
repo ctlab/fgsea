@@ -1,4 +1,5 @@
 #' @useDynLib fgsea
+#' @import Rcpp
 NULL
 
 #' Calculates GSEA statistics for a given query gene set

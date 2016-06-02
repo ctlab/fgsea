@@ -1,3 +1,4 @@
 library(testthat)
 library(fgsea)
-test_package("fgsea")
+
+test_check("fgsea")
