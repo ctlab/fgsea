@@ -47,6 +47,15 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1) {
     geneSetStatistic
 }
 
+#' Runs preranked gene set enrichment analysis.
+#' @param pathways List of gene sets to check.
+#' @param stats Named vector of gene-level stats. Names should be the same as in 'pathways'
+#' @param nperm Number of permutations to do. Minimial possible nominal p-value is about 1/nperm
+#' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
+#' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
+#' @param nproc Number of parallel processes to use.
+#' @param gseaParam GSEA parameter value.
+#' @return A table with GSEA results.
 #' @export
 #' @import data.table
 #' @import parallel
@@ -64,9 +73,10 @@ fgsea <- function(pathways, stats, nperm,
     pathwaysSizes <- sapply(pathwaysFiltered, length)
     K <- max(pathwaysSizes)
     m <- length(pathwaysFiltered)
-    npermActual <- nperm * m
-    message(sprintf("%s pathways left", m))
-    message(sprintf("Setting actual permutations number to %s", npermActual))
+    npermActual <- nperm
+#     npermActual <- if (npermIsActual) nperm else nperm * m
+#     message(sprintf("%s pathways left", m))
+#     message(sprintf("Setting actual permutations number to %s", npermActual))
 
     pathwaysIndexes <- lapply(pathwaysFiltered, match, names(stats))
 
