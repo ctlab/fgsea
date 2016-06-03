@@ -70,7 +70,7 @@ system.time(
 fgseaRes <- fgsea(pathways = pathways, stats = ranks,
                   minSize=15,
                   maxSize=500,
-                  nperm=2,
+                  nperm=1000,
                   nproc=1)
 )
 print(sum(fgseaRes$padj < 1e-2)) # 0
@@ -80,20 +80,20 @@ system.time(
 fgseaRes <- fgsea(pathways = pathways, stats = ranks,
                   minSize=15,
                   maxSize=500,
-                  nperm=10,
+                  nperm=1e4,
                   nproc=1)
 )
-print(sum(fgseaRes$padj < 1e-2)) # 76
+print(sum(fgseaRes$padj < 1e-2)) # 78
 
 set.seed(42)
 system.time(
 fgseaRes <- fgsea(pathways = pathways, stats = ranks,
                   minSize=15,
                   maxSize=500,
-                  nperm=200,
+                  nperm=100000,
                   nproc=1)
 )
-print(sum(fgseaRes$padj < 1e-2)) # 78
+print(sum(fgseaRes$padj < 1e-2)) # 77
 
 fgseaRes <- fgseaRes[order(pval)]
 write.table(fgseaRes, file="./inst/fgsea_res.tsv", sep="\t", quote = F, row.names = F)

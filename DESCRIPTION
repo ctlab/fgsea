@@ -6,13 +6,16 @@ Description: The package implements an algorithm for fast gene set enrichment
     analysis. Using the fast algorithm allows to make more permutations and
     get more fine grained p-values, which allows to use accurate stantard approaches 
     to multiple hypothesis correction.
-Depends:
+Depends: 
     R (>= 3.0),
     Rcpp,
     data.table
-Suggests:
-    testthat
+Suggests: 
+    testthat,
+    knitr,
+    rmarkdown
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp
 RoxygenNote: 5.0.0
+VignetteBuilder: knitr
