@@ -1,5 +1,5 @@
 # fgsea
-An R-package for gene set enrichment analysis
+An R-package for preranked gene set enrichment analysis (GSEA).
 
 ## Installation
 
