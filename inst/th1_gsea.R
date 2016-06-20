@@ -3,8 +3,8 @@ library(org.Mm.eg.db)
 library(data.table)
 library(fgsea)
 
-rnk.file <- "./inst/naive.vs.th1.rnk"
-gmt.file <- "./inst/mouse.reactome.gmt"
+rnk.file <- "./inst/extdata/naive.vs.th1.rnk"
+gmt.file <- "./inst/extdata/mouse.reactome.gmt"
 
 ##### Loading pathways from Reactome
 
@@ -20,6 +20,7 @@ pathway2name <- as.data.table(na.omit(select(reactome.db, names(pathways),
 # Remove organism prefix
 pathway2name[, PATHNAME := sub("^[^:]*: ", "", PATHNAME)]
 pathway2name <- structure(pathway2name$PATHNAME, names=pathway2name$PATHID)
+pathway2name <- iconv(pathway2name, "latin1", "ASCII", sub="")
 
 pathway.lines <- sapply(names(pathways), function(p) {
     link <- p

@@ -16,7 +16,8 @@ Suggests:
     testthat,
     knitr,
     rmarkdown,
-    reactome.db
+    reactome.db,
+    AnnotationDbi
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp

@@ -1,7 +1,3 @@
-#' @useDynLib fgsea
-#' @import Rcpp
-NULL
-
 #' Calculates GSEA statistics for a given query gene set
 #' @param stats Named numeric vector with gene-level statistics
 #' @param selectedStats indexes of selected genes in a 'stats' array
@@ -129,6 +125,13 @@ fgsea <- function(pathways, stats, nperm,
 
     counts <- rbindlist(counts)
 
+    # Getting rid of check NOTEs
+    leEs=leZero=geEs=geZero=leZeroSum=geZeroSum=NULL
+    pathway=padj=pval=ES=NES=geZeroMean=leZeroMean=NULL
+    nMoreExtreme=nGeEs=nLeEs=size=NULL
+    .="damn notes"
+
+
     pvals <- counts[,
         list(pval=min((1+sum(leEs)) / (1 + sum(leZero)),
                  (1+sum(geEs)) / (1 + sum(geZero))),
@@ -188,6 +191,9 @@ fgseaReactome <- function(stats, nperm,
         names(pathways),
         c("PATHNAME"),
         'PATHID')))
+
+    # Hack to get rid of check NOTEs
+    pathwayId=pathway=PATHNAME=NULL
 
     # Remove organism prefix
     pathway2name[, PATHNAME := sub("^[^:]*: ", "", PATHNAME)]

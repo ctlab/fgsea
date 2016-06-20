@@ -2,5 +2,6 @@
 
 language: r
 r: bioc-devel
-warnings_are_errors: true
-sudo: required
+# warnings_are_errors: true
+sudo: false
+cache: packages
