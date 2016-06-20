@@ -56,6 +56,7 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1) {
 #' @export
 #' @import data.table
 #' @import parallel
+#' @import stats
 #' @examples
 #' data(examplePathways)
 #' data(exampleRanks)
@@ -167,6 +168,7 @@ fgsea <- function(pathways, stats, nperm,
 #' @param nproc Number of parallel processes to use.
 #' @param gseaParam GSEA parameter value.
 #' @return A table with GSEA results.
+#' @import stats
 #' @export
 #' @examples
 #' data(exampleRanks)
