@@ -31,6 +31,7 @@ Runs preranked gene set enrichment analysis.
 \examples{
 data(examplePathways)
 data(exampleRanks)
+fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=10000)
 \dontrun{
  fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
 }

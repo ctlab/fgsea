@@ -27,7 +27,7 @@ Ranks
 
 ```{r}
 ranks <- read.table(rnk.file,
-                    header=T, colClasses = c("character", "numeric"))
+                    header=TRUE, colClasses = c("character", "numeric"))
 ranks <- structure(ranks$t, names=ranks$ID)
 str(ranks)
 ```

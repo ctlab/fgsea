@@ -1,9 +1,15 @@
 #' Calculates GSEA statistics for a given query gene set
 #' @param stats Named numeric vector with gene-level statistics
+#'  sorted in decreasing order (order is not checked)
 #' @param selectedStats indexes of selected genes in a 'stats' array
 #' @param gseaParam GSEA weight parameter (0 is unweighted, suggested value is 1)
 #' @return value of GSEA statistic
 #' @export
+#' @examples
+#' library(exampleRanks)
+#' library(examplePahtways)
+#' ranks <- sort(exampleRanks, decreasing=TRUE)
+#' es <- clacGseaStat(ranks, intersect(examplePathways[[1]], names(ranks)))
 calcGseaStat <- function(stats, selectedStats, gseaParam=1) {
     S <- selectedStats
     r <- stats
@@ -60,6 +66,7 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1) {
 #' @examples
 #' data(examplePathways)
 #' data(exampleRanks)
+#' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=10000)
 #' \dontrun{
 #'  fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
 #' }
@@ -68,7 +75,7 @@ fgsea <- function(pathways, stats, nperm,
                   nproc=1,
                   gseaParam=1) {
     minSize <- max(minSize, 1)
-    stats <- sort(stats, decreasing=T)
+    stats <- sort(stats, decreasing=TRUE)
     pathwaysFiltered <- lapply(pathways, intersect, names(stats))
     pathwaysSizes <- sapply(pathwaysFiltered, length)
     pathwaysFiltered <- pathwaysFiltered[

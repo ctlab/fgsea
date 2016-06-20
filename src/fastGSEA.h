@@ -7,10 +7,16 @@ using namespace std;
 
 //' Calculates GSEA statistic values for all the prefixes of a gene set
 //' @param stats Named numeric vector with gene-level statistics
+//'     sorted in decreasing order (order is not checked)
 //' @param selectedStats indexes of selected genes in a 'stats' array
 //' @param gseaParam GSEA weight parameter (0 is unweighted, suggested value is 1)
 //' @return numeric vector of GSEA statistics for all prefixes of selectedStats
 //' @export
+//' @examples
+//' library(exampleRanks)
+//' library(examplePahtways)
+//' ranks <- sort(exampleRanks, decreasing=TRUE)
+//' es <- clacGseaStatCumulative(ranks, intersect(examplePathways[[1]], names(ranks)))
 // [[Rcpp::export]]
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,

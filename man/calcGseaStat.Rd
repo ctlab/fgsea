@@ -7,7 +7,8 @@
 calcGseaStat(stats, selectedStats, gseaParam = 1)
 }
 \arguments{
-\item{stats}{Named numeric vector with gene-level statistics}
+\item{stats}{Named numeric vector with gene-level statistics
+sorted in decreasing order (order is not checked)}
 
 \item{selectedStats}{indexes of selected genes in a 'stats' array}
 
@@ -18,5 +19,11 @@ value of GSEA statistic
 }
 \description{
 Calculates GSEA statistics for a given query gene set
+}
+\examples{
+library(exampleRanks)
+library(examplePahtways)
+ranks <- sort(exampleRanks, decreasing=TRUE)
+es <- clacGseaStat(ranks, intersect(examplePathways[[1]], names(ranks)))
 }
 

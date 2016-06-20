@@ -7,7 +7,8 @@
 calcGseaStatCumulative(stats, selectedStats, gseaParam)
 }
 \arguments{
-\item{stats}{Named numeric vector with gene-level statistics}
+\item{stats}{Named numeric vector with gene-level statistics
+sorted in decreasing order (order is not checked)}
 
 \item{selectedStats}{indexes of selected genes in a 'stats' array}
 
@@ -18,5 +19,11 @@ numeric vector of GSEA statistics for all prefixes of selectedStats
 }
 \description{
 Calculates GSEA statistic values for all the prefixes of a gene set
+}
+\examples{
+library(exampleRanks)
+library(examplePahtways)
+ranks <- sort(exampleRanks, decreasing=TRUE)
+es <- clacGseaStatCumulative(ranks, intersect(examplePathways[[1]], names(ranks)))
 }
 
