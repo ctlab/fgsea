@@ -1,3 +1,7 @@
+[![Travis-CI Build Status](https://travis-ci.org/ctlab/fgsea.svg?branch=master)](https://travis-ci.org/ctlab/fgsea)
+[![codecov](https://codecov.io/gh/ctlab/fgsea/branch/master/graph/badge.svg)](https://codecov.io/gh/ctlab/fgsea)
+
+
 # fgsea
 An R-package for preranked gene set enrichment analysis (GSEA).
 
