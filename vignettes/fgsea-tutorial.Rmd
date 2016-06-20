@@ -19,8 +19,8 @@ library(fgsea)
 File with the input data
 
 ```{r}
-rnk.file <- system.file("naive.vs.th1.rnk", package="fgsea")
-gmt.file <- system.file("mouse.reactome.gmt", package="fgsea")
+rnk.file <- system.file("extdata", "naive.vs.th1.rnk", package="fgsea")
+gmt.file <- system.file("extdata", "mouse.reactome.gmt", package="fgsea")
 ```
 
 Ranks

@@ -8,12 +8,15 @@ Description: The package implements an algorithm for fast gene set enrichment
     to multiple hypothesis correction.
 Depends: 
     R (>= 3.0),
-    Rcpp,
-    data.table
+    Rcpp
+Imports:
+    data.table,
+    parallel
 Suggests: 
     testthat,
     knitr,
-    rmarkdown
+    rmarkdown,
+    reactome.db
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp

@@ -60,6 +60,12 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1) {
 #' @export
 #' @import data.table
 #' @import parallel
+#' @examples
+#' data(examplePathways)
+#' data(exampleRanks)
+#' \dontrun{
+#'  fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
+#' }
 fgsea <- function(pathways, stats, nperm,
                   minSize=1, maxSize=Inf,
                   nproc=1,
@@ -147,4 +153,51 @@ fgsea <- function(pathways, stats, nperm,
     pvals[, pathway := names(pathwaysFiltered)[pathway]]
 
     pvals
+}
+
+
+#' Runs preranked gene set enrichment analysis for reactome pathways.
+#' @param stats Named vector of gene-level stats. Names should be Entrez IDs.
+#' @param nperm Number of permutations to do. Minimial possible nominal p-value is about 1/nperm
+#' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
+#' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
+#' @param nproc Number of parallel processes to use.
+#' @param gseaParam GSEA parameter value.
+#' @return A table with GSEA results.
+#' @export
+#' @examples
+#' data(exampleRanks)
+#' \dontrun{
+#'  fgseaRes <- fgseaReactome(exampleRanks, nperm=10000, maxSize=500)
+#' }
+fgseaReactome <- function(stats, nperm,
+                  minSize=1, maxSize=Inf,
+                  nproc=1,
+                  gseaParam=1) {
+    stopifnot(requireNamespace("reactome.db"))
+    stopifnot(requireNamespace("AnnotationDbi"))
+    pathways <- na.omit(AnnotationDbi::select(reactome.db::reactome.db,
+                                              keys=names(stats),
+                                              c("PATHID"),
+                                              keytype = 'ENTREZID'))
+
+    pathways <- split(pathways$ENTREZID, pathways$PATHID)
+
+    pathway2name <- as.data.table(na.omit(AnnotationDbi::select(
+        reactome.db::reactome.db,
+        names(pathways),
+        c("PATHNAME"),
+        'PATHID')))
+
+    # Remove organism prefix
+    pathway2name[, PATHNAME := sub("^[^:]*: ", "", PATHNAME)]
+    pathway2name <- structure(pathway2name$PATHNAME, names=pathway2name$PATHID)
+    date()
+
+    res <- fgsea(pathways, stats, nperm,
+                 minSize, maxSize,
+                 nproc, gseaParam)
+    res[, pathwayId := pathway]
+    res[, pathway := pathway2name[pathwayId]]
+    res
 }

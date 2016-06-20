@@ -3,3 +3,4 @@
 inst/broad_gsea
 .gz
 test.R
+^data-raw$
