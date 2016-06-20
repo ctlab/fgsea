@@ -1,4 +1,6 @@
 .Rproj.user
 .Rhistory
 .RData
+*.so
+*.o
 inst/doc
