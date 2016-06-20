@@ -6,10 +6,10 @@
 #' @return value of GSEA statistic
 #' @export
 #' @examples
-#' library(exampleRanks)
-#' library(examplePahtways)
+#' data(exampleRanks)
+#' data(examplePathways)
 #' ranks <- sort(exampleRanks, decreasing=TRUE)
-#' es <- clacGseaStat(ranks, intersect(examplePathways[[1]], names(ranks)))
+#' es <- calcGseaStat(ranks, na.omit(match(examplePathways[[1]], names(ranks))))
 calcGseaStat <- function(stats, selectedStats, gseaParam=1) {
     S <- selectedStats
     r <- stats

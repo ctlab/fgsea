@@ -21,9 +21,9 @@ value of GSEA statistic
 Calculates GSEA statistics for a given query gene set
 }
 \examples{
-library(exampleRanks)
-library(examplePahtways)
+data(exampleRanks)
+data(examplePathways)
 ranks <- sort(exampleRanks, decreasing=TRUE)
-es <- clacGseaStat(ranks, intersect(examplePathways[[1]], names(ranks)))
+es <- calcGseaStat(ranks, na.omit(match(examplePathways[[1]], names(ranks))))
 }
 

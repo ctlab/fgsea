@@ -1,13 +1,24 @@
 # Sample .travis.yml for R projects
 
 language: r
-r: bioc-devel
+r: 
+    - bioc-devel
+    - bioc-release
 # warnings_are_errors: true
 sudo: false
 cache: packages
 
-r_github_packages:
-      - jimhester/covr
+r_packages:
+      - covr
+
+bioc_required: true
+bioc_packages:
+  - BiocCheck
+
+after_script:
+  - ls -lah
+  - FILE=$(ls -1t *.tar.gz | head -n 1)
+  - Rscript -e "library(BiocCheck); BiocCheck(\"${FILE}\")"
 
 after_success:
       - Rscript -e 'covr::codecov()'

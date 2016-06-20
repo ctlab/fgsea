@@ -21,9 +21,9 @@ numeric vector of GSEA statistics for all prefixes of selectedStats
 Calculates GSEA statistic values for all the prefixes of a gene set
 }
 \examples{
-library(exampleRanks)
-library(examplePahtways)
+data(exampleRanks)
+data(examplePathways)
 ranks <- sort(exampleRanks, decreasing=TRUE)
-es <- clacGseaStatCumulative(ranks, intersect(examplePathways[[1]], names(ranks)))
+es <- calcGseaStatCumulative(ranks, na.omit(match(examplePathways[[1]], names(ranks))), 1)
 }
 
