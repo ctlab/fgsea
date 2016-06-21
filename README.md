@@ -5,7 +5,7 @@
 # fgsea
 An R-package for fast preranked gene set enrichment analysis (GSEA).
 
-See https://github.com/ctlab/fgsea-paper/ for more details on the algorithm.
+See [the preprint](http://biorxiv.org/content/early/2016/06/20/060012) for algorithmic details.
 
 ## Installation
 
