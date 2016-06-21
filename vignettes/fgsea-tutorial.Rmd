@@ -11,19 +11,66 @@ vignette: >
 
 ## Loading necessary libraryries
 
-```{r echo=F}
-library(data.table)
+```{r echo=F, message=F}
 library(fgsea)
+library(data.table)
+library(ggplot2)
 ```
 
-File with the input data
+## Quick run
+
+Loading example pathways and gene-level statistics:
+```{r}
+data(examplePathways)
+data(exampleRanks)
+```
+
+Running fgsea:
+```{r}
+fgseaRes <- fgsea(pathways = examplePathways, 
+                  stats = exampleRanks,
+                  minSize=15,
+                  maxSize=500,
+                  nperm=10000,
+                  nproc=4)
+```
+
+The resulting table contains enrichment scores and p-values:
+```{r}
+head(fgseaRes[order(pval), ])
+```
+
+It tooks about ten seconds to get results with significant hits after FDR correction:
+```{r}
+sum(fgseaRes[, padj < 0.01])
+```
+
+One can make an enrichment plot for a pathway:
+```{r, fig.width=7, fig.height=4}
+plotEnrichment(examplePathways[["5991130_Programmed_Cell_Death"]],
+               exampleRanks) + labs(title="Programmed Cell Death")
+
+```
+
+Or make a table plot for a bunch of selected pathways:
+```{r, fig.width=7, fig.height=8, fig.retina=2}
+topPathwaysUp <- fgseaRes[ES > 0, ][head(order(pval), n=10), pathway]
+topPathwaysDown <- fgseaRes[ES < 0, ][head(order(pval), n=10), pathway]
+topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes, 
+              gseaParam = 0.5)
+```
+
+## Starting from files
+
+One can also start from `.rnk` and `.gmt` files as in original GSEA:
 
 ```{r}
 rnk.file <- system.file("extdata", "naive.vs.th1.rnk", package="fgsea")
 gmt.file <- system.file("extdata", "mouse.reactome.gmt", package="fgsea")
 ```
 
-Ranks
+Loading ranks:
 
 ```{r}
 ranks <- read.table(rnk.file,
@@ -32,7 +79,7 @@ ranks <- structure(ranks$t, names=ranks$ID)
 str(ranks)
 ```
 
-Pathways
+Loading pathways:
 
 ```{r}
 pathwayLines <- strsplit(readLines(gmt.file), "\t")
@@ -41,24 +88,15 @@ names(pathways) <- sapply(pathwayLines, head, 1)
 str(head(pathways))
 ```
 
-## Running fgsea
-
-Actual fgsea run
+And runnig fgsea:
 
 ```{r}
-set.seed(42)
-system.time(
 fgseaRes <- fgsea(pathways = pathways, 
                   stats = ranks,
                   minSize=15,
                   maxSize=500,
-                  nperm=10000,
+                  nperm=1000,
                   nproc=1)
-)
-head(fgseaRes[order(pval), ])
 ```
 
-It tooks ten seconds to get results with significant hits after FDR correction:
-```{r}
-sum(fgseaRes[, padj < 0.01])
-```
+

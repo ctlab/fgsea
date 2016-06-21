@@ -43,7 +43,8 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
             textGrob(pn, just="right", x=unit(0.95, "npc")),
             ggplot() +
                 geom_segment(aes(x=p, xend=p,
-                                 y=0, yend=statsAdj[p])) +
+                                 y=0, yend=statsAdj[p]),
+                             size=0.2) +
                 scale_x_continuous(limits=c(0, length(statsAdj)),
                                    expand=c(0, 0)) +
                 scale_y_continuous(limits=c(-1, 1),
