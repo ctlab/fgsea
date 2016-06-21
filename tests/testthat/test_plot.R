@@ -10,5 +10,13 @@ test_that("plotGseaTable works", {
     png(filename = tf, width=2000, height=1600, res = 300)
     plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes, gseaParam=0.5)
     dev.off()
+})
 
+test_that("plotEnrichment works", {
+    data(examplePathways)
+    data(exampleRanks)
+    g <- plotEnrichment(examplePathways[["5991130_Programmed_Cell_Death"]],
+                        exampleRanks)
+    tf <- tempfile("plot", fileext = ".png")
+    ggsave(tf, plot=g)
 })

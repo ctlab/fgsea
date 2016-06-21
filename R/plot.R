@@ -33,14 +33,8 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
     statsAdj <- statsAdj / max(abs(statsAdj))
 
     pathways <- lapply(pathways, function(p) {
-        if (is.character(p)) {
-            unname(as.vector(na.omit(match(p, names(statsAdj)))))
-        } else {
-            rnk[p]
-        }
+        unname(as.vector(na.omit(match(p, names(statsAdj)))))
     })
-    tt <- melt(pathways, as.is=TRUE)
-    colnames(tt) <- c("rank", "pathway")
 
     ps <- lapply(names(pathways), function(pn) {
         p <- pathways[[pn]]
@@ -101,3 +95,62 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
                  )),
         ncol=5, widths=colwidths)
 }
+
+#' Plots GSEA enrichment plot
+#' @param pathway Gene set to plot
+#' @param stats Gene-level statistics
+#' @param gseaParam GSEA parameter
+#' @return ggplot object with the enrichment plot
+#' @export
+#' @examples
+#' data(examplePathways)
+#' data(exampleRanks)
+#' \dontrun{
+#' plotEnrichment(examplePathways[["5991130_Programmed_Cell_Death"]],
+#'                exampleRanks)
+#' }
+plotEnrichment <- function(pathway, stats,
+                          gseaParam=1) {
+
+    rnk <- rank(-stats)
+    ord <- order(rnk)
+
+    statsAdj <- stats[ord]
+    statsAdj <- sign(statsAdj) * (abs(statsAdj) ^ gseaParam)
+    statsAdj <- statsAdj / max(abs(statsAdj))
+
+    pathway <- unname(as.vector(na.omit(match(pathway, names(statsAdj)))))
+    pathway <- sort(pathway)
+
+    gseaRes <- calcGseaStat(statsAdj, selectedStats = pathway, returnAllExtremes = T)
+
+    bottoms <- gseaRes$bottoms
+    tops <- gseaRes$tops
+
+    n <- length(statsAdj)
+    xs <- as.vector(rbind(pathway - 1, pathway))
+    ys <- as.vector(rbind(bottoms, tops))
+    toPlot <- data.frame(x=c(0, xs, n + 1), y=c(0, ys, 0))
+
+    diff <- (max(tops) - min(bottoms)) / 8
+
+    # Getting rid of NOTEs
+    x=y=NULL
+    g <- ggplot(toPlot, aes(x=x, y=y)) +
+        geom_point(color="green", size=0.1) +
+        geom_hline(yintercept=max(tops), colour="red", linetype="dashed") +
+        geom_hline(yintercept=min(bottoms), colour="red", linetype="dashed") +
+        geom_hline(yintercept=0, colour="black") +
+        geom_line(color="green") + theme_bw() +
+        geom_segment(data=data.frame(x=pathway),
+                     mapping=aes(x=x, y=-diff/2,
+                                 xend=x, yend=diff/2),
+                     size=0.2) +
+
+        theme(panel.border=element_blank(),
+              panel.grid.minor=element_blank()) +
+
+        labs(x="rank", y="enrichment score")
+    g
+}
+

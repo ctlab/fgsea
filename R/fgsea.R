@@ -3,6 +3,7 @@
 #'  sorted in decreasing order (order is not checked)
 #' @param selectedStats indexes of selected genes in a 'stats' array
 #' @param gseaParam GSEA weight parameter (0 is unweighted, suggested value is 1)
+#' @param returnAllExtremes If TRUE return not only the most extreme point, but all of them
 #' @return value of GSEA statistic
 #' @export
 #' @examples
@@ -10,7 +11,7 @@
 #' data(examplePathways)
 #' ranks <- sort(exampleRanks, decreasing=TRUE)
 #' es <- calcGseaStat(ranks, na.omit(match(examplePathways[[1]], names(ranks))))
-calcGseaStat <- function(stats, selectedStats, gseaParam=1) {
+calcGseaStat <- function(stats, selectedStats, gseaParam=1, returnAllExtremes=FALSE) {
     S <- selectedStats
     r <- stats
     p <- gseaParam
@@ -47,7 +48,14 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1) {
     } else {
         geneSetStatistic <- 0
     }
-    geneSetStatistic
+
+    if (returnAllExtremes) {
+        list(res=geneSetStatistic, tops=tops, bottoms=bottoms)
+    } else {
+        geneSetStatistic
+    }
+
+
 }
 
 #' Runs preranked gene set enrichment analysis.
