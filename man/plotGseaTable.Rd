@@ -21,6 +21,9 @@ choice too.}
 \item{colwidths}{Vector of five elements corresponding to column width for
 grid.arrange}
 }
+\value{
+TableGrob object returned by grid.arrange
+}
 \description{
 Plots table of enrichment graphs using ggplot and gridExtra
 }

@@ -7,6 +7,7 @@
 #'      choice too.
 #' @param colwidths Vector of five elements corresponding to column width for
 #'      grid.arrange
+#' @return TableGrob object returned by grid.arrange
 #' @import ggplot2
 #' @import gridExtra
 #' @import grid
@@ -90,7 +91,7 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
 
     grid.arrange(grobs=c(
             lapply(c("Pathway", "Gene ranks", "NES", "pval", "padj"), textGrob),
-            unlist(ps, recursive = F),
+            unlist(ps, recursive = FALSE),
             list(nullGrob(),
                  rankPlot
                  )),
@@ -123,7 +124,8 @@ plotEnrichment <- function(pathway, stats,
     pathway <- unname(as.vector(na.omit(match(pathway, names(statsAdj)))))
     pathway <- sort(pathway)
 
-    gseaRes <- calcGseaStat(statsAdj, selectedStats = pathway, returnAllExtremes = T)
+    gseaRes <- calcGseaStat(statsAdj, selectedStats = pathway,
+                            returnAllExtremes = TRUE)
 
     bottoms <- gseaRes$bottoms
     tops <- gseaRes$tops
