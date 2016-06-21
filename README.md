@@ -21,6 +21,7 @@ Loading libraries
 ```{r}
 library(data.table)
 library(fgsea)
+library(ggplot2)
 ```
 
 Loading example pathways and gene-level statistics:
@@ -53,3 +54,23 @@ The head of resulting table sorted by p-value:
  9: 5991599_Separation_of_Sister_Chromatids 0.0001460707 0.002356366 0.6164600 2.661433            0  116
 10:           5991130_Programmed_Cell_Death 0.0001465201 0.002356366 0.4537506 1.941445            0  108
 ```
+
+One can make an enrichment plot for a pathway:
+```{r}
+plotEnrichment(examplePathways[["5991130_Programmed_Cell_Death"]],
+               exampleRanks) + labs(title="Programmed Cell Death")
+
+```
+
+![enrichment.png](https://www.dropbox.com/s/zusn9pju7f608sn/enrichment.png?raw=1)
+
+Or make a table plot for a bunch of selected pathways:
+```{r}
+topPathwaysUp <- fgseaRes[ES > 0, ][head(order(pval), n=10), pathway]
+topPathwaysDown <- fgseaRes[ES < 0, ][head(order(pval), n=10), pathway]
+topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes, 
+              gseaParam = 0.5)
+```
+
+<img src="https://www.dropbox.com/s/uthtzn8wgo176f6/enrichmentTable.png?raw=1" width="600">
