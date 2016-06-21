@@ -13,13 +13,16 @@ Depends:
 Imports:
     data.table,
     parallel,
-    stats
+    stats,
+    ggplot2,
+    gridExtra,
+    grid
 Suggests: 
     testthat,
     knitr,
     rmarkdown,
     reactome.db,
-    AnnotationDbi
+    AnnotationDbi,
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp
