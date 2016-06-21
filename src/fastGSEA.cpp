@@ -74,7 +74,7 @@ class IndirectCmp {
 template<class T>
 vector<int> order(T const & x) {
     vector<int> res(x.size());
-    for (int i = 0; i < x.size(); ++i) {
+    for (int i = 0; i < (int)x.size(); ++i) {
         res[i] = i;
     }
 
@@ -86,7 +86,7 @@ vector<int> order(T const & x) {
 vector<int> ranksFromOrder(vector<int> const& order) {
     vector<int> res(order.size());
 
-    for (int i = 0; i < order.size(); ++i) {
+    for (int i = 0; i < (int)order.size(); ++i) {
         res[order[i]] = i;
     }
 
@@ -159,8 +159,6 @@ NumericVector gseaStats1(
         blockSummit[block] = blockEnd[block];
     }
 
-    int xxx = 0;
-
     double statEps = 1/0.;
 
     for (int i = 0; i < n; ++i) {
@@ -177,7 +175,7 @@ NumericVector gseaStats1(
         // cout << tRank << ":\n";
         // 0 values make problems, replacing with epsilon
         double adjStat = pow(max(abs(stats[t]), statEps), gseaParam);
-        
+
         xs.inc(tRank, -1);
         ys.inc(tRank, adjStat);
         NR += adjStat;
@@ -243,7 +241,7 @@ NumericVector gseaStats1(
 
         // Finding farthest points for `curBlock` from scratch
 
-        int topSummit = 0;
+        // int topSummit = 0;
         double maxP = 0;
 
         // So that blockSummit[curBlock] is to the right of
@@ -272,9 +270,11 @@ NumericVector gseaStats1(
             }
 
             blockSummit[block] = curSummit;
+            /*
             if (curDist > maxP) {
                 topSummit = curSummit;
             }
+            */
             maxP = max(maxP, curDist);
         }
 
@@ -321,7 +321,7 @@ NumericVector calcGseaStatCumulative(
 
     NumericVector resDown = gseaStats1(stats, selectedStats, selectedOrder, gseaParam, true);
 
-    for (int i = 0; i < selectedStats.size(); ++i) {
+    for (int i = 0; i < (int)selectedStats.size(); ++i) {
         if (res[i] == resDown[i]) {
             res[i] = 0;
         } else if (res[i] < resDown[i]) {
