@@ -32,7 +32,7 @@ fgseaRes <- fgsea(pathways = examplePathways,
                   minSize=15,
                   maxSize=500,
                   nperm=10000,
-                  nproc=4)
+                  nproc=1)
 ```
 
 The resulting table contains enrichment scores and p-values:
