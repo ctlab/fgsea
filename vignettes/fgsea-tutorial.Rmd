@@ -9,6 +9,9 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+`fgsea` is an R-package for fast preranked gene set enrichment analysis (GSEA). The performance is achieved by using an algorithm for cumulative
+GSEA-statistic calculation. This allows to reuse samples between different gene set sizes. See the [preprint](http://biorxiv.org/content/early/2016/06/20/060012) for algorithmic details. 
+
 ## Loading necessary libraryries
 
 ```{r echo=F, message=F}
