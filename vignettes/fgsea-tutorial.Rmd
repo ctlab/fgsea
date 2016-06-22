@@ -1,7 +1,7 @@
 ---
 title: "Using fgsea package"
 author: "Alexey Sergushichev"
-date: "`r Sys.Date()`"
+date: "2016-06-22"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Using fgsea package}
@@ -57,11 +57,32 @@ plotEnrichment(examplePathways[["5991130_Programmed_Cell_Death"]],
 
 Or make a table plot for a bunch of selected pathways:
 ```{r, fig.width=7, fig.height=8, fig.retina=2}
-topPathwaysUp <- fgseaRes[ES > 0, ][head(order(pval), n=10), pathway]
-topPathwaysDown <- fgseaRes[ES < 0, ][head(order(pval), n=10), pathway]
+topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
+topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
 topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
 plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes, 
               gseaParam = 0.5)
+```
+
+## Performance considerations
+
+Please, be aware that `fgsea` function takes about *O(nk^{3/2})* time,
+where *n* is number of permutations and *k* is a maximal size of the
+pathways. That means that setting `maxSize` parameter with a value of ~500 
+is strongly recommended.
+
+Also, `fgsea` can be parallelized by specifying `nproc` value.
+
+## Using Reactome pathways
+
+For convenience there is `reactomePathways` function that obtains pathways
+from Reactome for given set of genes. Package `reactome.db` is required
+to be installed.
+
+```{r message=F}
+pathways <- reactomePathways(names(exampleRanks))
+fgseaRes <- fgsea(pathways, exampleRanks, nperm=1000, maxSize=500)
+head(fgseaRes)
 ```
 
 ## Starting from files
@@ -78,28 +99,20 @@ Loading ranks:
 ```{r}
 ranks <- read.table(rnk.file,
                     header=TRUE, colClasses = c("character", "numeric"))
-ranks <- structure(ranks$t, names=ranks$ID)
+ranks <- setNames(ranks$t, ranks$ID)
 str(ranks)
 ```
 
 Loading pathways:
 
 ```{r}
-pathwayLines <- strsplit(readLines(gmt.file), "\t")
-pathways <- lapply(pathwayLines, tail, -2)
-names(pathways) <- sapply(pathwayLines, head, 1)
+pathways <- gmtPathways(gmt.file)
 str(head(pathways))
 ```
 
 And runnig fgsea:
 
 ```{r}
-fgseaRes <- fgsea(pathways = pathways, 
-                  stats = ranks,
-                  minSize=15,
-                  maxSize=500,
-                  nperm=1000,
-                  nproc=1)
+fgseaRes <- fgsea(pathways, ranks, minSize=15, maxSize=500, nperm=1000)
+head(fgseaRes)
 ```
-
-

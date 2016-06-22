@@ -23,17 +23,30 @@ fgsea(pathways, stats, nperm, minSize = 1, maxSize = Inf, nproc = 1,
 \item{gseaParam}{GSEA parameter value.}
 }
 \value{
-A table with GSEA results.
+A table with GSEA results. Each row corresponds to a tested pathway.
+The columns are the following:
+\itemize{
+ \item pathway -- name of the pathway as in `names(pathway)`;
+ \item pval -- an enrichment p-value;
+ \item padj -- a BH-adjusted p-value;
+ \item ES -- enrichment score, same as in Broad GSEA implementation;
+ \item NES -- enrichment score normalized to mean enrichment of random samples of the same size;
+ \item nMoreExtreme` -- a number of times a random gene set had a more
+     extreme enrichment score value;
+ \item size -- size of the pathway after removing genes not present in `names(stats)`.
+}
 }
 \description{
-Runs preranked gene set enrichment analysis.
+The function takes about \emph{O(nk^\{3/2\})} time,
+where \emph{n} is number of permutations and \emph{k} is a maximal
+size of the pathways. That means that setting `maxSize` parameter with a value of ~500
+is strongly recommended.
 }
 \examples{
 data(examplePathways)
 data(exampleRanks)
+fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
+# Testing only one pathway is implemented in a more efficient manner
 fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=10000)
-\dontrun{
- fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
-}
 }
 

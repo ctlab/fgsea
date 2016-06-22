@@ -8,19 +8,19 @@ calcGseaStat(stats, selectedStats, gseaParam = 1, returnAllExtremes = FALSE)
 }
 \arguments{
 \item{stats}{Named numeric vector with gene-level statistics
-sorted in decreasing order (order is not checked)}
+sorted in decreasing order (order is not checked).}
 
-\item{selectedStats}{indexes of selected genes in a 'stats' array}
+\item{selectedStats}{Indexes of selected genes in the `stats` array.}
 
-\item{gseaParam}{GSEA weight parameter (0 is unweighted, suggested value is 1)}
+\item{gseaParam}{GSEA weight parameter (0 is unweighted, suggested value is 1).}
 
-\item{returnAllExtremes}{If TRUE return not only the most extreme point, but all of them}
+\item{returnAllExtremes}{If TRUE return not only the most extreme point, but all of them.}
 }
 \value{
-value of GSEA statistic
+Value of GSEA statistic.
 }
 \description{
-Calculates GSEA statistics for a given query gene set
+Takes \emph{O(k log k)} time, where \emph{k} is a size of `selectedSize`.
 }
 \examples{
 data(exampleRanks)

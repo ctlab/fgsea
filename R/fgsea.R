@@ -1,10 +1,12 @@
 #' Calculates GSEA statistics for a given query gene set
+#'
+#' Takes \emph{O(k log k)} time, where \emph{k} is a size of `selectedSize`.
 #' @param stats Named numeric vector with gene-level statistics
-#'  sorted in decreasing order (order is not checked)
-#' @param selectedStats indexes of selected genes in a 'stats' array
-#' @param gseaParam GSEA weight parameter (0 is unweighted, suggested value is 1)
-#' @param returnAllExtremes If TRUE return not only the most extreme point, but all of them
-#' @return value of GSEA statistic
+#'  sorted in decreasing order (order is not checked).
+#' @param selectedStats Indexes of selected genes in the `stats` array.
+#' @param gseaParam GSEA weight parameter (0 is unweighted, suggested value is 1).
+#' @param returnAllExtremes If TRUE return not only the most extreme point, but all of them.
+#' @return Value of GSEA statistic.
 #' @export
 #' @examples
 #' data(exampleRanks)
@@ -59,6 +61,11 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1, returnAllExtremes=FA
 }
 
 #' Runs preranked gene set enrichment analysis.
+#'
+#' The function takes about \emph{O(nk^\{3/2\})} time,
+#' where \emph{n} is number of permutations and \emph{k} is a maximal
+#' size of the pathways. That means that setting `maxSize` parameter with a value of ~500
+#' is strongly recommended.
 #' @param pathways List of gene sets to check.
 #' @param stats Named vector of gene-level stats. Names should be the same as in 'pathways'
 #' @param nperm Number of permutations to do. Minimial possible nominal p-value is about 1/nperm
@@ -66,7 +73,19 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1, returnAllExtremes=FA
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
 #' @param nproc Number of parallel processes to use.
 #' @param gseaParam GSEA parameter value.
-#' @return A table with GSEA results.
+#' @return A table with GSEA results. Each row corresponds to a tested pathway.
+#' The columns are the following:
+#' \itemize{
+#'  \item pathway -- name of the pathway as in `names(pathway)`;
+#'  \item pval -- an enrichment p-value;
+#'  \item padj -- a BH-adjusted p-value;
+#'  \item ES -- enrichment score, same as in Broad GSEA implementation;
+#'  \item NES -- enrichment score normalized to mean enrichment of random samples of the same size;
+#'  \item nMoreExtreme` -- a number of times a random gene set had a more
+#'      extreme enrichment score value;
+#'  \item size -- size of the pathway after removing genes not present in `names(stats)`.
+#' }
+#'
 #' @export
 #' @import data.table
 #' @import parallel
@@ -74,10 +93,9 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1, returnAllExtremes=FA
 #' @examples
 #' data(examplePathways)
 #' data(exampleRanks)
+#' fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
+#' # Testing only one pathway is implemented in a more efficient manner
 #' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=10000)
-#' \dontrun{
-#'  fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
-#' }
 fgsea <- function(pathways, stats, nperm,
                   minSize=1, maxSize=Inf,
                   nproc=1,
@@ -172,55 +190,4 @@ fgsea <- function(pathways, stats, nperm,
     pvals[, pathway := names(pathwaysFiltered)[pathway]]
 
     pvals
-}
-
-
-#' Runs preranked gene set enrichment analysis for reactome pathways.
-#' @param stats Named vector of gene-level stats. Names should be Entrez IDs.
-#' @param nperm Number of permutations to do. Minimial possible nominal p-value is about 1/nperm
-#' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
-#' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
-#' @param nproc Number of parallel processes to use.
-#' @param gseaParam GSEA parameter value.
-#' @return A table with GSEA results.
-#' @import stats
-#' @export
-#' @examples
-#' data(exampleRanks)
-#' \dontrun{
-#'  fgseaRes <- fgseaReactome(exampleRanks, nperm=10000, maxSize=500)
-#' }
-fgseaReactome <- function(stats, nperm,
-                  minSize=1, maxSize=Inf,
-                  nproc=1,
-                  gseaParam=1) {
-    stopifnot(requireNamespace("reactome.db"))
-    stopifnot(requireNamespace("AnnotationDbi"))
-    pathways <- na.omit(AnnotationDbi::select(reactome.db::reactome.db,
-                                              keys=names(stats),
-                                              c("PATHID"),
-                                              keytype = 'ENTREZID'))
-
-    pathways <- split(pathways$ENTREZID, pathways$PATHID)
-
-    pathway2name <- as.data.table(na.omit(AnnotationDbi::select(
-        reactome.db::reactome.db,
-        names(pathways),
-        c("PATHNAME"),
-        'PATHID')))
-
-    # Hack to get rid of check NOTEs
-    pathwayId=pathway=PATHNAME=NULL
-
-    # Remove organism prefix
-    pathway2name[, PATHNAME := sub("^[^:]*: ", "", PATHNAME)]
-    pathway2name <- structure(pathway2name$PATHNAME, names=pathway2name$PATHID)
-    date()
-
-    res <- fgsea(pathways, stats, nperm,
-                 minSize, maxSize,
-                 nproc, gseaParam)
-    res[, pathwayId := pathway]
-    res[, pathway := pathway2name[pathwayId]]
-    res
 }
