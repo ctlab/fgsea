@@ -189,5 +189,8 @@ fgsea <- function(pathways, stats, nperm,
     pvals[, size := pathwaysSizes[pathway]]
     pvals[, pathway := names(pathwaysFiltered)[pathway]]
 
+    # Makes pvals object printable immediatly
+    pvals <- pvals[]
+
     pvals
 }

@@ -1,6 +1,6 @@
 Package: fgsea
 Title: Fast Gene Set Entrichment Analysis
-Version: 0.99.3
+Version: 0.99.4
 Authors@R: person("Alexey", "Sergushichev", email = "alsergbox@gmail.com", role = c("aut", "cre"))
 Description: The package implements an algorithm for fast gene set enrichment 
     analysis. Using the fast algorithm allows to make more permutations and
