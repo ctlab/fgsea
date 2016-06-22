@@ -10,15 +10,15 @@ calcGseaStatCumulative(stats, selectedStats, gseaParam)
 \item{stats}{Named numeric vector with gene-level statistics
 sorted in decreasing order (order is not checked)}
 
-\item{selectedStats}{indexes of selected genes in a 'stats' array}
+\item{selectedStats}{indexes of selected genes in a `stats` array}
 
 \item{gseaParam}{GSEA weight parameter (0 is unweighted, suggested value is 1)}
 }
 \value{
-numeric vector of GSEA statistics for all prefixes of selectedStats
+Numeric vector of GSEA statistics for all prefixes of selectedStats.
 }
 \description{
-Calculates GSEA statistic values for all the prefixes of a gene set
+Takes \emph{O(k^\{3/2\})} time, where \emph{k} is a size of `selectedSize`.
 }
 \examples{
 data(exampleRanks)

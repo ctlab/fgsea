@@ -3,8 +3,10 @@
 \docType{data}
 \name{exampleRanks}
 \alias{exampleRanks}
-\title{Example vector of gene-lvele statistics obtained for Th1 polarization}
+\title{Example vector of gene-level statistics obtained for Th1 polarization.}
 \description{
-Example vector of gene-lvele statistics obtained for Th1 polarization
+The data were obtained by doing differential expression between
+Naive and Th1-activated states for GEO dataset GSE14308. The
+exact script is available as system.file("gen_gene_ranks.R", package="fgsea")
 }
 

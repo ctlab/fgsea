@@ -19,7 +19,7 @@ pathway2name <- as.data.table(na.omit(select(reactome.db, names(pathways),
                                              c("PATHNAME"), 'PATHID')))
 # Remove organism prefix
 pathway2name[, PATHNAME := sub("^[^:]*: ", "", PATHNAME)]
-pathway2name <- structure(pathway2name$PATHNAME, names=pathway2name$PATHID)
+pathway2name <- setNames(pathway2name$PATHNAME, names=pathway2name$PATHID)
 pathway2name <- iconv(pathway2name, "latin1", "ASCII", sub="")
 
 pathway.lines <- sapply(names(pathways), function(p) {
@@ -62,7 +62,7 @@ system2("java",
 
 ##### Running fast GSEA
 
-ranks <- read.table("./inst/naive.vs.th1.rnk",
+ranks <- read.table(rnk.file,
                     header=T, colClasses = c("character", "numeric"))
 ranks <- structure(ranks$t, names=ranks$ID)
 
@@ -97,7 +97,7 @@ fgseaRes <- fgsea(pathways = pathways, stats = ranks,
 print(sum(fgseaRes$padj < 1e-2)) # 77
 
 fgseaRes <- fgseaRes[order(pval)]
-write.table(fgseaRes, file="./inst/fgsea_res.tsv", sep="\t", quote = F, row.names = F)
+write.table(fgseaRes, file="./inst/extdata/fgsea_res.tsv", sep="\t", quote = F, row.names = F)
 
 system.time(x <- fgsea(pathways=pathways["5990988"], stats=ranks, nperm=1e6, nproc=4))
 
