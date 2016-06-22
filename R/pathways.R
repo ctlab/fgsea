@@ -42,7 +42,7 @@ reactomePathways <- function(genes) {
 #' @export
 gmtPathways <- function(gmt.file) {
     pathwayLines <- strsplit(readLines(gmt.file), "\t")
-    pathways <- lapply(pathwayLines, tail, -2)
+    pathways <- lapply(pathwayLines, utils::tail, -2)
     names(pathways) <- sapply(pathwayLines, head, 1)
     pathways
 }

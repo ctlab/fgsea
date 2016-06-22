@@ -1,13 +1,13 @@
-#' Plots table of enrichment graphs using ggplot and gridExtra
-#' @param pathways Pathways to plot table, as in `fgsea` function
-#' @param stats Gene-level stats, as in `fgsea` function
-#' @param fgseaRes Table with fgsea results
+#' Plots table of enrichment graphs using ggplot and gridExtra.
+#' @param pathways Pathways to plot table, as in `fgsea` function.
+#' @param stats Gene-level stats, as in `fgsea` function.
+#' @param fgseaRes Table with fgsea results.
 #' @param gseaParam GSEA-like parameter. Adjusts displayed statistic values,
 #'      values closer to 0 flatten plots. Default = 1, value of 0.5 is a good
 #'      choice too.
 #' @param colwidths Vector of five elements corresponding to column width for
-#'      grid.arrange
-#' @return TableGrob object returned by grid.arrange
+#'      grid.arrange.
+#' @return TableGrob object returned by grid.arrange.
 #' @import ggplot2
 #' @import gridExtra
 #' @import grid
@@ -15,10 +15,10 @@
 #' @examples
 #' data(examplePathways)
 #' data(exampleRanks)
-#' \dontrun{
 #' fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=1000,
 #'                   minSize=15, maxSize=100)
 #' topPathways <- fgseaRes[head(order(pval), n=15)][order(NES), pathway]
+#' \dontrun{
 #' plotGseaTable(examplePathways[topPathways], exampleRanks,
 #'               fgseaRes, gseaParam=0.5)
 #' }
@@ -98,11 +98,11 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
         ncol=5, widths=colwidths)
 }
 
-#' Plots GSEA enrichment plot
-#' @param pathway Gene set to plot
-#' @param stats Gene-level statistics
-#' @param gseaParam GSEA parameter
-#' @return ggplot object with the enrichment plot
+#' Plots GSEA enrichment plot.
+#' @param pathway Gene set to plot.
+#' @param stats Gene-level statistics.
+#' @param gseaParam GSEA parameter.
+#' @return ggplot object with the enrichment plot.
 #' @export
 #' @examples
 #' data(examplePathways)

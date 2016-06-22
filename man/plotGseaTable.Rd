@@ -2,38 +2,38 @@
 % Please edit documentation in R/plot.R
 \name{plotGseaTable}
 \alias{plotGseaTable}
-\title{Plots table of enrichment graphs using ggplot and gridExtra}
+\title{Plots table of enrichment graphs using ggplot and gridExtra.}
 \usage{
 plotGseaTable(pathways, stats, fgseaRes, gseaParam = 1, colwidths = c(5, 3,
   0.8, 1.2, 1.2))
 }
 \arguments{
-\item{pathways}{Pathways to plot table, as in `fgsea` function}
+\item{pathways}{Pathways to plot table, as in `fgsea` function.}
 
-\item{stats}{Gene-level stats, as in `fgsea` function}
+\item{stats}{Gene-level stats, as in `fgsea` function.}
 
-\item{fgseaRes}{Table with fgsea results}
+\item{fgseaRes}{Table with fgsea results.}
 
 \item{gseaParam}{GSEA-like parameter. Adjusts displayed statistic values,
 values closer to 0 flatten plots. Default = 1, value of 0.5 is a good
 choice too.}
 
 \item{colwidths}{Vector of five elements corresponding to column width for
-grid.arrange}
+grid.arrange.}
 }
 \value{
-TableGrob object returned by grid.arrange
+TableGrob object returned by grid.arrange.
 }
 \description{
-Plots table of enrichment graphs using ggplot and gridExtra
+Plots table of enrichment graphs using ggplot and gridExtra.
 }
 \examples{
 data(examplePathways)
 data(exampleRanks)
-\dontrun{
 fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=1000,
                   minSize=15, maxSize=100)
 topPathways <- fgseaRes[head(order(pval), n=15)][order(NES), pathway]
+\dontrun{
 plotGseaTable(examplePathways[topPathways], exampleRanks,
               fgseaRes, gseaParam=0.5)
 }

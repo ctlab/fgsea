@@ -2,22 +2,22 @@
 % Please edit documentation in R/plot.R
 \name{plotEnrichment}
 \alias{plotEnrichment}
-\title{Plots GSEA enrichment plot}
+\title{Plots GSEA enrichment plot.}
 \usage{
 plotEnrichment(pathway, stats, gseaParam = 1)
 }
 \arguments{
-\item{pathway}{Gene set to plot}
+\item{pathway}{Gene set to plot.}
 
-\item{stats}{Gene-level statistics}
+\item{stats}{Gene-level statistics.}
 
-\item{gseaParam}{GSEA parameter}
+\item{gseaParam}{GSEA parameter.}
 }
 \value{
-ggplot object with the enrichment plot
+ggplot object with the enrichment plot.
 }
 \description{
-Plots GSEA enrichment plot
+Plots GSEA enrichment plot.
 }
 \examples{
 data(examplePathways)
