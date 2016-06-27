@@ -3,9 +3,10 @@
 
 
 # fgsea
-An R-package for fast preranked gene set enrichment analysis (GSEA).
-
-See [the preprint](http://biorxiv.org/content/early/2016/06/20/060012) for algorithmic details.
+An R-package for fast preranked gene set enrichment analysis (GSEA). The package 
+implements a special algorithm to calculate the empirical enrichment score null distributions simulthaneously
+for all the gene set sizes, which allows up to **several hundred faster** execution time compared to original
+implementation. See [the preprint](http://biorxiv.org/content/early/2016/06/20/060012) for algorithmic details.
 
 ## Installation
 
