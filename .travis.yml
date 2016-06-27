@@ -4,6 +4,7 @@ language: r
 r: 
     - bioc-devel
     - bioc-release
+    - 3.2
 # warnings_are_errors: true
 sudo: false
 cache: packages

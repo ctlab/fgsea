@@ -8,7 +8,7 @@ Description: The package implements an algorithm for fast gene set enrichment
     to multiple hypothesis correction.
 biocViews: GeneExpression, DifferentialExpression, GeneSetEnrichment, Pathways
 Depends: 
-    R (>= 3.3),
+    R (>= 3.2),
     Rcpp
 Imports:
     data.table,
