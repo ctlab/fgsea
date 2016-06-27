@@ -14,6 +14,12 @@ library(devtools)
 install_github("ctlab/fgsea")
 ```
 
+To install `fgsea` on R 3.2, use `r-3.2` branch:
+```{r}
+install_github("ctlab/fgsea", ref="r-3.2")
+```
+
+
 ## Quick run
 
 Loading libraries
