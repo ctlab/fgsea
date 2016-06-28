@@ -1,0 +1,7 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+inst/broad_gsea
+.gz
+test.R
+^data-raw$
+^\.travis\.yml$

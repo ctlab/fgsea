@@ -1,0 +1,118 @@
+---
+title: "Using fgsea package"
+author: "Alexey Sergushichev"
+date: "2016-06-22"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using fgsea package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+`fgsea` is an R-package for fast preranked gene set enrichment analysis (GSEA). The performance is achieved by using an algorithm for cumulative
+GSEA-statistic calculation. This allows to reuse samples between different gene set sizes. See the [preprint](http://biorxiv.org/content/early/2016/06/20/060012) for algorithmic details. 
+
+## Loading necessary libraryries
+
+```{r echo=F, message=F}
+library(fgsea)
+library(data.table)
+library(ggplot2)
+```
+
+## Quick run
+
+Loading example pathways and gene-level statistics:
+```{r}
+data(examplePathways)
+data(exampleRanks)
+```
+
+Running fgsea:
+```{r}
+fgseaRes <- fgsea(pathways = examplePathways, 
+                  stats = exampleRanks,
+                  minSize=15,
+                  maxSize=500,
+                  nperm=10000,
+                  nproc=1)
+```
+
+The resulting table contains enrichment scores and p-values:
+```{r}
+head(fgseaRes[order(pval), ])
+```
+
+It tooks about ten seconds to get results with significant hits after FDR correction:
+```{r}
+sum(fgseaRes[, padj < 0.01])
+```
+
+One can make an enrichment plot for a pathway:
+```{r, fig.width=7, fig.height=4}
+plotEnrichment(examplePathways[["5991130_Programmed_Cell_Death"]],
+               exampleRanks) + labs(title="Programmed Cell Death")
+
+```
+
+Or make a table plot for a bunch of selected pathways:
+```{r, fig.width=7, fig.height=8, fig.retina=2}
+topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
+topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
+topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes, 
+              gseaParam = 0.5)
+```
+
+## Performance considerations
+
+Please, be aware that `fgsea` function takes about *O(nk^{3/2})* time,
+where *n* is number of permutations and *k* is a maximal size of the
+pathways. That means that setting `maxSize` parameter with a value of ~500 
+is strongly recommended.
+
+Also, `fgsea` can be parallelized by specifying `nproc` value.
+
+## Using Reactome pathways
+
+For convenience there is `reactomePathways` function that obtains pathways
+from Reactome for given set of genes. Package `reactome.db` is required
+to be installed.
+
+```{r message=F}
+pathways <- reactomePathways(names(exampleRanks))
+fgseaRes <- fgsea(pathways, exampleRanks, nperm=1000, maxSize=500)
+head(fgseaRes)
+```
+
+## Starting from files
+
+One can also start from `.rnk` and `.gmt` files as in original GSEA:
+
+```{r}
+rnk.file <- system.file("extdata", "naive.vs.th1.rnk", package="fgsea")
+gmt.file <- system.file("extdata", "mouse.reactome.gmt", package="fgsea")
+```
+
+Loading ranks:
+
+```{r}
+ranks <- read.table(rnk.file,
+                    header=TRUE, colClasses = c("character", "numeric"))
+ranks <- setNames(ranks$t, ranks$ID)
+str(ranks)
+```
+
+Loading pathways:
+
+```{r}
+pathways <- gmtPathways(gmt.file)
+str(head(pathways))
+```
+
+And runnig fgsea:
+
+```{r}
+fgseaRes <- fgsea(pathways, ranks, minSize=15, maxSize=500, nperm=1000)
+head(fgseaRes)
+```
