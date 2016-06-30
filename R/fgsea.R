@@ -107,6 +107,7 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #'  \item nMoreExtreme` -- a number of times a random gene set had a more
 #'      extreme enrichment score value;
 #'  \item size -- size of the pathway after removing genes not present in `names(stats)`.
+#'  \item leadingGene -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
 #' }
 #'
 #' @export
