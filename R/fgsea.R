@@ -5,15 +5,25 @@
 #'  sorted in decreasing order (order is not checked).
 #' @param selectedStats Indexes of selected genes in the `stats` array.
 #' @param gseaParam GSEA weight parameter (0 is unweighted, suggested value is 1).
-#' @param returnAllExtremes If TRUE return not only the most extreme point, but all of them.
-#' @return Value of GSEA statistic.
+#' @param returnAllExtremes If TRUE return not only the most extreme point, but all of them. Can be used for enrichment plot
+#' @param returnLeadingEdge If TRUE return also leading edge genes.
+#' @return Value of GSEA statistic if both returnAllExtremes and returnLeadingEdge are FALSE.
+#' Otherwise returns list with the folowing elements:
+#' \itemize{
+#' \item res -- value of GSEA statistic
+#' \item tops -- vector of top peak values of cumulative enrichment statistic for each gene;
+#' \item bottoms -- vector of bottom peak values of cumulative enrichment statistic for each gene;
+#' \item leadingGene -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
+#' }
 #' @export
 #' @examples
 #' data(exampleRanks)
 #' data(examplePathways)
 #' ranks <- sort(exampleRanks, decreasing=TRUE)
 #' es <- calcGseaStat(ranks, na.omit(match(examplePathways[[1]], names(ranks))))
-calcGseaStat <- function(stats, selectedStats, gseaParam=1, returnAllExtremes=FALSE) {
+calcGseaStat <- function(stats, selectedStats, gseaParam=1,
+                         returnAllExtremes=FALSE,
+                         returnLeadingEdge=FALSE) {
     S <- selectedStats
     r <- stats
     p <- gseaParam
@@ -51,13 +61,26 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1, returnAllExtremes=FA
         geneSetStatistic <- 0
     }
 
-    if (returnAllExtremes) {
-        list(res=geneSetStatistic, tops=tops, bottoms=bottoms)
-    } else {
-        geneSetStatistic
+    if (!returnAllExtremes && !returnLeadingEdge) {
+        return(geneSetStatistic)
     }
 
+    res <- list(res=geneSetStatistic)
+    if (returnAllExtremes) {
+        res <- c(res, list(tops=tops, bottoms=bottoms))
+    }
+    if (returnLeadingEdge) {
+        leadingEdge <- if (maxP > -minP) {
+            S[seq_along(S) <= which.max(bottoms)]
+        } else if (maxP < -minP) {
+            S[seq_along(S) >= which.min(bottoms)]
+        } else {
+            NULL
+        }
 
+        res <- c(res, list(leadingEdge=leadingEdge))
+    }
+    res
 }
 
 #' Runs preranked gene set enrichment analysis.
@@ -102,7 +125,7 @@ fgsea <- function(pathways, stats, nperm,
                   gseaParam=1) {
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing=TRUE)
-    pathwaysFiltered <- lapply(pathways, intersect, names(stats))
+    pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(match(p, names(stats)))) })
     pathwaysSizes <- sapply(pathwaysFiltered, length)
     pathwaysFiltered <- pathwaysFiltered[
         minSize <= pathwaysSizes & pathwaysSizes <= maxSize]
@@ -115,9 +138,15 @@ fgsea <- function(pathways, stats, nperm,
 #     message(sprintf("%s pathways left", m))
 #     message(sprintf("Setting actual permutations number to %s", npermActual))
 
-    pathwaysIndexes <- lapply(pathwaysFiltered, match, names(stats))
+    gseaStatRes <- do.call(rbind,
+                lapply(pathwaysFiltered, calcGseaStat,
+                       stats=stats,
+                       returnLeadingEdge=TRUE))
 
-    pathwayScores <- sapply(pathwaysIndexes, calcGseaStat, stats=stats)
+
+    leadingEdges <- mapply("[", list(names(stats)), gseaStatRes[, "leadingEdge"], SIMPLIFY = FALSE)
+    pathwayScores <- unlist(gseaStatRes[, "res"])
+
 
 
     permPerProc <- rep(npermActual %/% nproc, nproc) +
@@ -188,6 +217,9 @@ fgsea <- function(pathways, stats, nperm,
 
     pvals[, size := pathwaysSizes[pathway]]
     pvals[, pathway := names(pathwaysFiltered)[pathway]]
+
+    pvals[, leadingEdge := .(leadingEdges)]
+
 
     # Makes pvals object printable immediatly
     pvals <- pvals[]

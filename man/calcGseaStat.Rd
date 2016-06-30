@@ -4,7 +4,8 @@
 \alias{calcGseaStat}
 \title{Calculates GSEA statistics for a given query gene set}
 \usage{
-calcGseaStat(stats, selectedStats, gseaParam = 1, returnAllExtremes = FALSE)
+calcGseaStat(stats, selectedStats, gseaParam = 1, returnAllExtremes = FALSE,
+  returnLeadingEdge = FALSE)
 }
 \arguments{
 \item{stats}{Named numeric vector with gene-level statistics
@@ -14,10 +15,19 @@ sorted in decreasing order (order is not checked).}
 
 \item{gseaParam}{GSEA weight parameter (0 is unweighted, suggested value is 1).}
 
-\item{returnAllExtremes}{If TRUE return not only the most extreme point, but all of them.}
+\item{returnAllExtremes}{If TRUE return not only the most extreme point, but all of them. Can be used for enrichment plot}
+
+\item{returnLeadingEdge}{If TRUE return also leading edge genes.}
 }
 \value{
-Value of GSEA statistic.
+Value of GSEA statistic if both returnAllExtremes and returnLeadingEdge are FALSE.
+Otherwise returns list with the folowing elements:
+\itemize{
+\item res -- value of GSEA statistic
+\item tops -- vector of top peak values of cumulative enrichment statistic for each gene;
+\item bottoms -- vector of bottom peak values of cumulative enrichment statistic for each gene;
+\item leadingGene -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
+}
 }
 \description{
 Takes \emph{O(k log k)} time, where \emph{k} is a size of `selectedSize`.
