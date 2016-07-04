@@ -34,8 +34,7 @@ fgseaRes <- fgsea(pathways = examplePathways,
                   stats = exampleRanks,
                   minSize=15,
                   maxSize=500,
-                  nperm=10000,
-                  nproc=1)
+                  nperm=10000)
 ```
 
 The resulting table contains enrichment scores and p-values:
@@ -71,7 +70,11 @@ where *n* is number of permutations and *k* is a maximal size of the
 pathways. That means that setting `maxSize` parameter with a value of ~500 
 is strongly recommended.
 
-Also, `fgsea` can be parallelized by specifying `nproc` value.
+Also, `fgsea` is parallelized using `BiocParallel` package. 
+By default the first registered backend returned by `bpparam()` is 
+used. To tweak the parallelization one can either specify `BPPARAM`
+parameter used for `bclapply` of set `nproc` parameter, which is 
+a shorthand for setting `BPPARAM=MulticoreParam(workers = nproc)`.
 
 ## Using Reactome pathways
 

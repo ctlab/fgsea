@@ -21,4 +21,7 @@ test_that("fgsea works", {
     # analyzing one pathway is done in a different way
     fgsea1Res <- fgsea(examplePathways[1237], exampleRanks, nperm=nperm, maxSize=500)
     expect_gt(fgseaRes[1, nMoreExtreme], 50 * nperm / 1000)
+
+    # specifying number of threads
+    fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=2000, maxSize=100, nproc=2)
 })

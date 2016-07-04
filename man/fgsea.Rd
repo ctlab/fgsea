@@ -4,8 +4,8 @@
 \alias{fgsea}
 \title{Runs preranked gene set enrichment analysis.}
 \usage{
-fgsea(pathways, stats, nperm, minSize = 1, maxSize = Inf, nproc = 1,
-  gseaParam = 1)
+fgsea(pathways, stats, nperm, minSize = 1, maxSize = Inf, nproc = 0,
+  gseaParam = 1, BPPARAM = bpparam())
 }
 \arguments{
 \item{pathways}{List of gene sets to check.}
@@ -18,9 +18,11 @@ fgsea(pathways, stats, nperm, minSize = 1, maxSize = Inf, nproc = 1,
 
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
 
-\item{nproc}{Number of parallel processes to use.}
+\item{nproc}{If not equal to zero (default), sets BPPARAM to use nproc workers.}
 
 \item{gseaParam}{GSEA parameter value.}
+
+\item{BPPARAM}{Parallelization parameter used in bclapply. Default = bpparam().}
 }
 \value{
 A table with GSEA results. Each row corresponds to a tested pathway.
@@ -34,7 +36,7 @@ The columns are the following:
  \item nMoreExtreme` -- a number of times a random gene set had a more
      extreme enrichment score value;
  \item size -- size of the pathway after removing genes not present in `names(stats)`.
- \item leadingGene -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
+ \item leadingEdge -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
 }
 }
 \description{

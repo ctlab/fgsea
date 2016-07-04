@@ -94,8 +94,9 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @param nperm Number of permutations to do. Minimial possible nominal p-value is about 1/nperm
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
-#' @param nproc Number of parallel processes to use.
+#' @param nproc If not equal to zero (default), sets BPPARAM to use nproc workers.
 #' @param gseaParam GSEA parameter value.
+#' @param BPPARAM Parallelization parameter used in bclapply. Default = bpparam().
 #' @return A table with GSEA results. Each row corresponds to a tested pathway.
 #' The columns are the following:
 #' \itemize{
@@ -107,12 +108,12 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #'  \item nMoreExtreme` -- a number of times a random gene set had a more
 #'      extreme enrichment score value;
 #'  \item size -- size of the pathway after removing genes not present in `names(stats)`.
-#'  \item leadingGene -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
+#'  \item leadingEdge -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
 #' }
 #'
 #' @export
 #' @import data.table
-#' @import parallel
+#' @import BiocParallel
 #' @import stats
 #' @examples
 #' data(examplePathways)
@@ -122,8 +123,12 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=10000)
 fgsea <- function(pathways, stats, nperm,
                   minSize=1, maxSize=Inf,
-                  nproc=1,
-                  gseaParam=1) {
+                  nproc=0,
+                  gseaParam=1,
+                  BPPARAM=bpparam()) {
+    if (nproc != 0) {
+        BPPARAM <- MulticoreParam(workers = nproc)
+    }
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing=TRUE)
     pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(match(p, names(stats)))) })
@@ -149,10 +154,13 @@ fgsea <- function(pathways, stats, nperm,
     pathwayScores <- unlist(gseaStatRes[, "res"])
 
 
+    granularity <- 1000
+    permPerProc <- rep(granularity, floor(npermActual / granularity))
+    if (npermActual - sum(permPerProc) > 0) {
+        permPerProc <- c(permPerProc, npermActual - sum(permPerProc))
+    }
 
-    permPerProc <- rep(npermActual %/% nproc, nproc) +
-        c(rep(1, npermActual %% nproc), rep(0, nproc - npermActual %% nproc))
-    counts <- mclapply(permPerProc, function(nperm1) {
+    counts <- bplapply(permPerProc, function(nperm1) {
         leEs <- rep(0, m)
         geEs <- rep(0, m)
         leZero <- rep(0, m)
@@ -185,7 +193,7 @@ fgsea <- function(pathways, stats, nperm,
                    leZero=leZero, geZero=geZero,
                    leZeroSum=leZeroSum, geZeroSum=geZeroSum
                    )
-    }, mc.cores=nproc)
+    }, BPPARAM=BPPARAM)
 
     counts <- rbindlist(counts)
 
@@ -193,6 +201,7 @@ fgsea <- function(pathways, stats, nperm,
     leEs=leZero=geEs=geZero=leZeroSum=geZeroSum=NULL
     pathway=padj=pval=ES=NES=geZeroMean=leZeroMean=NULL
     nMoreExtreme=nGeEs=nLeEs=size=NULL
+    leadingEdge=NULL
     .="damn notes"
 
 
