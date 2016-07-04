@@ -17,7 +17,8 @@ Imports:
     stats,
     ggplot2,
     gridExtra,
-    grid
+    grid,
+    fastmatch
 Suggests: 
     testthat,
     knitr,

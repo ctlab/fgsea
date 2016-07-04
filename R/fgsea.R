@@ -114,6 +114,7 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @export
 #' @import data.table
 #' @import BiocParallel
+#' @import fastmatch
 #' @import stats
 #' @examples
 #' data(examplePathways)
@@ -131,7 +132,7 @@ fgsea <- function(pathways, stats, nperm,
     }
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing=TRUE)
-    pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(match(p, names(stats)))) })
+    pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, names(stats)))) })
     pathwaysSizes <- sapply(pathwaysFiltered, length)
     pathwaysFiltered <- pathwaysFiltered[
         minSize <= pathwaysSizes & pathwaysSizes <= maxSize]
