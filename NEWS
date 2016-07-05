@@ -1,0 +1,6 @@
+CHANGES IN VERSION 0.99.5
+-------------------------
+
+* Using `BiocParallel` package instead of `parallel`
+* Implemented leading edge analysis (`leadingEdge` column of fgsea result)
+

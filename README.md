@@ -43,8 +43,7 @@ fgseaRes <- fgsea(pathways = examplePathways,
                   stats = exampleRanks,
                   minSize=15,
                   maxSize=500,
-                  nperm=10000,
-                  nproc=1)
+                  nperm=10000)
 ```
 
 The head of resulting table sorted by p-value:
