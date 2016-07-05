@@ -2,12 +2,42 @@ context("GSEA stat calculation")
 
 test_that("calcGseaStats works", {
     stats <- -10:10
+
     sample <- 1:5
     expect_equal(calcGseaStat(stats, selectedStats = sample), 1)
     sample <- 16:21
     expect_equal(calcGseaStat(stats, selectedStats = sample), -1)
+
     sample <- (1:5)*2
     expect_equal(calcGseaStat(stats, selectedStats = sample), 0.71)
+})
+
+test_that("calcGseaStats(returnLeadingEdge=TRUE) works", {
+    stats <- -10:10
+
+    sample <- c(10, 1:5)
+    gseaRes <- calcGseaStat(stats, selectedStats = sample,
+                            returnLeadingEdge = TRUE,
+                            returnAllExtremes = TRUE)
+    expect_equal(gseaRes$res, calcGseaStat(stats, selectedStats = sample))
+    expect_true(1 %in% gseaRes$leadingEdge)
+    expect_false(10 %in% gseaRes$leadingEdge)
+
+    sample <- c(10, 16:21)
+    gseaRes <- calcGseaStat(stats, selectedStats = sample,
+                            returnLeadingEdge = TRUE,
+                            returnAllExtremes = TRUE)
+    expect_equal(gseaRes$res, calcGseaStat(stats, selectedStats = sample))
+    expect_true(21 %in% gseaRes$leadingEdge)
+    expect_false(10 %in% gseaRes$leadingEdge)
+
+    sample <- 10:12
+    gseaRes <- calcGseaStat(stats, selectedStats = sample,
+                            returnLeadingEdge = TRUE,
+                            returnAllExtremes = TRUE)
+    expect_equal(gseaRes$res, calcGseaStat(stats, selectedStats = sample))
+    expect_false(12 %in% gseaRes$leadingEdge)
+    expect_false(10 %in% gseaRes$leadingEdge)
 })
 
 test_that("calcGseaStats returns zero when both sides are equally enriched", {

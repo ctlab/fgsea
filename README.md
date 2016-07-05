@@ -3,9 +3,10 @@
 
 
 # fgsea
-An R-package for fast preranked gene set enrichment analysis (GSEA).
-
-See [the preprint](http://biorxiv.org/content/early/2016/06/20/060012) for algorithmic details.
+An R-package for fast preranked gene set enrichment analysis (GSEA). The package 
+implements a special algorithm to calculate the empirical enrichment score null distributions simulthaneously
+for all the gene set sizes, which allows up to **several hundred times faster** execution time compared to original
+implementation. See [the preprint](http://biorxiv.org/content/early/2016/06/20/060012) for algorithmic details.
 
 ## Installation
 
@@ -13,6 +14,12 @@ See [the preprint](http://biorxiv.org/content/early/2016/06/20/060012) for algor
 library(devtools)
 install_github("ctlab/fgsea")
 ```
+
+To install `fgsea` on R 3.2, use `r-3.2` branch:
+```{r}
+install_github("ctlab/fgsea", ref="r-3.2")
+```
+
 
 ## Quick run
 
@@ -36,8 +43,7 @@ fgseaRes <- fgsea(pathways = examplePathways,
                   stats = exampleRanks,
                   minSize=15,
                   maxSize=500,
-                  nperm=10000,
-                  nproc=1)
+                  nperm=10000)
 ```
 
 The head of resulting table sorted by p-value:

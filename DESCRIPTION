@@ -1,6 +1,7 @@
 Package: fgsea
-Title: Fast Gene Set Entrichment Analysis
-Version: 0.99.4
+Title: Fast Gene Set Enrichment Analysis
+Version: 0.99.5
+Date: 2016-06-30
 Authors@R: person("Alexey", "Sergushichev", email = "alsergbox@gmail.com", role = c("aut", "cre"))
 Description: The package implements an algorithm for fast gene set enrichment 
     analysis. Using the fast algorithm allows to make more permutations and
@@ -12,19 +13,23 @@ Depends:
     Rcpp
 Imports:
     data.table,
-    parallel,
+    BiocParallel,
     stats,
     ggplot2,
     gridExtra,
-    grid
+    grid,
+    fastmatch
 Suggests: 
     testthat,
     knitr,
     rmarkdown,
     reactome.db,
     AnnotationDbi,
+    parallel
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp
 RoxygenNote: 5.0.0
 VignetteBuilder: knitr
+URL: https://github.com/ctlab/fgsea/
+BugReports: https://github.com/ctlab/fgsea/issues

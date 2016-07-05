@@ -4,3 +4,4 @@
 *.so
 *.o
 inst/doc
+inst/broad_gsea
