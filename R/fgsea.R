@@ -94,9 +94,8 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @param nperm Number of permutations to do. Minimial possible nominal p-value is about 1/nperm
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
-#' @param nproc If not equal to zero (default), sets BPPARAM to use nproc workers.
+#' @param nproc Number of processors to use.
 #' @param gseaParam GSEA parameter value.
-#' @param BPPARAM Parallelization parameter used in bclapply. Default = bpparam().
 #' @return A table with GSEA results. Each row corresponds to a tested pathway.
 #' The columns are the following:
 #' \itemize{
@@ -113,7 +112,7 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #'
 #' @export
 #' @import data.table
-#' @import BiocParallel
+#' @import parallel
 #' @import fastmatch
 #' @import stats
 #' @examples
@@ -124,12 +123,8 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=10000)
 fgsea <- function(pathways, stats, nperm,
                   minSize=1, maxSize=Inf,
-                  nproc=0,
-                  gseaParam=1,
-                  BPPARAM=bpparam()) {
-    if (nproc != 0) {
-        BPPARAM <- MulticoreParam(workers = nproc)
-    }
+                  nproc=1,
+                  gseaParam=1) {
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing=TRUE)
     pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, names(stats)))) })
@@ -161,7 +156,7 @@ fgsea <- function(pathways, stats, nperm,
         permPerProc <- c(permPerProc, npermActual - sum(permPerProc))
     }
 
-    counts <- bplapply(permPerProc, function(nperm1) {
+    counts <- mclapply(permPerProc, function(nperm1) {
         leEs <- rep(0, m)
         geEs <- rep(0, m)
         leZero <- rep(0, m)
@@ -194,7 +189,7 @@ fgsea <- function(pathways, stats, nperm,
                    leZero=leZero, geZero=geZero,
                    leZeroSum=leZeroSum, geZeroSum=geZeroSum
                    )
-    }, BPPARAM=BPPARAM)
+    }, mc.cores = nproc)
 
     counts <- rbindlist(counts)
 

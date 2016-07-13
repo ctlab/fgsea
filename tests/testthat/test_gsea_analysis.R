@@ -8,7 +8,7 @@ test_that("fgsea works", {
     fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=nperm, maxSize=500)
 
 
-    expect_equal(fgseaRes[23, ES], 0.5788464)
+    expect_true(abs(fgseaRes[23, ES] - 0.5788464) < 1e-5)
     expect_equal(fgseaRes[23, nMoreExtreme], 0)
     expect_gt(fgseaRes[1237, nMoreExtreme], 50 * nperm / 1000)
 

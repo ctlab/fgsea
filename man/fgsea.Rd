@@ -4,8 +4,8 @@
 \alias{fgsea}
 \title{Runs preranked gene set enrichment analysis.}
 \usage{
-fgsea(pathways, stats, nperm, minSize = 1, maxSize = Inf, nproc = 0,
-  gseaParam = 1, BPPARAM = bpparam())
+fgsea(pathways, stats, nperm, minSize = 1, maxSize = Inf, nproc = 1,
+  gseaParam = 1)
 }
 \arguments{
 \item{pathways}{List of gene sets to check.}
@@ -18,11 +18,9 @@ fgsea(pathways, stats, nperm, minSize = 1, maxSize = Inf, nproc = 0,
 
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
 
-\item{nproc}{If not equal to zero (default), sets BPPARAM to use nproc workers.}
+\item{nproc}{Number of processors to use.}
 
 \item{gseaParam}{GSEA parameter value.}
-
-\item{BPPARAM}{Parallelization parameter used in bclapply. Default = bpparam().}
 }
 \value{
 A table with GSEA results. Each row corresponds to a tested pathway.

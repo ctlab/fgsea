@@ -3,23 +3,23 @@ Title: Fast Gene Set Enrichment Analysis
 Version: 0.99.5.9000
 Date: 2016-06-30
 Authors@R: person("Alexey", "Sergushichev", email = "alsergbox@gmail.com", role = c("aut", "cre"))
-Description: The package implements an algorithm for fast gene set enrichment 
-    analysis. Using the fast algorithm allows to make more permutations and
-    get more fine grained p-values, which allows to use accurate stantard approaches 
-    to multiple hypothesis correction.
+Description: The package implements an algorithm for fast gene set enrichment
+    analysis. Using the fast algorithm allows to make more permutations and get
+    more fine grained p-values, which allows to use accurate stantard approaches to
+    multiple hypothesis correction.
 biocViews: GeneExpression, DifferentialExpression, GeneSetEnrichment, Pathways
-Depends: 
+Depends:
     R (>= 3.2),
     Rcpp
 Imports:
     data.table,
-    BiocParallel,
+    parallel,
     stats,
     ggplot2,
     gridExtra,
     grid,
     fastmatch
-Suggests: 
+Suggests:
     testthat,
     knitr,
     rmarkdown,
@@ -29,7 +29,7 @@ Suggests:
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp
-RoxygenNote: 5.0.0
+RoxygenNote: 5.0.1
 VignetteBuilder: knitr
 URL: https://github.com/ctlab/fgsea/
 BugReports: https://github.com/ctlab/fgsea/issues
