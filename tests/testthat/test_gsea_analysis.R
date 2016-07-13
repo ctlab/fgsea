@@ -24,4 +24,7 @@ test_that("fgsea works", {
 
     # specifying number of threads
     fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=2000, maxSize=100, nproc=2)
+
+    # all nMoreExtreme being even is a sign of invalid parallelization
+    expect_false(all(fgseaRes$nMoreExtreme %% 2 == 0))
 })
