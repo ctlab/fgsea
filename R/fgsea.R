@@ -129,12 +129,25 @@ fgsea <- function(pathways, stats, nperm,
     stats <- sort(stats, decreasing=TRUE)
     pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, names(stats)))) })
     pathwaysSizes <- sapply(pathwaysFiltered, length)
-    pathwaysFiltered <- pathwaysFiltered[
-        minSize <= pathwaysSizes & pathwaysSizes <= maxSize]
 
-    pathwaysSizes <- sapply(pathwaysFiltered, length)
+    toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
+    m <- length(toKeep)
+
+    if (m == 0) {
+        return(data.table(pathway=character(),
+                          pval=numeric(),
+                          padj=numeric(),
+                          ES=numeric(),
+                          NES=numeric(),
+                          nMoreExtreme=numeric(),
+                          size=integer(),
+                          leadingEdge=list()))
+    }
+
+    pathwaysFiltered <- pathwaysFiltered[toKeep]
+    pathwaysSizes <- pathwaysSizes[toKeep]
+
     K <- max(pathwaysSizes)
-    m <- length(pathwaysFiltered)
     npermActual <- nperm
 #     npermActual <- if (npermIsActual) nperm else nperm * m
 #     message(sprintf("%s pathways left", m))
