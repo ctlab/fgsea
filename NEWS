@@ -1,3 +1,8 @@
+CHANGES IN VERSION 0.99.6
+-------------------------
+
+* Fixed bug with failing when zero pathways are analyzed
+
 CHANGES IN VERSION 0.99.5
 -------------------------
 
