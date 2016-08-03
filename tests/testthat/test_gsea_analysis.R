@@ -25,3 +25,15 @@ test_that("fgsea works", {
     # specifying number of threads
     fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=2000, maxSize=100, nproc=2)
 })
+
+test_that("fgsea works with zero pathways", {
+    data(examplePathways)
+    data(exampleRanks)
+    set.seed(42)
+    nperm <- 100
+    fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=nperm,
+                      minSize=50, maxSize=10)
+    expect_equal(nrow(fgseaRes), 0)
+    fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=nperm)
+    expect_equal(colnames(fgseaRes), colnames(fgseaRes1))
+})
