@@ -161,8 +161,9 @@ NumericVector gseaStats1(
 
     double statEps = 1/0.;
 
-    for (int i = 0; i < n; ++i) {
-        double xx = abs(stats[i]);
+    for (int i = 0; i < k; ++i) {
+        int t = selectedStats[i] - 1;
+        double xx = abs(stats[t]);
         if (xx > 0) {
             statEps = min(xx, statEps);
         }

@@ -174,6 +174,8 @@ fgsea <- function(pathways, stats, nperm,
         permPerProc <- c(permPerProc, npermActual - sum(permPerProc))
     }
 
+    universe <- seq_along(stats)
+
     counts <- bplapply(permPerProc, function(nperm1) {
         leEs <- rep(0, m)
         geEs <- rep(0, m)
@@ -182,7 +184,7 @@ fgsea <- function(pathways, stats, nperm,
         leZeroSum <- rep(0, m)
         geZeroSum <- rep(0, m)
         for (i in seq_len(nperm1)) {
-            randSample <- sample(seq_along(stats), size=K)
+            randSample <- .Internal(sample2(length(universe), K))
             if (m == 1) {
                 randEsP <- calcGseaStat(
                     stats = stats,
