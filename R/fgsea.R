@@ -184,7 +184,7 @@ fgsea <- function(pathways, stats, nperm,
         leZeroSum <- rep(0, m)
         geZeroSum <- rep(0, m)
         for (i in seq_len(nperm1)) {
-            randSample <- .Internal(sample2(length(universe), K))
+            randSample <- sample.int(length(universe), K)
             if (m == 1) {
                 randEsP <- calcGseaStat(
                     stats = stats,
