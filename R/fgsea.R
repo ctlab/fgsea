@@ -132,6 +132,7 @@ fgsea <- function(pathways, stats, nperm,
     }
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing=TRUE)
+    stats <- abs(stats) ^ gseaParam
     pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, names(stats)))) })
     pathwaysSizes <- sapply(pathwaysFiltered, length)
 
@@ -189,12 +190,12 @@ fgsea <- function(pathways, stats, nperm,
                 randEsP <- calcGseaStat(
                     stats = stats,
                     selectedStats = randSample,
-                    gseaParam = gseaParam)
+                    gseaParam = 1)
             } else {
                 randEs <- calcGseaStatCumulative(
                     stats = stats,
                     selectedStats = randSample,
-                    gseaParam = gseaParam)
+                    gseaParam = 1)
                 randEsP <- randEs[pathwaysSizes]
             }
             leEs <- leEs + (randEsP <= pathwayScores)
