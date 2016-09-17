@@ -19,6 +19,7 @@ class SegmentTree {
         vector<T> b;
         int n;
         int k;
+        int k2;
         int logK;
         int blockMask;
     public:
@@ -29,12 +30,13 @@ class SegmentTree {
                 k <<= 1;
                 logK++;
             }
+            k2 = (n_ - 1) / k + 1;
             n = k * k;
 
             blockMask = k - 1;
 
             t = vector<T>(n, 0);
-            b = vector<T>(k, 0);
+            b = vector<T>(k2, 0);
         }
 
         void inc(int p, T delta) {  // increase value at position p
@@ -43,7 +45,7 @@ class SegmentTree {
                 t[p] += delta;
             }
 
-            for (int p1 = (p >> logK); p1 < k; ++p1) {
+            for (int p1 = (p >> logK); p1 < k2; ++p1) {
                 b[p1] += delta;
             }
         }
@@ -161,8 +163,9 @@ NumericVector gseaStats1(
 
     double statEps = 1/0.;
 
-    for (int i = 0; i < n; ++i) {
-        double xx = abs(stats[i]);
+    for (int i = 0; i < k; ++i) {
+        int t = selectedStats[i] - 1;
+        double xx = abs(stats[t]);
         if (xx > 0) {
             statEps = min(xx, statEps);
         }

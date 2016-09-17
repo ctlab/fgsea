@@ -1,3 +1,7 @@
+CHANGES IN VERSION 0.99.7
+
+* Performance improvement: slightly better sampling and better segment tree
+
 CHANGES IN VERSION 0.99.6
 -------------------------
 

@@ -132,6 +132,7 @@ fgsea <- function(pathways, stats, nperm,
     }
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing=TRUE)
+    stats <- abs(stats) ^ gseaParam
     pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, names(stats)))) })
     pathwaysSizes <- sapply(pathwaysFiltered, length)
 
@@ -174,6 +175,8 @@ fgsea <- function(pathways, stats, nperm,
         permPerProc <- c(permPerProc, npermActual - sum(permPerProc))
     }
 
+    universe <- seq_along(stats)
+
     counts <- bplapply(permPerProc, function(nperm1) {
         leEs <- rep(0, m)
         geEs <- rep(0, m)
@@ -182,17 +185,17 @@ fgsea <- function(pathways, stats, nperm,
         leZeroSum <- rep(0, m)
         geZeroSum <- rep(0, m)
         for (i in seq_len(nperm1)) {
-            randSample <- sample(seq_along(stats), size=K)
+            randSample <- sample.int(length(universe), K)
             if (m == 1) {
                 randEsP <- calcGseaStat(
                     stats = stats,
                     selectedStats = randSample,
-                    gseaParam = gseaParam)
+                    gseaParam = 1)
             } else {
                 randEs <- calcGseaStatCumulative(
                     stats = stats,
                     selectedStats = randSample,
-                    gseaParam = gseaParam)
+                    gseaParam = 1)
                 randEsP <- randEs[pathwaysSizes]
             }
             leEs <- leEs + (randEsP <= pathwayScores)
