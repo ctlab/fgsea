@@ -42,7 +42,7 @@ The resulting table contains enrichment scores and p-values:
 head(fgseaRes[order(pval), ])
 ```
 
-It tooks about ten seconds to get results with significant hits after FDR correction:
+It takes about ten seconds to get results with significant hits after FDR correction:
 ```{r}
 sum(fgseaRes[, padj < 0.01])
 ```
