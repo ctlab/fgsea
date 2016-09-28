@@ -98,7 +98,7 @@ vector<int> ranksFromOrder(vector<int> const& order) {
 
 NumericVector gseaStats1(
         NumericVector const& stats,
-        IntegerVector const& selectedStats,
+        vector<int> const& selectedStats,
         vector<int> const& selectedOrder,
         double gseaParam,
         bool rev = false) {
@@ -312,12 +312,26 @@ NumericVector gseaStats1(
     return res;
 }
 
+vector<int> combination(const int &n, const int &k) {
+    vector<int> v;
+    v.push_back(rand() % n + 1);
+    while (v.size() < k) {
+        int x = rand() % n + 1;
+        if (std::find(v.begin(), v.end(), x) == v.end()) {
+            v.push_back(x);
+        }
+    }
+    return v;
+}
+
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
-        IntegerVector const& selectedStats, // Indexes start from one!
+        int &n,
+        int &k,
         double gseaParam
         ) {
-
+    
+    vector<int> selectedStats = combination(n, k);
     vector<int> selectedOrder = order(selectedStats);
 
     NumericVector res = gseaStats1(stats, selectedStats, selectedOrder, gseaParam);
@@ -331,5 +345,5 @@ NumericVector calcGseaStatCumulative(
             res[i] = -resDown[i];
         }
     }
-    return res;
+    return wrap(res);
 }

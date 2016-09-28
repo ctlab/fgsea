@@ -22,6 +22,7 @@ using namespace std;
 // [[Rcpp::export]]
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
-        IntegerVector const& selectedStats, // Indexes start from one!
+        int &n,
+        int &k,
         double gseaParam
         );

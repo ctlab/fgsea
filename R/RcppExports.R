@@ -15,7 +15,6 @@
 #' data(examplePathways)
 #' ranks <- sort(exampleRanks, decreasing=TRUE)
 #' es <- calcGseaStatCumulative(ranks, na.omit(match(examplePathways[[1]], names(ranks))), 1)
-calcGseaStatCumulative <- function(stats, selectedStats, gseaParam) {
-    .Call('fgsea_calcGseaStatCumulative', PACKAGE = 'fgsea', stats, selectedStats, gseaParam)
+calcGseaStatCumulative <- function(stats, n, k, gseaParam) {
+    .Call('fgsea_calcGseaStatCumulative', PACKAGE = 'fgsea', stats, n, k, gseaParam)
 }
-

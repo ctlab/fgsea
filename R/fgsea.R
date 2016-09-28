@@ -185,8 +185,8 @@ fgsea <- function(pathways, stats, nperm,
         leZeroSum <- rep(0, m)
         geZeroSum <- rep(0, m)
         for (i in seq_len(nperm1)) {
-            randSample <- sample.int(length(universe), K)
             if (m == 1) {
+                randSample <- sample.int(length(universe), K)
                 randEsP <- calcGseaStat(
                     stats = stats,
                     selectedStats = randSample,
@@ -194,7 +194,8 @@ fgsea <- function(pathways, stats, nperm,
             } else {
                 randEs <- calcGseaStatCumulative(
                     stats = stats,
-                    selectedStats = randSample,
+                    n = length(universe),
+                    k = K,
                     gseaParam = 1)
                 randEsP <- randEs[pathwaysSizes]
             }
