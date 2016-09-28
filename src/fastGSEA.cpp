@@ -312,13 +312,18 @@ NumericVector gseaStats1(
     return res;
 }
 
-vector<int> combination(const int &n, const int &k) {
-    vector<int> v;
-    v.push_back(rand() % n + 1);
-    while (v.size() < k) {
-        int x = rand() % n + 1;
-        if (std::find(v.begin(), v.end(), x) == v.end()) {
-            v.push_back(x);
+std::vector<int> combination(const int &n, const int &k) {
+    std::vector<int> v;
+    v.reserve(k);
+    std::unordered_set<int> used({});
+    for (int i = 0; i < k; i++) {
+        for (int j = 0; j < 100; j++) { // average < 2
+            int x = rand() % n + 1;
+            if (used.count(x) == 0) {
+                v.push_back(x);
+                used.insert(x);
+                break;
+            }
         }
     }
     return v;
