@@ -184,27 +184,36 @@ fgsea <- function(pathways, stats, nperm,
         geZero <- rep(0, m)
         leZeroSum <- rep(0, m)
         geZeroSum <- rep(0, m)
-        for (i in seq_len(nperm1)) {
-            if (m == 1) {
+        if (m == 1) {
+            for (i in seq_len(nperm1)) {
                 randSample <- sample.int(length(universe), K)
                 randEsP <- calcGseaStat(
                     stats = stats,
                     selectedStats = randSample,
                     gseaParam = 1)
-            } else {
-                randEs <- calcGseaStatCumulative(
-                    stats = stats,
-                    n = length(universe),
-                    k = K,
-                    gseaParam = 1)
-                randEsP <- randEs[pathwaysSizes]
+                leEs <- leEs + (randEsP <= pathwayScores)
+                geEs <- geEs + (randEsP >= pathwayScores)
+                leZero <- leZero + (randEsP <= 0)
+                geZero <- geZero + (randEsP >= 0)
+                leZeroSum <- leZeroSum + pmin(randEsP, 0)
+                geZeroSum <- geZeroSum + pmax(randEsP, 0)
             }
-            leEs <- leEs + (randEsP <= pathwayScores)
-            geEs <- geEs + (randEsP >= pathwayScores)
-            leZero <- leZero + (randEsP <= 0)
-            geZero <- geZero + (randEsP >= 0)
-            leZeroSum <- leZeroSum + pmin(randEsP, 0)
-            geZeroSum <- geZeroSum + pmax(randEsP, 0)
+        } else {
+            aux <- calcGseaStatCumulativeParallel(
+                stats = stats,
+                n = length(universe),
+                k = K,
+                gseaParam = 1,
+                m = m,
+                pathwayScores = pathwayScores,
+                pathwaysSizes = pathwaysSizes,
+                iterations = nperm1)
+            leEs = get("leEs", aux)
+            geEs = get("geEs", aux)
+            leZero = get("leZero", aux)
+            geZero = get("geZero", aux)
+            leZeroSum = get("leZeroSum", aux)
+            geZeroSum = get("geZeroSum", aux)
         }
         data.table(pathway=seq_len(m),
                    leEs=leEs, geEs=geEs,

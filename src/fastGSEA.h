@@ -23,7 +23,19 @@ using namespace std;
 // [[Rcpp::export]]
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
-        int &n,
-        int &k,
+        int n,
+        int k,
         double gseaParam
         );
+
+// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::export]]
+List calcGseaStatCumulativeParallel(
+        NumericVector const& stats,
+        int n,
+        int k,
+        double gseaParam,
+        int m,
+        NumericVector const& pathwayScores,
+        IntegerVector const& pathwaysSizes,
+        int iterations);

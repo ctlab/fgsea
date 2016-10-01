@@ -334,8 +334,8 @@ std::vector<int> combination(const int &n, const int &k, mt19937& rng) {
 
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
-        int &n,
-        int &k,
+        int n,
+        int k,
         double gseaParam
         ) {
 
@@ -344,7 +344,6 @@ NumericVector calcGseaStatCumulative(
     vector<int> selectedOrder = order(selectedStats);
 
     NumericVector res = gseaStats1(stats, selectedStats, selectedOrder, gseaParam);
-
     NumericVector resDown = gseaStats1(stats, selectedStats, selectedOrder, gseaParam, true);
 
     for (int i = 0; i < (int)selectedStats.size(); ++i) {
@@ -354,5 +353,67 @@ NumericVector calcGseaStatCumulative(
             res[i] = -resDown[i];
         }
     }
-    return wrap(res);
+    return res;
+}
+
+NumericVector subvector(NumericVector const &from, IntegerVector const &indices) {
+    NumericVector result(indices.size());
+    for (int i = 0; i < indices.size(); ++i) {
+        result[i] = from[indices[i]];
+    }
+    return result;
+}
+
+List calcGseaStatCumulativeParallel(
+        NumericVector const& stats,
+        int n,
+        int k,
+        double gseaParam,
+        int m,
+        NumericVector const& pathwayScores,
+        IntegerVector const& pathwaysSizes,
+        int iterations) {
+
+    NumericVector leEs(m);
+    NumericVector geEs(m);
+    NumericVector leZero(m);
+    NumericVector geZero(m);
+    NumericVector leZeroSum(m);
+    NumericVector geZeroSum(m);
+
+    NumericVector zeros(m);
+    LogicalVector aux;
+    NumericVector diff;
+
+    for (int i = 0; i < iterations; ++i) {
+        NumericVector randEs = calcGseaStatCumulative(stats, n, k, gseaParam);
+        NumericVector randEsP = subvector(randEs, pathwaysSizes);
+
+        aux = randEsP <= pathwayScores;
+        diff = wrap(aux);
+        leEs = leEs + diff;
+
+        aux = randEsP >= pathwayScores;
+        diff = wrap(aux);
+        geEs = geEs + diff;
+
+        aux = randEsP <= zeros;
+        diff = wrap(aux);
+        leZero = leZero + diff;
+
+        aux = randEsP >= zeros;
+        diff = wrap(aux);
+        geZero = geZero + diff;
+
+        leZeroSum = leZeroSum + pmin(randEsP, zeros);
+        geZeroSum = geZeroSum + pmax(randEsP, zeros);
+    }
+    return Rcpp::List::create(
+            Rcpp::Named("leEs") = leEs,
+            Rcpp::Named("geEs") = geEs,
+            Rcpp::Named("leZero") = leZero,
+            Rcpp::Named("geZero") = geZero,
+            Rcpp::Named("leZeroSum") = leZeroSum,
+            Rcpp::Named("geZeroSum") = geZeroSum
+    );
 }
