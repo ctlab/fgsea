@@ -7,6 +7,8 @@ using namespace Rcpp;
 #include <cassert>
 #include <cmath>
 #include <limits>
+#include <random>
+#include <chrono>
 
 using namespace std;
 
@@ -312,16 +314,17 @@ NumericVector gseaStats1(
     return res;
 }
 
-std::vector<int> combination(const int &n, const int &k) {
+std::vector<int> combination(const int &n, const int &k, mt19937& rng) {
+    std::uniform_int_distribution<int> uni(1, n);
     std::vector<int> v;
     v.reserve(k);
-    std::unordered_set<int> used({});
+    std::vector<bool> used(n);
     for (int i = 0; i < k; i++) {
         for (int j = 0; j < 100; j++) { // average < 2
-            int x = rand() % n + 1;
-            if (used.count(x) == 0) {
+            int x = uni(rng);
+            if (!used[x]) {
                 v.push_back(x);
-                used.insert(x);
+                used[x] = true;
                 break;
             }
         }
@@ -335,8 +338,9 @@ NumericVector calcGseaStatCumulative(
         int &k,
         double gseaParam
         ) {
-    
-    vector<int> selectedStats = combination(n, k);
+
+    static std::mt19937 rng(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    vector<int> selectedStats = combination(n, k, rng);
     vector<int> selectedOrder = order(selectedStats);
 
     NumericVector res = gseaStats1(stats, selectedStats, selectedOrder, gseaParam);
