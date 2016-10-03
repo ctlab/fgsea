@@ -21,15 +21,6 @@ using namespace std;
 //' es <- calcGseaStatCumulative(ranks, na.omit(match(examplePathways[[1]], names(ranks))), 1)
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::export]]
-NumericVector calcGseaStatCumulative(
-        NumericVector const& stats,
-        int n,
-        int k,
-        double gseaParam
-        );
-
-// [[Rcpp::plugins(cpp11)]]
-// [[Rcpp::export]]
 List calcGseaStatCumulativeParallel(
         NumericVector const& stats,
         int n,
@@ -38,4 +29,6 @@ List calcGseaStatCumulativeParallel(
         int m,
         NumericVector const& pathwayScores,
         IntegerVector const& pathwaysSizes,
-        int iterations);
+        int iterations,
+        bool setSeed,
+        int seed);
