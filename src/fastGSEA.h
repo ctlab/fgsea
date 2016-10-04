@@ -30,5 +30,4 @@ List calcGseaStatCumulativeParallel(
         NumericVector const& pathwayScores,
         IntegerVector const& pathwaysSizes,
         int iterations,
-        bool setSeed,
         int seed);

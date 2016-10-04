@@ -332,6 +332,14 @@ std::vector<int> combination(const int &n, const int &k, mt19937& rng) {
     return v;
 }
 
+NumericVector subvector(NumericVector const &from, IntegerVector const &indices) {
+    NumericVector result(indices.size());
+    for (int i = 0; i < indices.size(); ++i) {
+        result[i] = from[indices[i]];
+    }
+    return result;
+}
+
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
         int n,
@@ -356,14 +364,6 @@ NumericVector calcGseaStatCumulative(
     return res;
 }
 
-NumericVector subvector(NumericVector const &from, IntegerVector const &indices) {
-    NumericVector result(indices.size());
-    for (int i = 0; i < indices.size(); ++i) {
-        result[i] = from[indices[i]];
-    }
-    return result;
-}
-
 List calcGseaStatCumulativeParallel(
         NumericVector const& stats,
         int n,
@@ -373,7 +373,6 @@ List calcGseaStatCumulativeParallel(
         NumericVector const& pathwayScores,
         IntegerVector const& pathwaysSizes,
         int iterations,
-        bool setSeed,
         int seed) {
 
     NumericVector leEs(m);
@@ -387,8 +386,7 @@ List calcGseaStatCumulativeParallel(
     LogicalVector aux;
     NumericVector diff;
 
-    long long int seedValue = setSeed ? seed : std::chrono::high_resolution_clock::now().time_since_epoch().count();
-    static thread_local std::mt19937 rng(seedValue);
+    std::mt19937 rng(seed);
 
     for (int i = 0; i < iterations; ++i) {
         NumericVector randEs = calcGseaStatCumulative(stats, n, k, gseaParam, rng);

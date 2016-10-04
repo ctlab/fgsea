@@ -3,10 +3,10 @@
 
 #include <R_ext/Rdynload.h>
 
-SEXP fgsea_calcGseaStatCumulativeParallel(SEXP statsSEXP, SEXP nSEXP, SEXP kSEXP, SEXP gseaParamSEXP, SEXP mSEXP, SEXP pathwayScoresSEXP, SEXP pathwaysSizesSEXP, SEXP iterationsSEXP, SEXP setSeedSEXP, SEXP seedSEXP);
+SEXP fgsea_calcGseaStatCumulativeParallel(SEXP statsSEXP, SEXP nSEXP, SEXP kSEXP, SEXP gseaParamSEXP, SEXP mSEXP, SEXP pathwayScoresSEXP, SEXP pathwaysSizesSEXP, SEXP iterationsSEXP, SEXP seedSEXP);
 
 R_CallMethodDef callMethods[]  = {
-  {"fgsea_calcGseaStatCumulativeParallel", (DL_FUNC) &fgsea_calcGseaStatCumulativeParallel, 10},
+  {"fgsea_calcGseaStatCumulativeParallel", (DL_FUNC) &fgsea_calcGseaStatCumulativeParallel, 9},
   {NULL, NULL, 0}
 };
 
