@@ -212,9 +212,9 @@ fgsea <- function(pathways, stats, nperm,
                 gseaParam = 1,
                 m = m,
                 pathwayScores = pathwayScores,
-                pathwaysSizes = pathwaysSizes,
+                pathwaysSizes = pathwaysSizes - 1,
                 iterations = nperm1,
-                seed = as.integer(runif(1, 0, 10^9)))
+                seed = sample.int(10^9, 1))
             leEs = get("leEs", aux)
             geEs = get("geEs", aux)
             leZero = get("leZero", aux)
