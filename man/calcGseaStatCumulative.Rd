@@ -26,4 +26,3 @@ data(examplePathways)
 ranks <- sort(exampleRanks, decreasing=TRUE)
 es <- calcGseaStatCumulative(ranks, na.omit(match(examplePathways[[1]], names(ranks))), 1)
 }
-
