@@ -342,16 +342,14 @@ NumericVector subvector(NumericVector const &from, IntegerVector const &indices)
 
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
-        int n,
-        int k,
-        double gseaParam,
-        std::mt19937& rng
-        ) {
+        IntegerVector const& selectedStats, // Indexes start from one!
+        double gseaParam
+) {
 
-    vector<int> selectedStats = combination(n, k, rng);
     vector<int> selectedOrder = order(selectedStats);
 
     NumericVector res = gseaStats1(stats, selectedStats, selectedOrder, gseaParam);
+
     NumericVector resDown = gseaStats1(stats, selectedStats, selectedOrder, gseaParam, true);
 
     for (int i = 0; i < (int)selectedStats.size(); ++i) {
@@ -362,6 +360,18 @@ NumericVector calcGseaStatCumulative(
         }
     }
     return res;
+}
+
+NumericVector calcRandomGseaStatCumulative(
+        NumericVector const& stats,
+        int n,
+        int k,
+        double gseaParam,
+        std::mt19937& rng
+) {
+
+    vector<int> selectedStats = combination(n, k, rng);
+    return calcGseaStatCumulative(stats, selectedStats, gseaParam);
 }
 
 List calcGseaStatCumulativeBatch(
@@ -389,7 +399,7 @@ List calcGseaStatCumulativeBatch(
     std::mt19937 rng(seed);
 
     for (int i = 0; i < iterations; ++i) {
-        NumericVector randEs = calcGseaStatCumulative(stats, n, k, gseaParam, rng);
+        NumericVector randEs = calcRandomGseaStatCumulative(stats, n, k, gseaParam, rng);
         NumericVector randEsP = subvector(randEs, pathwaysSizes);
 
         aux = randEsP <= pathwayScores;
