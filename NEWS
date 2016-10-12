@@ -1,3 +1,8 @@
+CHANGES IN VERSION 0.99.8
+
+* Results are now reproducible with set.seed()
+
+
 CHANGES IN VERSION 0.99.7
 
 * Performance improvement: slightly better sampling and better segment tree
