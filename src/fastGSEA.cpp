@@ -7,6 +7,8 @@ using namespace Rcpp;
 #include <cassert>
 #include <cmath>
 #include <limits>
+#include <random>
+#include <chrono>
 
 using namespace std;
 
@@ -312,16 +314,41 @@ NumericVector gseaStats1(
     return res;
 }
 
+IntegerVector combination(const int &n, const int &k, mt19937& rng) {
+    std::uniform_int_distribution<int> uni(1, n);
+    std::vector<int> v;
+    v.reserve(k);
+    std::vector<bool> used(n);
+    for (int i = 0; i < k; i++) {
+        for (int j = 0; j < 100; j++) { // average < 2
+            int x = uni(rng);
+            if (!used[x]) {
+                v.push_back(x);
+                used[x] = true;
+                break;
+            }
+        }
+    }
+    return wrap(v);
+}
+
+NumericVector subvector(NumericVector const &from, IntegerVector const &indices) {
+    NumericVector result(indices.size());
+    for (int i = 0; i < indices.size(); ++i) {
+        result[i] = from[indices[i] - 1];
+    }
+    return result;
+}
+
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
         IntegerVector const& selectedStats, // Indexes start from one!
         double gseaParam
-        ) {
+) {
 
     vector<int> selectedOrder = order(selectedStats);
 
     NumericVector res = gseaStats1(stats, selectedStats, selectedOrder, gseaParam);
-
     NumericVector resDown = gseaStats1(stats, selectedStats, selectedOrder, gseaParam, true);
 
     for (int i = 0; i < (int)selectedStats.size(); ++i) {
@@ -332,4 +359,74 @@ NumericVector calcGseaStatCumulative(
         }
     }
     return res;
+}
+
+NumericVector calcRandomGseaStatCumulative(
+        NumericVector const& stats,
+        int n,
+        int k,
+        double gseaParam,
+        std::mt19937& rng
+) {
+
+    IntegerVector selectedStats = combination(n, k, rng);
+    return calcGseaStatCumulative(stats, selectedStats, gseaParam);
+}
+
+List calcGseaStatCumulativeBatch(
+        NumericVector const& stats,
+        double gseaParam,
+        NumericVector const& pathwayScores,
+        IntegerVector const& pathwaysSizes,
+        int iterations,
+        int seed) {
+
+    int n = stats.size();
+    int k = max(pathwaysSizes);
+    int m = pathwaysSizes.size();
+
+    NumericVector leEs(m);
+    NumericVector geEs(m);
+    NumericVector leZero(m);
+    NumericVector geZero(m);
+    NumericVector leZeroSum(m);
+    NumericVector geZeroSum(m);
+
+    NumericVector zeros(m);
+    LogicalVector aux;
+    NumericVector diff;
+
+    std::mt19937 rng(seed);
+
+    for (int i = 0; i < iterations; ++i) {
+        NumericVector randEs = calcRandomGseaStatCumulative(stats, n, k, gseaParam, rng);
+        NumericVector randEsP = subvector(randEs, pathwaysSizes);
+
+        aux = randEsP <= pathwayScores;
+        diff = wrap(aux);
+        leEs = leEs + diff;
+
+        aux = randEsP >= pathwayScores;
+        diff = wrap(aux);
+        geEs = geEs + diff;
+
+        aux = randEsP <= zeros;
+        diff = wrap(aux);
+        leZero = leZero + diff;
+
+        aux = randEsP >= zeros;
+        diff = wrap(aux);
+        geZero = geZero + diff;
+
+        leZeroSum = leZeroSum + pmin(randEsP, zeros);
+        geZeroSum = geZeroSum + pmax(randEsP, zeros);
+    }
+    return Rcpp::List::create(
+            Rcpp::Named("leEs") = leEs,
+            Rcpp::Named("geEs") = geEs,
+            Rcpp::Named("leZero") = leZero,
+            Rcpp::Named("geZero") = geZero,
+            Rcpp::Named("leZeroSum") = leZeroSum,
+            Rcpp::Named("geZeroSum") = geZeroSum
+    );
 }

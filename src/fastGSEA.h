@@ -4,6 +4,15 @@ using namespace Rcpp;
 #include <vector>
 using namespace std;
 
+// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::export]]
+List calcGseaStatCumulativeBatch(
+        NumericVector const& stats,
+        double gseaParam,
+        NumericVector const& pathwayScores,
+        IntegerVector const& pathwaysSizes,
+        int iterations,
+        int seed);
 
 //' Calculates GSEA statistic values for all the prefixes of a gene set
 //'
@@ -19,9 +28,10 @@ using namespace std;
 //' data(examplePathways)
 //' ranks <- sort(exampleRanks, decreasing=TRUE)
 //' es <- calcGseaStatCumulative(ranks, na.omit(match(examplePathways[[1]], names(ranks))), 1)
+// [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::export]]
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
         IntegerVector const& selectedStats, // Indexes start from one!
         double gseaParam
-        );
+);

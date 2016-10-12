@@ -96,7 +96,7 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
 #' @param nproc If not equal to zero (default), sets BPPARAM to use nproc workers.
 #' @param gseaParam GSEA parameter value.
-#' @param BPPARAM Parallelization parameter used in bclapply. Default = bpparam().
+#' @param BPPARAM Parallelization parameter used in bclapply. Default = MulticoreParam.
 #' @return A table with GSEA results. Each row corresponds to a tested pathway.
 #' The columns are the following:
 #' \itemize{
@@ -126,10 +126,18 @@ fgsea <- function(pathways, stats, nperm,
                   minSize=1, maxSize=Inf,
                   nproc=0,
                   gseaParam=1,
-                  BPPARAM=bpparam()) {
-    if (nproc != 0) {
-        BPPARAM <- MulticoreParam(workers = nproc)
+                  BPPARAM=NULL) {
+
+    seed = as.integer(runif(1, 0, 10^9))
+
+    if (is.null(BPPARAM)) {
+        if (nproc != 0) {
+            BPPARAM <- MulticoreParam(workers = nproc, RNGseed = seed)
+        } else {
+            BPPARAM <- MulticoreParam(RNGseed = seed)
+        }
     }
+
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing=TRUE)
     stats <- abs(stats) ^ gseaParam
@@ -184,26 +192,34 @@ fgsea <- function(pathways, stats, nperm,
         geZero <- rep(0, m)
         leZeroSum <- rep(0, m)
         geZeroSum <- rep(0, m)
-        for (i in seq_len(nperm1)) {
-            randSample <- sample.int(length(universe), K)
-            if (m == 1) {
+        if (m == 1) {
+            for (i in seq_len(nperm1)) {
+                randSample <- sample.int(length(universe), K)
                 randEsP <- calcGseaStat(
                     stats = stats,
                     selectedStats = randSample,
                     gseaParam = 1)
-            } else {
-                randEs <- calcGseaStatCumulative(
-                    stats = stats,
-                    selectedStats = randSample,
-                    gseaParam = 1)
-                randEsP <- randEs[pathwaysSizes]
+                leEs <- leEs + (randEsP <= pathwayScores)
+                geEs <- geEs + (randEsP >= pathwayScores)
+                leZero <- leZero + (randEsP <= 0)
+                geZero <- geZero + (randEsP >= 0)
+                leZeroSum <- leZeroSum + pmin(randEsP, 0)
+                geZeroSum <- geZeroSum + pmax(randEsP, 0)
             }
-            leEs <- leEs + (randEsP <= pathwayScores)
-            geEs <- geEs + (randEsP >= pathwayScores)
-            leZero <- leZero + (randEsP <= 0)
-            geZero <- geZero + (randEsP >= 0)
-            leZeroSum <- leZeroSum + pmin(randEsP, 0)
-            geZeroSum <- geZeroSum + pmax(randEsP, 0)
+        } else {
+            aux <- calcGseaStatCumulativeBatch(
+                stats = stats,
+                gseaParam = 1,
+                pathwayScores = pathwayScores,
+                pathwaysSizes = pathwaysSizes,
+                iterations = nperm1,
+                seed = sample.int(10^9, 1))
+            leEs = get("leEs", aux)
+            geEs = get("geEs", aux)
+            leZero = get("leZero", aux)
+            geZero = get("geZero", aux)
+            leZeroSum = get("leZeroSum", aux)
+            geZeroSum = get("geZeroSum", aux)
         }
         data.table(pathway=seq_len(m),
                    leEs=leEs, geEs=geEs,

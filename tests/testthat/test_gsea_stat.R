@@ -80,3 +80,20 @@ test_that("calcGseaStatsCumulative works", {
     }
 })
 
+test_that("fgsea results are reproducible with set.seed", {
+    set.seed(42)
+    data(examplePathways)
+    data(exampleRanks)
+    erm <- sample(exampleRanks, 1000)
+    epw <- lapply(examplePathways, function(a) { return(a[a %in% names(erm)]) })
+    epw <- epw[sapply(epw, length) >= 5]
+    set.seed(42)
+    res1 = fgsea(pathways = epw, stats = erm, minSize=15, maxSize=500, nperm=1000, nproc=0)
+    set.seed(42)
+    res2 = fgsea(pathways = epw, stats = erm, minSize=15, maxSize=500, nperm=1000, nproc=0)
+    epsilon <- 1e-5
+    for (i in seq_along(length(res1))) {
+      expect_lte(abs(res1[i]$pval / res2[i]$pval - 1), epsilon)
+    }
+})
+
