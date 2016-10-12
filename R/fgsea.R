@@ -126,14 +126,16 @@ fgsea <- function(pathways, stats, nperm,
                   minSize=1, maxSize=Inf,
                   nproc=0,
                   gseaParam=1,
-                  BPPARAM=bpparam()) {
+                  BPPARAM=NULL) {
 
     seed = as.integer(runif(1, 0, 10^9))
 
-    if (nproc != 0) {
-        BPPARAM <- MulticoreParam(workers = nproc, RNGseed = seed)
-    } else {
-        BPPARAM <- MulticoreParam(RNGseed = seed)
+    if (is.null(BPPARAM)) {
+        if (nproc != 0) {
+            BPPARAM <- MulticoreParam(workers = nproc, RNGseed = seed)
+        } else {
+            BPPARAM <- MulticoreParam(RNGseed = seed)
+        }
     }
 
     minSize <- max(minSize, 1)
