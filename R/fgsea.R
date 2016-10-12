@@ -207,7 +207,7 @@ fgsea <- function(pathways, stats, nperm,
                 geZeroSum <- geZeroSum + pmax(randEsP, 0)
             }
         } else {
-            aux <- calcGseaStatCumulativeParallel(
+            aux <- calcGseaStatCumulativeBatch(
                 stats = stats,
                 n = length(universe),
                 k = K,

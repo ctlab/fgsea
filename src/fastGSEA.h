@@ -6,7 +6,7 @@ using namespace std;
 
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::export]]
-List calcGseaStatCumulativeParallel(
+List calcGseaStatCumulativeBatch(
         NumericVector const& stats,
         int n,
         int k,

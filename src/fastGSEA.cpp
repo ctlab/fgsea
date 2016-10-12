@@ -364,7 +364,7 @@ NumericVector calcGseaStatCumulative(
     return res;
 }
 
-List calcGseaStatCumulativeParallel(
+List calcGseaStatCumulativeBatch(
         NumericVector const& stats,
         int n,
         int k,
