@@ -69,6 +69,8 @@ test_that("fgsea results are reproducible with set.seed", {
     set.seed(42)
     res2 = fgsea(pathways = epw, stats = erm, minSize=15, maxSize=500, nperm=1000, nproc=0)
     epsilon <- 1e-5
-    expect_true(abs(res1$pval / res2$pval - 1) <= epsilon)
+    for (i in seq_along(length(res1))) {
+      expect_lte(abs(res1[i]$pval / res2[i]$pval - 1), epsilon)
+    }
 })
 
