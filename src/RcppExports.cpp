@@ -5,6 +5,9 @@
 
 using namespace Rcpp;
 
+#include <vector>
+using namespace std;
+
 // calcGseaStatCumulativeBatch
 List calcGseaStatCumulativeBatch(NumericVector const& stats, int n, int k, double gseaParam, int m, NumericVector const& pathwayScores, IntegerVector const& pathwaysSizes, int iterations, int seed);
 RcppExport SEXP fgsea_calcGseaStatCumulativeBatch(SEXP statsSEXP, SEXP nSEXP, SEXP kSEXP, SEXP gseaParamSEXP, SEXP mSEXP, SEXP pathwayScoresSEXP, SEXP pathwaysSizesSEXP, SEXP iterationsSEXP, SEXP seedSEXP) {
@@ -21,6 +24,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type iterations(iterationsSEXP);
     Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
     rcpp_result_gen = Rcpp::wrap(calcGseaStatCumulativeBatch(stats, n, k, gseaParam, m, pathwayScores, pathwaysSizes, iterations, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calcGseaStatCumulative
+NumericVector calcGseaStatCumulative(NumericVector const& stats, vector<int> const& selectedStats, double gseaParam);
+RcppExport SEXP fgsea_calcGseaStatCumulative(SEXP statsSEXP, SEXP selectedStatsSEXP, SEXP gseaParamSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector const& >::type stats(statsSEXP);
+    Rcpp::traits::input_parameter< vector<int> const& >::type selectedStats(selectedStatsSEXP);
+    Rcpp::traits::input_parameter< double >::type gseaParam(gseaParamSEXP);
+    rcpp_result_gen = Rcpp::wrap(calcGseaStatCumulative(stats, selectedStats, gseaParam));
     return rcpp_result_gen;
 END_RCPP
 }

@@ -5,3 +5,7 @@ calcGseaStatCumulativeBatch <- function(stats, n, k, gseaParam, m, pathwayScores
     .Call('fgsea_calcGseaStatCumulativeBatch', PACKAGE = 'fgsea', stats, n, k, gseaParam, m, pathwayScores, pathwaysSizes, iterations, seed)
 }
 
+calcGseaStatCumulative <- function(stats, selectedStats, gseaParam) {
+    .Call('fgsea_calcGseaStatCumulative', PACKAGE = 'fgsea', stats, selectedStats, gseaParam)
+}
+
