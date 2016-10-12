@@ -342,14 +342,13 @@ NumericVector subvector(NumericVector const &from, IntegerVector const &indices)
 
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
-        IntegerVector const& selectedStats, // Indexes start from one!
+        vector<int> const& selectedStats, // Indexes start from one!
         double gseaParam
 ) {
 
     vector<int> selectedOrder = order(selectedStats);
 
     NumericVector res = gseaStats1(stats, selectedStats, selectedOrder, gseaParam);
-
     NumericVector resDown = gseaStats1(stats, selectedStats, selectedOrder, gseaParam, true);
 
     for (int i = 0; i < (int)selectedStats.size(); ++i) {
