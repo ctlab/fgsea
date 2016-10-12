@@ -100,7 +100,7 @@ vector<int> ranksFromOrder(vector<int> const& order) {
 
 NumericVector gseaStats1(
         NumericVector const& stats,
-        vector<int> const& selectedStats,
+        IntegerVector const& selectedStats,
         vector<int> const& selectedOrder,
         double gseaParam,
         bool rev = false) {
@@ -314,7 +314,7 @@ NumericVector gseaStats1(
     return res;
 }
 
-std::vector<int> combination(const int &n, const int &k, mt19937& rng) {
+IntegerVector combination(const int &n, const int &k, mt19937& rng) {
     std::uniform_int_distribution<int> uni(1, n);
     std::vector<int> v;
     v.reserve(k);
@@ -329,20 +329,20 @@ std::vector<int> combination(const int &n, const int &k, mt19937& rng) {
             }
         }
     }
-    return v;
+    return wrap(v);
 }
 
 NumericVector subvector(NumericVector const &from, IntegerVector const &indices) {
     NumericVector result(indices.size());
     for (int i = 0; i < indices.size(); ++i) {
-        result[i] = from[indices[i]];
+        result[i] = from[indices[i] - 1];
     }
     return result;
 }
 
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
-        vector<int> const& selectedStats, // Indexes start from one!
+        IntegerVector const& selectedStats, // Indexes start from one!
         double gseaParam
 ) {
 
@@ -369,20 +369,21 @@ NumericVector calcRandomGseaStatCumulative(
         std::mt19937& rng
 ) {
 
-    vector<int> selectedStats = combination(n, k, rng);
+    IntegerVector selectedStats = combination(n, k, rng);
     return calcGseaStatCumulative(stats, selectedStats, gseaParam);
 }
 
 List calcGseaStatCumulativeBatch(
         NumericVector const& stats,
-        int n,
-        int k,
         double gseaParam,
-        int m,
         NumericVector const& pathwayScores,
         IntegerVector const& pathwaysSizes,
         int iterations,
         int seed) {
+
+    int n = stats.size();
+    int k = max(pathwaysSizes);
+    int m = pathwaysSizes.size();
 
     NumericVector leEs(m);
     NumericVector geEs(m);

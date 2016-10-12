@@ -8,10 +8,7 @@ using namespace std;
 // [[Rcpp::export]]
 List calcGseaStatCumulativeBatch(
         NumericVector const& stats,
-        int n,
-        int k,
         double gseaParam,
-        int m,
         NumericVector const& pathwayScores,
         IntegerVector const& pathwaysSizes,
         int iterations,
@@ -35,6 +32,6 @@ List calcGseaStatCumulativeBatch(
 // [[Rcpp::export]]
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
-        vector<int> const& selectedStats, // Indexes start from one!
+        IntegerVector const& selectedStats, // Indexes start from one!
         double gseaParam
 );
