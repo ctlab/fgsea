@@ -81,6 +81,7 @@ test_that("calcGseaStatsCumulative works", {
 })
 
 test_that("fgsea results are reproducible with set.seed", {
+    skip_on_os("mac")
     set.seed(42)
     data(examplePathways)
     data(exampleRanks)
