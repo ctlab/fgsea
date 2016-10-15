@@ -128,13 +128,12 @@ fgsea <- function(pathways, stats, nperm,
                   gseaParam=1,
                   BPPARAM=NULL) {
 
-    seed = as.integer(runif(1, 0, 10^9))
 
     if (is.null(BPPARAM)) {
         if (nproc != 0) {
-            BPPARAM <- MulticoreParam(workers = nproc, RNGseed = seed)
+            BPPARAM <- MulticoreParam(workers = nproc)
         } else {
-            BPPARAM <- MulticoreParam(RNGseed = seed)
+            BPPARAM <- MulticoreParam()
         }
     }
 
@@ -184,8 +183,10 @@ fgsea <- function(pathways, stats, nperm,
     }
 
     universe <- seq_along(stats)
+    seeds <- sample.int(10^9, length(permPerProc))
 
-    counts <- bplapply(permPerProc, function(nperm1) {
+    counts <- bplapply(seq_along(permPerProc), function(i) {
+        nperm1 <- permPerProc[i]
         leEs <- rep(0, m)
         geEs <- rep(0, m)
         leZero <- rep(0, m)
@@ -213,7 +214,7 @@ fgsea <- function(pathways, stats, nperm,
                 pathwayScores = pathwayScores,
                 pathwaysSizes = pathwaysSizes,
                 iterations = nperm1,
-                seed = sample.int(10^9, 1))
+                seed = seeds[i])
             leEs = get("leEs", aux)
             geEs = get("geEs", aux)
             leZero = get("leZero", aux)

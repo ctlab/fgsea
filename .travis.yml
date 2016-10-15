@@ -15,11 +15,10 @@ os:
   - linux
   - osx
 
-osx_image: beta-xcode6.2
-
 bioc_required: true
 bioc_packages:
   - BiocCheck
+  - BiocParallel
 
 after_script:
   - ls -lah
