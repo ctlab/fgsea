@@ -19,6 +19,7 @@ bioc_required: true
 bioc_packages:
   - BiocCheck
   - BiocParallel
+  - reactome.db
 
 after_script:
   - ls -lah
