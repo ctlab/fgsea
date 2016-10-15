@@ -11,6 +11,10 @@ cache: packages
 r_packages:
       - covr
 
+os:
+  - linux
+  - osx
+
 bioc_required: true
 bioc_packages:
   - BiocCheck
