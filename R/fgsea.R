@@ -96,7 +96,6 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
 #' @param nproc If not equal to zero (default), sets BPPARAM to use nproc workers.
 #' @param gseaParam GSEA parameter value.
-#' @param BPPARAM Parallelization parameter used in bclapply. Default = MulticoreParam.
 #' @return A table with GSEA results. Each row corresponds to a tested pathway.
 #' The columns are the following:
 #' \itemize{
@@ -125,15 +124,12 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 fgsea <- function(pathways, stats, nperm,
                   minSize=1, maxSize=Inf,
                   nproc=0,
-                  gseaParam=1,
-                  BPPARAM=NULL) {
+                  gseaParam=1) {
 
 
     if (is.null(BPPARAM)) {
         if (nproc != 0) {
-            BPPARAM <- MulticoreParam(workers = nproc)
-        } else {
-            BPPARAM <- MulticoreParam()
+            options(mc.cores = nproc)
         }
     }
 
@@ -227,7 +223,7 @@ fgsea <- function(pathways, stats, nperm,
                    leZero=leZero, geZero=geZero,
                    leZeroSum=leZeroSum, geZeroSum=geZeroSum
                    )
-    }, BPPARAM=BPPARAM)
+    })
 
     counts <- rbindlist(counts)
 
