@@ -131,9 +131,7 @@ fgsea <- function(pathways, stats, nperm,
 
     if (is.null(BPPARAM)) {
         if (nproc != 0) {
-            BPPARAM <- MulticoreParam(workers = nproc)
-        } else {
-            BPPARAM <- MulticoreParam()
+            options(mc.cores = nproc)
         }
     }
 
@@ -227,7 +225,7 @@ fgsea <- function(pathways, stats, nperm,
                    leZero=leZero, geZero=geZero,
                    leZeroSum=leZeroSum, geZeroSum=geZeroSum
                    )
-    }, BPPARAM=BPPARAM)
+    })
 
     counts <- rbindlist(counts)
 
