@@ -94,9 +94,11 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @param nperm Number of permutations to do. Minimial possible nominal p-value is about 1/nperm
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
-#' @param nproc If not equal to zero (default), sets BPPARAM to use nproc workers.
+#' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
 #' @param gseaParam GSEA parameter value.
-#' @param BPPARAM Parallelization parameter used in bclapply. Default = MulticoreParam.
+#' @param BPPARAM Parallelization parameter used in bplapply.
+#'  Can be used to specify cluster to run. If not initialized explicitly or
+#'  by setting `nproc` default value `bpparam()` is used.
 #' @return A table with GSEA results. Each row corresponds to a tested pathway.
 #' The columns are the following:
 #' \itemize{
@@ -131,9 +133,14 @@ fgsea <- function(pathways, stats, nperm,
 
     if (is.null(BPPARAM)) {
         if (nproc != 0) {
-            BPPARAM <- MulticoreParam(workers = nproc)
+            if (.Platform$OS.type == "windows") {
+                # windows doesn't support multicore, using snow instead
+                BPPARAM <- SnowParam(workers = nproc)
+            } else {
+                BPPARAM <- MulticoreParam(workers = nproc)
+            }
         } else {
-            BPPARAM <- MulticoreParam()
+            BPPARAM <- bpparam()
         }
     }
 
