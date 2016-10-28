@@ -18,11 +18,13 @@ fgsea(pathways, stats, nperm, minSize = 1, maxSize = Inf, nproc = 0,
 
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
 
-\item{nproc}{If not equal to zero (default), sets BPPARAM to use nproc workers.}
+\item{nproc}{If not equal to zero sets BPPARAM to use nproc workers (default = 0).}
 
 \item{gseaParam}{GSEA parameter value.}
 
-\item{BPPARAM}{Parallelization parameter used in bclapply. Default = bpparam().}
+\item{BPPARAM}{Parallelization parameter used in bplapply.
+Can be used to specify cluster to run. If not initialized explicitly or
+by setting `nproc` default value `bpparam()` is used.}
 }
 \value{
 A table with GSEA results. Each row corresponds to a tested pathway.
