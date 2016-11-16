@@ -21,6 +21,12 @@ bioc_packages:
   - BiocParallel
   - reactome.db
 
+# Set CXX1X for R-devel, as R-devel does not detect CXX1X support for gcc 4.6.3,
+# see https://github.com/travis-ci/travis-ci/issues/6587
+before_install:
+  - if [[ "$TRAVIS_R_VERSION_STRING" = 'devel' ]]; then mkdir ~/.R && echo 'CXX1X=g++ -std=c++0x -g -O2 -fPIC' > ~/.R/Makevars; fi
+
+
 after_script:
   - ls -lah
   - FILE=$(ls -1t *.tar.gz | head -n 1)
