@@ -1,6 +1,6 @@
 Package: fgsea
 Title: Fast Gene Set Enrichment Analysis
-Version: 1.1.1
+Version: 1.1.1.9000
 Date: 2016-10-27
 Authors@R: person("Alexey", "Sergushichev", email = "alsergbox@gmail.com", role = c("aut", "cre"))
 Description: The package implements an algorithm for fast gene set enrichment
@@ -16,7 +16,7 @@ Imports:
     data.table,
     BiocParallel,
     stats,
-    ggplot2,
+    ggplot2 (>= 2.2.0),
     gridExtra,
     grid,
     fastmatch
