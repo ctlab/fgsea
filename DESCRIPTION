@@ -16,7 +16,7 @@ Imports:
     data.table,
     BiocParallel,
     stats,
-    ggplot2,
+    ggplot2 (>= 2.2.0),
     gridExtra,
     grid,
     fastmatch
