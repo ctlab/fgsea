@@ -1,5 +1,3 @@
-# Sample .travis.yml for R projects
-
 language: r
 r: 
     - bioc-devel
@@ -34,3 +32,9 @@ after_script:
 
 after_success:
       - Rscript -e 'covr::codecov()'
+
+# Something happend to osx bioc-devel builds 
+matrix:
+  exclude:
+  - os: osx
+    r: bioc-devel
