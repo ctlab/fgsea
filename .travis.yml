@@ -1,13 +1,14 @@
 language: r
 r: 
-    - bioc-devel
-    - bioc-release
+  - bioc-devel
+  - bioc-release
 # warnings_are_errors: true
 sudo: false
 cache: packages
 
 r_packages:
-      - covr
+  - covr
+  - RSQLite
 
 os:
   - linux
@@ -17,13 +18,12 @@ bioc_required: true
 bioc_packages:
   - BiocCheck
   - BiocParallel
-  - RSQLite
   - reactome.db
 
 # Set CXX1X for R-devel, as R-devel does not detect CXX1X support for gcc 4.6.3,
 # see https://github.com/travis-ci/travis-ci/issues/6587
 before_install:
-    - if [[ "$TRAVIS_R_VERSION_STRING" = 'bioc-devel' ]]; then mkdir ~/.R && echo -e 'CXX1X=g++ -std=c++0x -g -O2 -fPIC\nCXX11=g++ -std=c++0x -g -O2 -fPIC' > ~/.R/Makevars; fi
+  - if [[ "$TRAVIS_R_VERSION_STRING" = 'bioc-devel' ]]; then mkdir ~/.R && echo -e 'CXX1X=g++ -std=c++0x -g -O2 -fPIC\nCXX11=g++ -std=c++0x -g -O2 -fPIC' > ~/.R/Makevars; fi
 
 
 after_script:
@@ -32,10 +32,5 @@ after_script:
   - Rscript -e "library(BiocCheck); BiocCheck(\"${FILE}\")"
 
 after_success:
-      - Rscript -e 'covr::codecov()'
+  - Rscript -e 'covr::codecov()'
 
-# Something happend to osx bioc-devel builds 
-#matrix:
-#  exclude:
-#  - os: osx
-#    r: bioc-devel
