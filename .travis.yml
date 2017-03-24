@@ -9,6 +9,10 @@ cache: packages
 r_packages:
   - covr
   - RSQLite
+  - data.table
+  - fastmatch
+  - ggplot2
+  - gridExtra
 
 os:
   - linux
