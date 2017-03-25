@@ -13,6 +13,10 @@ r_packages:
   - fastmatch
   - ggplot2
   - gridExtra
+  - testthat
+  - knitr
+  - rmarkdown
+  - parallel
 
 os:
   - linux
