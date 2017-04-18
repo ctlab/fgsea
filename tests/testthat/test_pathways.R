@@ -7,11 +7,11 @@ test_that("reactomePathways works", {
     data(exampleRanks)
     pathways <- reactomePathways(names(exampleRanks))
 
-    expect_true("11461" %in% pathways$`Chromatin organization`)
+    expect_true("12504" %in% pathways$`TCR signaling`)
 })
 
 test_that("gmtPathways works", {
     pathways <- gmtPathways(system.file("extdata", "mouse.reactome.gmt", package="fgsea"))
 
-    expect_true("11461" %in% pathways$`5992314_Chromatin_organization`)
+    expect_true("12504" %in% pathways$`5991751_TCR_signaling`)
 })
