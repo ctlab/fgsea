@@ -20,7 +20,8 @@ fgsea(pathways, stats, nperm, minSize = 1, maxSize = Inf, nproc = 0,
 
 \item{nproc}{If not equal to zero sets BPPARAM to use nproc workers (default = 0).}
 
-\item{gseaParam}{GSEA parameter value.}
+\item{gseaParam}{GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
+before calculation of GSEA enrichment scores.}
 
 \item{BPPARAM}{Parallelization parameter used in bplapply.
 Can be used to specify cluster to run. If not initialized explicitly or

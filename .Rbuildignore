@@ -5,3 +5,4 @@
 test.R
 ^data-raw$
 ^\.travis\.yml$
+^appveyor\.yml$

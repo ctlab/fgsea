@@ -95,7 +95,8 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
 #' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
-#' @param gseaParam GSEA parameter value.
+#' @param gseaParam GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
+#'                  before calculation of GSEA enrichment scores.
 #' @param BPPARAM Parallelization parameter used in bplapply.
 #'  Can be used to specify cluster to run. If not initialized explicitly or
 #'  by setting `nproc` default value `bpparam()` is used.

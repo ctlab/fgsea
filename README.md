@@ -1,4 +1,5 @@
 [![Travis-CI Build Status](https://travis-ci.org/ctlab/fgsea.svg?branch=master)](https://travis-ci.org/ctlab/fgsea)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ctlab/fgsea?branch=master&svg=true)](https://ci.appveyor.com/project/ctlab/fgsea)
 [![codecov](https://codecov.io/gh/ctlab/fgsea/branch/master/graph/badge.svg)](https://codecov.io/gh/ctlab/fgsea)
 
 

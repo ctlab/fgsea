@@ -15,11 +15,11 @@ reactomePathways <- function(genes) {
 
     pathways <- split(pathways$ENTREZID, pathways$PATHID)
 
-    pathway2name <- as.data.table(na.omit(AnnotationDbi::select(
+    pathway2name <- as.data.table(AnnotationDbi::select(
         reactome.db::reactome.db,
         names(pathways),
         c("PATHNAME"),
-        'PATHID')))
+        'PATHID'))
 
     # Hack to get rid of check NOTEs
     PATHNAME=NULL
@@ -28,6 +28,8 @@ reactomePathways <- function(genes) {
     pathway2name[, PATHNAME := sub("^[^:]*: ", "", PATHNAME)]
 
     names(pathways) <- pathway2name$PATHNAME
+
+    pathways <- pathways[!is.na(names(pathways))]
 
     pathways
 }
