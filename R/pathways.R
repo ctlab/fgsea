@@ -21,6 +21,10 @@ reactomePathways <- function(genes) {
         c("PATHNAME"),
         'PATHID'))
 
+    # workaround for reactome.db having one-to-many PATHID to PATHNAM mapping
+    PATHID=NULL
+    pathway2name <- pathway2name[!duplicated(PATHID)]
+
     # Hack to get rid of check NOTEs
     PATHNAME=NULL
 
