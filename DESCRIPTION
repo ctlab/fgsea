@@ -27,9 +27,7 @@ Suggests:
     rmarkdown,
     reactome.db,
     AnnotationDbi,
-    parallel,
-    GEOquery,
-    limma
+    parallel
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp
