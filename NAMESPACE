@@ -2,6 +2,7 @@
 
 export(calcGseaStat)
 export(fgsea)
+export(fgseaL)
 export(gmtPathways)
 export(plotEnrichment)
 export(plotGseaTable)
@@ -14,4 +15,5 @@ import(ggplot2)
 import(grid)
 import(gridExtra)
 import(stats)
+importFrom(Matrix,invPerm)
 useDynLib(fgsea)

@@ -35,3 +35,17 @@ NumericVector calcGseaStatCumulative(
         IntegerVector const& selectedStats, // Indexes start from one!
         double gseaParam
 );
+
+//' Calculates GSEA statistic valus for all gene sets in `selectedStats` list.
+//'
+//' Takes \emph{O(n + mKlogK)} time, where n is the number of genes, m is the number of gene sets,
+//' and k is the mean gene set size.
+//' @param stats Numeric vector of gene-level statistics sorted in decreasing order
+//' @param selectedGenes List of integer vector with integer gene IDs (from 1 to n)
+//' @param geneRanks Integer vector of gene ranks
+// [[Rcpp::export]]
+NumericVector calcGseaStatBatchCpp(
+        NumericVector const & stats,
+        List const & selectedGenes,
+        IntegerVector const & geneRanks // Ranks are 1-based!
+);

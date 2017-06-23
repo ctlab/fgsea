@@ -34,3 +34,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// calcGseaStatBatchCpp
+NumericVector calcGseaStatBatchCpp(NumericVector const& stats, List const& selectedGenes, IntegerVector const& geneRanks);
+RcppExport SEXP fgsea_calcGseaStatBatchCpp(SEXP statsSEXP, SEXP selectedGenesSEXP, SEXP geneRanksSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector const& >::type stats(statsSEXP);
+    Rcpp::traits::input_parameter< List const& >::type selectedGenes(selectedGenesSEXP);
+    Rcpp::traits::input_parameter< IntegerVector const& >::type geneRanks(geneRanksSEXP);
+    rcpp_result_gen = Rcpp::wrap(calcGseaStatBatchCpp(stats, selectedGenes, geneRanks));
+    return rcpp_result_gen;
+END_RCPP
+}

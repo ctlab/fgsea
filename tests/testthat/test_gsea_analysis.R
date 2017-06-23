@@ -40,3 +40,30 @@ test_that("fgsea works with zero pathways", {
     fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=nperm)
     expect_equal(colnames(fgseaRes), colnames(fgseaRes1))
 })
+
+test_that("fgseaL works", {
+    skip_on_bioc()
+    set.seed(42)
+
+    skip_if_not(require("limma"))
+    skip_if_not(require("GEOquery"))
+
+    library(limma)
+    library(GEOquery)
+    es <- getGEO("GSE19429", AnnotGPL = TRUE)[[1]]
+    exprs(es) <- normalizeBetweenArrays(log2(exprs(es)+1), method="quantile")
+    es <- es[!grepl("///", fData(es)$`Gene ID`), ]
+    es <- es[fData(es)$`Gene ID` != "", ]
+    es <- es[order(apply(exprs(es), 1, mean), decreasing=T), ]
+    es <- es[!duplicated(fData(es)$`Gene ID`), ]
+    rownames(es) <- fData(es)$`Gene ID`
+
+    pathways <- reactomePathways(rownames(es))
+    mat <- exprs(es)
+    labels <- as.numeric(as.factor(gsub(" .*", "", es$title)))
+    fgseaRes <- fgseaL(pathways, mat, labels, nperm = 1000, minSize = 15, maxSize = 500)
+    expect_true(abs(fgseaRes[1, ES] - -0.1754936) < 1e-5)
+    expect_true(fgseaRes[1, pval] > 0.5)
+    expect_true(fgseaRes[1, pval] < 0.95)
+
+})
