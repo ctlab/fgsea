@@ -24,6 +24,7 @@
 calcGseaStat <- function(stats, selectedStats, gseaParam=1,
                          returnAllExtremes=FALSE,
                          returnLeadingEdge=FALSE) {
+
     S <- selectedStats
     r <- stats
     p <- gseaParam
@@ -32,6 +33,9 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 
     m <- length(S)
     N <- length(r)
+    if (m == N) {
+        stop("GSEA statistic is not defined when all genes are selected")
+    }
     NR <- (sum(abs(r[S])^p))
     rAdj <- abs(r[S])^p
     if (NR == 0) {
@@ -479,4 +483,48 @@ fgseaL <- function(pathways, mat, labels, nperm,
     pvals <- pvals[]
 
     pvals
+}
+
+#' @export
+selectIndependentPathways <- function(fgseaRes,
+                                      pathways,
+                                      stats,
+                                      pval.threshold=0.1,
+                                      nperm=1000,
+                                      gseaParam=1) {
+    universe <- names(stats)
+
+    pathways <- pathways[fgseaRes$pathway]
+    pathways <- lapply(pathways, intersect, universe)
+
+    nonInterestingReason <- setNames(rep(NA, length(pathways)), names(pathways))
+
+    for (i in seq_along(pathways)) {
+        p <- names(pathways)[i]
+        if (!is.na(nonInterestingReason[p])) {
+            next
+        }
+
+        pathwaysToCheck <- setdiff(names(which(is.na(nonInterestingReason))), p)
+
+        if (length(pathwaysToCheck) == 0) {
+            break
+        }
+
+        minPval <- setNames(rep(1, length(pathwaysToCheck)), pathwaysToCheck)
+
+        u1 <- setdiff(universe, pathways[[p]])
+        fgseaRes1 <- fgsea(pathways = pathways[pathwaysToCheck], stats=stats[u1],
+                           nperm=nperm, maxSize=length(u1)-1, nproc=1)
+        minPval[fgseaRes1$pathway] <- pmin(minPval[fgseaRes1$pathway], fgseaRes1$pval)
+
+        u2 <- pathways[[p]]
+        fgseaRes2 <- fgsea(pathways = pathways[pathwaysToCheck], stats=stats[u2],
+                           nperm=nperm, maxSize=length(u2)-1, nproc=1)
+        minPval[fgseaRes2$pathway] <- pmin(minPval[fgseaRes2$pathway], fgseaRes2$pval)
+
+        nonInterestingReason[names(which(minPval > pval.threshold))] <- p
+    }
+
+    mainPathways <- names(which(is.na(nonInterestingReason)))
 }
