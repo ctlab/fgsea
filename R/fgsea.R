@@ -485,12 +485,27 @@ fgseaL <- function(pathways, mat, labels, nperm,
     pvals
 }
 
+#' Collapse list of enriched pathways to independent ones.
+#'
+#' @param fgseaRes Table with results of running fgsea(), should be filtered
+#'                 by p-value, for example by selecting ones with padj < 0.01.
+#' @param pathways List of pathways, should contain all the pathways present in
+#'                 `fgseaRes`.
+#' @param stats Gene-level statistic values used for ranking, the same as
+#'              in `fgsea()`.
+#' @param pval.threshold Two pathways are considered dependent when p-value
+#'                       of enrichment of one pathways on background of another
+#'                       is greater then `pval.threshold`.
+#' @param nperm Number of permutations to test for independence, should be
+#'              several times greater than `1/pval.threhold`.
+#'              Default value: `10/pval.threshold`.
+#' @param gseaParam GSEA parameter, same as for `fgsea()`
 #' @export
 collapsePathways <- function(fgseaRes,
                              pathways,
                              stats,
                              pval.threshold=0.1,
-                             nperm=1000,
+                             nperm=10/pval.threshold,
                              gseaParam=1) {
     universe <- names(stats)
 
@@ -515,12 +530,14 @@ collapsePathways <- function(fgseaRes,
 
         u1 <- setdiff(universe, pathways[[p]])
         fgseaRes1 <- fgsea(pathways = pathways[pathwaysToCheck], stats=stats[u1],
-                           nperm=nperm, maxSize=length(u1)-1, nproc=1)
+                           nperm=nperm, maxSize=length(u1)-1, nproc=1,
+                           gseaParam=gseaParam)
         minPval[fgseaRes1$pathway] <- pmin(minPval[fgseaRes1$pathway], fgseaRes1$pval)
 
         u2 <- pathways[[p]]
         fgseaRes2 <- fgsea(pathways = pathways[pathwaysToCheck], stats=stats[u2],
-                           nperm=nperm, maxSize=length(u2)-1, nproc=1)
+                           nperm=nperm, maxSize=length(u2)-1, nproc=1,
+                           gseaParam=gseaParam)
         minPval[fgseaRes2$pathway] <- pmin(minPval[fgseaRes2$pathway], fgseaRes2$pval)
 
         parentPathways[names(which(minPval > pval.threshold))] <- p
