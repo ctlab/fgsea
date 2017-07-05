@@ -19,7 +19,8 @@ Imports:
     ggplot2 (>= 2.2.0),
     gridExtra,
     grid,
-    fastmatch
+    fastmatch,
+    Matrix
 Suggests:
     testthat,
     knitr,

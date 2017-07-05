@@ -430,3 +430,68 @@ List calcGseaStatCumulativeBatch(
             Rcpp::Named("geZeroSum") = geZeroSum
     );
 }
+
+NumericVector calcGseaStatBatchCpp(
+        NumericVector const & stats,
+        List const & selectedGenes,
+        IntegerVector const & geneRanks) {
+    int n = stats.size();
+    int m = selectedGenes.size();
+    NumericVector gseaStats(m);
+
+    for (int i = 0; i < m; ++i)  {
+        vector<int> S(as<vector<int> >(selectedGenes[i]));
+        for (int j = 0; j < S.size(); ++j) {
+            S[j] = geneRanks[S[j]-1];
+        }
+        sort(S.begin(), S.end());
+
+        int k = S.size();
+        gseaStats[i] = k;
+
+
+        double NR = 0;
+        for (int j = 0; j < k; ++j) {
+            int tRank = S[j]; // 1-based indexing
+            double cur = abs(stats[tRank - 1]);
+            NR += cur;
+        }
+
+        double x = 0;
+        double y = 0;
+
+        double coef = (double)(n - k) / NR;
+
+        double maxP = 0;
+        double minP = 0;
+
+
+        for (int j = 0; j < k; ++j) {
+            int tRank = S[j]; // 1-based indexing
+            double cur = abs(stats[tRank - 1]);
+
+            x = tRank - j - 1;
+
+            double bottom = y * coef - x;
+
+            y += cur;
+
+            double top = y * coef - x;
+            maxP = max(maxP, top);
+            minP = min(minP, bottom);
+        }
+
+        if(maxP > -minP) {
+            gseaStats[i] = maxP;
+        } else if (maxP < -minP) {
+            gseaStats[i] = minP;
+        } else {
+            gseaStats[i] = 0;
+        }
+        gseaStats[i] /= (n - k);
+    }
+
+    return gseaStats;
+}
+
+
