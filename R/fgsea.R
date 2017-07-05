@@ -486,26 +486,26 @@ fgseaL <- function(pathways, mat, labels, nperm,
 }
 
 #' @export
-selectIndependentPathways <- function(fgseaRes,
-                                      pathways,
-                                      stats,
-                                      pval.threshold=0.1,
-                                      nperm=1000,
-                                      gseaParam=1) {
+collapsePathways <- function(fgseaRes,
+                             pathways,
+                             stats,
+                             pval.threshold=0.1,
+                             nperm=1000,
+                             gseaParam=1) {
     universe <- names(stats)
 
     pathways <- pathways[fgseaRes$pathway]
     pathways <- lapply(pathways, intersect, universe)
 
-    nonInterestingReason <- setNames(rep(NA, length(pathways)), names(pathways))
+    parentPathways <- setNames(rep(NA, length(pathways)), names(pathways))
 
     for (i in seq_along(pathways)) {
         p <- names(pathways)[i]
-        if (!is.na(nonInterestingReason[p])) {
+        if (!is.na(parentPathways[p])) {
             next
         }
 
-        pathwaysToCheck <- setdiff(names(which(is.na(nonInterestingReason))), p)
+        pathwaysToCheck <- setdiff(names(which(is.na(parentPathways))), p)
 
         if (length(pathwaysToCheck) == 0) {
             break
@@ -523,8 +523,9 @@ selectIndependentPathways <- function(fgseaRes,
                            nperm=nperm, maxSize=length(u2)-1, nproc=1)
         minPval[fgseaRes2$pathway] <- pmin(minPval[fgseaRes2$pathway], fgseaRes2$pval)
 
-        nonInterestingReason[names(which(minPval > pval.threshold))] <- p
+        parentPathways[names(which(minPval > pval.threshold))] <- p
     }
 
-    mainPathways <- names(which(is.na(nonInterestingReason)))
+    return(list(mainPathways=names(which(is.na(parentPathways))),
+                parentPathways=parentPathways))
 }

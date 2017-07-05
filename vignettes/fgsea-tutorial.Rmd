@@ -64,13 +64,14 @@ plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes,
 ```
 
 From the plot above one can see that there are very similar pathways in the table (for example `5991502_Mitotic_Metaphase_and_Anaphase` and `5991600_Mitotic_Anaphase`). To select only
-independent pathways one can use `selectIndependentPathways` function:
+independent pathways one can use `collapsePathways` function:
 
 ```{r, fig.width=7, fig.height=8, fig.retina=2}
-independentPathways <- selectIndependentPathways(fgseaRes[order(pval)][padj < 0.01], 
-                                                 examplePathways, exampleRanks)
-independentPathways <- fgseaRes[pathway %in% independentPathways][order(-NES), pathway]
-plotGseaTable(examplePathways[independentPathways], exampleRanks, fgseaRes, 
+collapsedPathways <- collapsePathways(fgseaRes[order(pval)][padj < 0.01], 
+                                      examplePathways, exampleRanks)
+mainPathways <- fgseaRes[pathway %in% collapsedPathways$mainPathways][
+                         order(-NES), pathway]
+plotGseaTable(examplePathways[mainPathways], exampleRanks, fgseaRes, 
               gseaParam = 0.5)
 ```
 
