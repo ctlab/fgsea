@@ -29,6 +29,29 @@ test_that("fgsea works", {
     expect_false(all(fgseaRes$nMoreExtreme %% 2 == 0))
 })
 
+test_that("fgsea is reproducable independent of bpparam settings", {
+
+    data(examplePathways)
+    data(exampleRanks)
+    nperm <- 2000
+
+    set.seed(42)
+    fr <- fgsea(examplePathways[1:2], exampleRanks, nperm=nperm, maxSize=500, nproc=1)
+
+
+    set.seed(42)
+    fr1 <- fgsea(examplePathways[1:2], exampleRanks, nperm=nperm, maxSize=500)
+    expect_equal(fr1$nMoreExtreme, fr$nMoreExtreme)
+
+    set.seed(42)
+    fr2 <- fgsea(examplePathways[1:2], exampleRanks, nperm=nperm, maxSize=500, nproc=0)
+    expect_equal(fr2$nMoreExtreme, fr$nMoreExtreme)
+
+    set.seed(42)
+    fr3 <- fgsea(examplePathways[1:2], exampleRanks, nperm=nperm, maxSize=500, nproc=2)
+    expect_equal(fr3$nMoreExtreme, fr$nMoreExtreme)
+})
+
 test_that("fgsea works with zero pathways", {
     data(examplePathways)
     data(exampleRanks)
