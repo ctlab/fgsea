@@ -9,4 +9,3 @@ The data were obtained by doing differential expression between
 Naive and Th1-activated states for GEO dataset GSE14308. The
 exact script is available as system.file("gen_gene_ranks.R", package="fgsea")
 }
-

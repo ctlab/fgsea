@@ -3,7 +3,7 @@
 export(calcGseaStat)
 export(collapsePathways)
 export(fgsea)
-export(fgseaL)
+export(fgseaLabel)
 export(gmtPathways)
 export(plotEnrichment)
 export(plotGseaTable)

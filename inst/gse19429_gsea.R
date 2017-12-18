@@ -13,5 +13,5 @@ pathways <- reactomePathways(rownames(es))
 mat <- exprs(es)
 labels <- as.numeric(as.factor(gsub(" .*", "", es$title)))
 
-fgseaRes <- fgseaL(pathways, mat, labels, nperm = 1000, minSize = 15, maxSize = 500)
+fgseaRes <- fgseaLabel(pathways, mat, labels, nperm = 1000, minSize = 15, maxSize = 500)
 

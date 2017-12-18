@@ -55,4 +55,3 @@ fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
 # Testing only one pathway is implemented in a more efficient manner
 fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=10000)
 }
-

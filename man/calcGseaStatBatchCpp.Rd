@@ -17,4 +17,3 @@ calcGseaStatBatchCpp(stats, selectedGenes, geneRanks)
 Takes \emph{O(n + mKlogK)} time, where n is the number of genes, m is the number of gene sets,
 and k is the mean gene set size.
 }
-

@@ -19,4 +19,3 @@ Returns a list of Reactome pathways for given Entrez gene IDs
 data(exampleRanks)
 pathways <- reactomePathways(names(exampleRanks))
 }
-

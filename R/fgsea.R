@@ -334,10 +334,10 @@ calcGseaStatBatch <- function(stats, selectedStats, geneRanks=seq_along(stats),
 #' pathways <- reactomePathways(rownames(es))
 #' mat <- exprs(es)
 #' labels <- as.numeric(as.factor(gsub(" .*", "", es$title)))
-#' fgseaRes <- fgseaL(pathways, mat, labels, nperm = 1000, minSize = 15, maxSize = 500)
+#' fgseaRes <- fgseaLabel(pathways, mat, labels, nperm = 1000, minSize = 15, maxSize = 500)
 #' }
 #' @importFrom Matrix invPerm
-fgseaL <- function(pathways, mat, labels, nperm,
+fgseaLabel <- function(pathways, mat, labels, nperm,
                       minSize=1, maxSize=Inf,
                       nproc=0,
                       gseaParam=1,
@@ -504,7 +504,7 @@ fgseaL <- function(pathways, mat, labels, nperm,
 collapsePathways <- function(fgseaRes,
                              pathways,
                              stats,
-                             pval.threshold=0.1,
+                             pval.threshold=0.05,
                              nperm=10/pval.threshold,
                              gseaParam=1) {
     universe <- names(stats)

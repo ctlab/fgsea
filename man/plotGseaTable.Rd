@@ -38,4 +38,3 @@ plotGseaTable(examplePathways[topPathways], exampleRanks,
               fgseaRes, gseaParam=0.5)
 }
 }
-

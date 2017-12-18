@@ -41,7 +41,7 @@ test_that("fgsea works with zero pathways", {
     expect_equal(colnames(fgseaRes), colnames(fgseaRes1))
 })
 
-test_that("fgseaL works", {
+test_that("fgseaLabel works", {
     mat <- matrix(rnorm(1000*20),1000,20)
     labels <- rep(1:2, c(10, 10))
 
@@ -49,6 +49,6 @@ test_that("fgseaL works", {
     pathways <- list(sample(rownames(mat), 100),
                      sample(rownames(mat), 200))
 
-    fgseaRes <- fgseaL(pathways, mat, labels, nperm = 1000, minSize = 15, maxSize = 500)
+    fgseaRes <- fgseaLabel(pathways, mat, labels, nperm = 1000, minSize = 15, maxSize = 500)
 
 })

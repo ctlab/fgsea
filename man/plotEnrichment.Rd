@@ -27,4 +27,3 @@ plotEnrichment(examplePathways[["5991130_Programmed_Cell_Death"]],
                exampleRanks)
 }
 }
-

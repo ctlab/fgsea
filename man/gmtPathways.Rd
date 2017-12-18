@@ -19,4 +19,3 @@ Returns a list of pathways from a GMT file.
 pathways <- gmtPathways(system.file(
      "extdata", "mouse.reactome.gmt", package="fgsea"))
 }
-

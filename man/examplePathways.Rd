@@ -9,4 +9,3 @@ The list was obtained by selecting all the pathways from `reactome.db`
 package that contain mouse genes. The exact script is available as
 system.file("gen_reactome_pathways.R", package="fgsea")
 }
-
