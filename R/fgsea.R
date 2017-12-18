@@ -135,6 +135,12 @@ fgsea <- function(pathways, stats, nperm,
                   gseaParam=1,
                   BPPARAM=NULL) {
 
+    granularity <- 1000
+    permPerProc <- rep(granularity, floor(nperm / granularity))
+    if (nperm - sum(permPerProc) > 0) {
+        permPerProc <- c(permPerProc, nperm - sum(permPerProc))
+    }
+    seeds <- sample.int(10^9, length(permPerProc))
 
     if (is.null(BPPARAM)) {
         if (nproc != 0) {
@@ -151,6 +157,7 @@ fgsea <- function(pathways, stats, nperm,
 
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing=TRUE)
+
     stats <- abs(stats) ^ gseaParam
     pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, names(stats)))) })
     pathwaysSizes <- sapply(pathwaysFiltered, length)
@@ -173,10 +180,6 @@ fgsea <- function(pathways, stats, nperm,
     pathwaysSizes <- pathwaysSizes[toKeep]
 
     K <- max(pathwaysSizes)
-    npermActual <- nperm
-#     npermActual <- if (npermIsActual) nperm else nperm * m
-#     message(sprintf("%s pathways left", m))
-#     message(sprintf("Setting actual permutations number to %s", npermActual))
 
     gseaStatRes <- do.call(rbind,
                 lapply(pathwaysFiltered, calcGseaStat,
@@ -188,14 +191,8 @@ fgsea <- function(pathways, stats, nperm,
     pathwayScores <- unlist(gseaStatRes[, "res"])
 
 
-    granularity <- 1000
-    permPerProc <- rep(granularity, floor(npermActual / granularity))
-    if (npermActual - sum(permPerProc) > 0) {
-        permPerProc <- c(permPerProc, npermActual - sum(permPerProc))
-    }
 
     universe <- seq_along(stats)
-    seeds <- sample.int(10^9, length(permPerProc))
 
     counts <- bplapply(seq_along(permPerProc), function(i) {
         nperm1 <- permPerProc[i]
@@ -343,6 +340,13 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
                       gseaParam=1,
                       BPPARAM=NULL) {
 
+    granularity <- 100
+    permPerProc <- rep(granularity, floor(nperm / granularity))
+    if (nperm - sum(permPerProc) > 0) {
+        permPerProc <- c(permPerProc, nperm - sum(permPerProc))
+    }
+    seeds <- sample.int(10^9, length(permPerProc))
+
     if (is.null(BPPARAM)) {
         if (nproc != 0) {
             if (.Platform$OS.type == "windows") {
@@ -397,15 +401,7 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
     leadingEdges <- mapply("[", list(names(stats)), gseaStatRes[, "leadingEdge"], SIMPLIFY = FALSE)
     pathwayScores <- unlist(gseaStatRes[, "res"])
 
-
-    granularity <- 100
-    permPerProc <- rep(granularity, floor(nperm / granularity))
-    if (nperm - sum(permPerProc) > 0) {
-        permPerProc <- c(permPerProc, nperm - sum(permPerProc))
-    }
-
     universe <- seq_along(stats)
-    seeds <- sample.int(10^9, length(permPerProc))
 
     counts <- bplapply(seq_along(permPerProc), function(i) {
         nperm1 <- permPerProc[i]
