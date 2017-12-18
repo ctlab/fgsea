@@ -8,6 +8,7 @@ test_that("reactomePathways works", {
     pathways <- reactomePathways(names(exampleRanks))
 
     expect_true("12504" %in% pathways$`TCR signaling`)
+    expect_false(any(duplicated(names(pathways))))
 })
 
 test_that("gmtPathways works", {

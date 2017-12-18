@@ -25,13 +25,19 @@ reactomePathways <- function(genes) {
     PATHID=NULL
     pathway2name <- pathway2name[!duplicated(PATHID)]
 
+
+
     # Hack to get rid of check NOTEs
     PATHNAME=NULL
 
     # Remove organism prefix
     pathway2name[, PATHNAME := sub("^[^:]*: ", "", PATHNAME)]
 
-    names(pathways) <- pathway2name$PATHNAME
+    # workaround for reactome.db having duplicated names for pathways
+    # example: Immune system (5991156 and 6096039)
+    name2pathways <- split(pathway2name$PATHID, pathway2name$PATHNAME)
+
+    pathways <- lapply(name2pathways, function(x) unique(do.call(c, pathways[x])))
 
     pathways <- pathways[!is.na(names(pathways))]
 
