@@ -324,7 +324,7 @@ calcGseaStatBatch <- function(stats, selectedStats, geneRanks=seq_along(stats),
 #' exprs(es) <- normalizeBetweenArrays(log2(exprs(es)+1), method="quantile")
 #' es <- es[!grepl("///", fData(es)$`Gene ID`), ]
 #' es <- es[fData(es)$`Gene ID` != "", ]
-#' es <- es[order(apply(exprs(es), 1, mean), decreasing=T), ]
+#' es <- es[order(apply(exprs(es), 1, mean), decreasing=TRUE), ]
 #' es <- es[!duplicated(fData(es)$`Gene ID`), ]
 #' rownames(es) <- fData(es)$`Gene ID`
 #'
@@ -386,7 +386,7 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
     pathwaysSizes <- pathwaysSizes[toKeep]
 
     corRanks <- var(tmatSc, labelsSc)[,1]
-    ranksOrder <- order(corRanks, decreasing=T)
+    ranksOrder <- order(corRanks, decreasing=TRUE)
     ranksOrderInv <- invPerm(ranksOrder)
     stats <- corRanks[ranksOrder]
 
@@ -411,7 +411,7 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
 
         randEsPs <- lapply(seq_len(nperm1), function(i) {
             randCorRanks1 <- randCorRanks[, i]
-            ranksOrder <- sort.list(randCorRanks1, decreasing=T)
+            ranksOrder <- sort.list(randCorRanks1, decreasing=TRUE)
             geneRanks <- invPerm(ranksOrder)
             stats <- randCorRanks1[ranksOrder]
 
