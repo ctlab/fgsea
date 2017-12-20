@@ -318,7 +318,7 @@ IntegerVector combination(const int &n, const int &k, mt19937& rng) {
     std::uniform_int_distribution<int> uni(1, n);
     std::vector<int> v;
     v.reserve(k);
-    std::vector<bool> used(n);
+    std::vector<char> used(n + 1);
     for (int i = 0; i < k; i++) {
         for (int j = 0; j < 100; j++) { // average < 2
             int x = uni(rng);
