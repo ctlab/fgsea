@@ -16,6 +16,7 @@ calcGseaStatCumulative <- function(stats, selectedStats, gseaParam) {
 #' @param stats Numeric vector of gene-level statistics sorted in decreasing order
 #' @param selectedGenes List of integer vector with integer gene IDs (from 1 to n)
 #' @param geneRanks Integer vector of gene ranks
+#' @return Numeric vector of GSEA statistics of the same length as `selectedGenes` list
 calcGseaStatBatchCpp <- function(stats, selectedGenes, geneRanks) {
     .Call('_fgsea_calcGseaStatBatchCpp', PACKAGE = 'fgsea', stats, selectedGenes, geneRanks)
 }

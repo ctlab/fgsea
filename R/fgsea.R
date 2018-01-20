@@ -320,7 +320,7 @@ calcGseaStatBatch <- function(stats, selectedStats, geneRanks=seq_along(stats),
 #' \dontrun{
 #' library(limma)
 #' library(GEOquery)
-#' es <- getGEO("GSE19429", AnnotGPL = TRUE, destdir="~/Dropbox/phantasus-cache/")[[1]]
+#' es <- getGEO("GSE19429", AnnotGPL = TRUE")[[1]]
 #' exprs(es) <- normalizeBetweenArrays(log2(exprs(es)+1), method="quantile")
 #' es <- es[!grepl("///", fData(es)$`Gene ID`), ]
 #' es <- es[fData(es)$`Gene ID` != "", ]
@@ -496,6 +496,18 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
 #'              several times greater than `1/pval.threhold`.
 #'              Default value: `10/pval.threshold`.
 #' @param gseaParam GSEA parameter, same as for `fgsea()`
+#' @return Named list with two elments: `mainPathways` containing IDs of pathways
+#'         not reducable to each other, and `parentPathways` with vector describing
+#'         for all the pathways to which ones they can be reduced. For
+#'         pathways from `mainPathwyas` vector `parentPathways` contains `NA` values.
+#' @examples
+#' data(examplePathways)
+#' data(exampleRanks)
+#' fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
+#' collapsedPathways <- collapsePathways(fgseaRes[order(pval)][padj < 0.01],
+#'                                       examplePathways, exampleRanks)
+#' mainPathways <- fgseaRes[pathway %in% collapsedPathways$mainPathways][
+#'                          order(-NES), pathway]
 #' @export
 collapsePathways <- function(fgseaRes,
                              pathways,

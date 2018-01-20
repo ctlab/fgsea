@@ -51,10 +51,11 @@ reactomePathways <- function(genes) {
 #' @examples
 #' pathways <- gmtPathways(system.file(
 #'      "extdata", "mouse.reactome.gmt", package="fgsea"))
+#' @importFrom  utils head tail
 #' @export
 gmtPathways <- function(gmt.file) {
     pathwayLines <- strsplit(readLines(gmt.file), "\t")
-    pathways <- lapply(pathwayLines, utils::tail, -2)
+    pathways <- lapply(pathwayLines, tail, -2)
     names(pathways) <- sapply(pathwayLines, head, 1)
     pathways
 }

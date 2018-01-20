@@ -20,7 +20,8 @@ Imports:
     gridExtra,
     grid,
     fastmatch,
-    Matrix
+    Matrix,
+    utils
 Suggests:
     testthat,
     knitr,

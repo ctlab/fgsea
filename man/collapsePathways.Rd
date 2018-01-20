@@ -27,6 +27,21 @@ Default value: `10/pval.threshold`.}
 
 \item{gseaParam}{GSEA parameter, same as for `fgsea()`}
 }
+\value{
+Named list with two elments: `mainPathways` containing IDs of pathways
+        not reducable to each other, and `parentPathways` with vector describing
+        for all the pathways to which ones they can be reduced. For
+        pathways from `mainPathwyas` vector `parentPathways` contains `NA` values.
+}
 \description{
 Collapse list of enriched pathways to independent ones.
+}
+\examples{
+data(examplePathways)
+data(exampleRanks)
+fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
+collapsedPathways <- collapsePathways(fgseaRes[order(pval)][padj < 0.01],
+                                      examplePathways, exampleRanks)
+mainPathways <- fgseaRes[pathway \%in\% collapsedPathways$mainPathways][
+                         order(-NES), pathway]
 }

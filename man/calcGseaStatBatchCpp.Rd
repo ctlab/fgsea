@@ -13,6 +13,9 @@ calcGseaStatBatchCpp(stats, selectedGenes, geneRanks)
 
 \item{geneRanks}{Integer vector of gene ranks}
 }
+\value{
+Numeric vector of GSEA statistics of the same length as `selectedGenes` list
+}
 \description{
 Takes \emph{O(n + mKlogK)} time, where n is the number of genes, m is the number of gene sets,
 and k is the mean gene set size.
