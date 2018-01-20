@@ -406,7 +406,7 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
     counts <- bplapply(seq_along(permPerProc), function(i) {
         nperm1 <- permPerProc[i]
 
-        labelPerms <- do.call(cbind, replicate(nperm1, sample(labelsSc), simplify = F))
+        labelPerms <- do.call(cbind, replicate(nperm1, sample(labelsSc), simplify = FALSE))
         randCorRanks <- var(tmatSc, labelPerms)
 
         randEsPs <- lapply(seq_len(nperm1), function(i) {
