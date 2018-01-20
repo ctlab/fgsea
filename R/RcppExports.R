@@ -2,11 +2,11 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 calcGseaStatCumulativeBatch <- function(stats, gseaParam, pathwayScores, pathwaysSizes, iterations, seed) {
-    .Call('fgsea_calcGseaStatCumulativeBatch', PACKAGE = 'fgsea', stats, gseaParam, pathwayScores, pathwaysSizes, iterations, seed)
+    .Call('_fgsea_calcGseaStatCumulativeBatch', PACKAGE = 'fgsea', stats, gseaParam, pathwayScores, pathwaysSizes, iterations, seed)
 }
 
 calcGseaStatCumulative <- function(stats, selectedStats, gseaParam) {
-    .Call('fgsea_calcGseaStatCumulative', PACKAGE = 'fgsea', stats, selectedStats, gseaParam)
+    .Call('_fgsea_calcGseaStatCumulative', PACKAGE = 'fgsea', stats, selectedStats, gseaParam)
 }
 
 #' Calculates GSEA statistic valus for all gene sets in `selectedStats` list.
@@ -17,6 +17,6 @@ calcGseaStatCumulative <- function(stats, selectedStats, gseaParam) {
 #' @param selectedGenes List of integer vector with integer gene IDs (from 1 to n)
 #' @param geneRanks Integer vector of gene ranks
 calcGseaStatBatchCpp <- function(stats, selectedGenes, geneRanks) {
-    .Call('fgsea_calcGseaStatBatchCpp', PACKAGE = 'fgsea', stats, selectedGenes, geneRanks)
+    .Call('_fgsea_calcGseaStatBatchCpp', PACKAGE = 'fgsea', stats, selectedGenes, geneRanks)
 }
 

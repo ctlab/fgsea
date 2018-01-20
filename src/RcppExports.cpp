@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // calcGseaStatCumulativeBatch
 List calcGseaStatCumulativeBatch(NumericVector const& stats, double gseaParam, NumericVector const& pathwayScores, IntegerVector const& pathwaysSizes, int iterations, int seed);
-RcppExport SEXP fgsea_calcGseaStatCumulativeBatch(SEXP statsSEXP, SEXP gseaParamSEXP, SEXP pathwayScoresSEXP, SEXP pathwaysSizesSEXP, SEXP iterationsSEXP, SEXP seedSEXP) {
+RcppExport SEXP _fgsea_calcGseaStatCumulativeBatch(SEXP statsSEXP, SEXP gseaParamSEXP, SEXP pathwayScoresSEXP, SEXP pathwaysSizesSEXP, SEXP iterationsSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -23,7 +23,7 @@ END_RCPP
 }
 // calcGseaStatCumulative
 NumericVector calcGseaStatCumulative(NumericVector const& stats, IntegerVector const& selectedStats, double gseaParam);
-RcppExport SEXP fgsea_calcGseaStatCumulative(SEXP statsSEXP, SEXP selectedStatsSEXP, SEXP gseaParamSEXP) {
+RcppExport SEXP _fgsea_calcGseaStatCumulative(SEXP statsSEXP, SEXP selectedStatsSEXP, SEXP gseaParamSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -36,7 +36,7 @@ END_RCPP
 }
 // calcGseaStatBatchCpp
 NumericVector calcGseaStatBatchCpp(NumericVector const& stats, List const& selectedGenes, IntegerVector const& geneRanks);
-RcppExport SEXP fgsea_calcGseaStatBatchCpp(SEXP statsSEXP, SEXP selectedGenesSEXP, SEXP geneRanksSEXP) {
+RcppExport SEXP _fgsea_calcGseaStatBatchCpp(SEXP statsSEXP, SEXP selectedGenesSEXP, SEXP geneRanksSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
