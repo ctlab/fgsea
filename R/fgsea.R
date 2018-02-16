@@ -137,7 +137,7 @@ fgsea <- function(pathways, stats, nperm,
   
     #Warning message for ties in stats
     ties <- (length(stats[stats!=0])-length(unique(stats[stats!=0])))!=0
-    if (ties == T){ message("There are ties in the preranked stats (",paste(round(length(stats[duplicated(stats[stats!=0])])*100/length(stats),digits = 2)),"% of the list).\n",
+    if (ties == T){ warning("There are ties in the preranked stats (",paste(round(length(stats[duplicated(stats[stats!=0])])*100/length(stats),digits = 2)),"% of the list).\n",
                             "The order of those tied genes will be arbitrary, which may produce unexpected results.")}
 
     granularity <- 1000
