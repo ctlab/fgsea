@@ -163,7 +163,7 @@ NumericVector gseaStats1(
         blockSummit[block] = blockEnd[block];
     }
 
-    double statEps = 1/0.;
+    double statEps = 1e-5;
 
     for (int i = 0; i < k; ++i) {
         int t = selectedStats[i] - 1;
