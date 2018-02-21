@@ -144,6 +144,11 @@ fgsea <- function(pathways, stats, nperm,
                 "The order of those tied genes will be arbitrary, which may produce unexpected results.")
     }
 
+    # Warning message for duplicate gene names
+    if (any(duplicated(names(stats)))) {
+        warning("There are duplicate gene names, fgsea may produce unexpected results")
+    }
+
     granularity <- 1000
     permPerProc <- rep(granularity, floor(nperm / granularity))
     if (nperm - sum(permPerProc) > 0) {

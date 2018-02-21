@@ -91,6 +91,16 @@ test_that("Ties detection in ranking works", {
     expect_silent(fgsea(examplePathways, exampleRanks.ties.zero, nperm=100, minSize=10, maxSize=50, nproc=1))
 })
 
+test_that("fgsea throws a warning when there are duplicate gene names", {
+    data(examplePathways)
+    data(exampleRanks)
+    exampleRanks.dupNames <- exampleRanks
+    names(exampleRanks.dupNames)[41] <- names(exampleRanks.dupNames)[42]
+
+    expect_warning(fgsea(examplePathways, exampleRanks.dupNames, nperm=100, minSize=10, maxSize=50, nproc=1))
+
+})
+
 test_that("fgsea returns leading edge ordered by decreasing of absolute statistic value", {
     data(examplePathways)
     data(exampleRanks)

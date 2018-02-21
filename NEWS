@@ -1,5 +1,6 @@
 CHANGES IN VERSION 1.5.2
-* Warning for rank ties
+* fgsea throws warning for rank ties
+* fgsea throws warning for duplicate gene names
 * Leading edge is now ordered by decreasing of absolute statistic value
 
 CHANGES IN VERSION 1.5.1
