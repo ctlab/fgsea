@@ -90,3 +90,17 @@ test_that("Ties detection in ranking works", {
 
     expect_silent(fgsea(examplePathways, exampleRanks.ties.zero, nperm=100, minSize=10, maxSize=50, nproc=1))
 })
+
+test_that("fgsea returns leading edge ordered by decreasing of absolute statistic value", {
+    data(examplePathways)
+    data(exampleRanks)
+    set.seed(42)
+    nperm <- 100
+    fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=nperm, maxSize=50)
+
+    expect_true(abs(exampleRanks[fgseaRes$leadingEdge[[1]][1]]) >
+                abs(exampleRanks[fgseaRes$leadingEdge[[1]][2]]))
+
+    expect_true(abs(exampleRanks[fgseaRes$leadingEdge[[2]][1]]) >
+                abs(exampleRanks[fgseaRes$leadingEdge[[2]][2]]))
+})

@@ -77,7 +77,7 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
         leadingEdge <- if (maxP > -minP) {
             S[seq_along(S) <= which.max(bottoms)]
         } else if (maxP < -minP) {
-            S[seq_along(S) >= which.min(bottoms)]
+            rev(S[seq_along(S) >= which.min(bottoms)])
         } else {
             NULL
         }
