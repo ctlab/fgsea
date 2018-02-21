@@ -75,3 +75,18 @@ test_that("fgseaLabel works", {
     fgseaRes <- fgseaLabel(pathways, mat, labels, nperm = 1000, minSize = 15, maxSize = 500)
 
 })
+
+test_that("Ties detection in ranking works",{
+    data(examplePathways)
+    data(exampleRanks)
+    exampleRanks.ties <- exampleRanks
+    name20<- names(exampleRanks.ties[42])
+    exampleRanks.ties[41] <- exampleRanks.ties[42]
+    names(exampleRanks.ties[41])<-name20
+
+    expect_silent(fgsea(examplePathways, exampleRanks, nperm=100,minSize=50, maxSize=10,nproc = 1))
+    
+    expect_warning( fgsea(examplePathways, exampleRanks.ties, nperm=100,minSize=50, maxSize=10,nproc = 1))
+
+
+    })
