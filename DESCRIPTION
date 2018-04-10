@@ -28,7 +28,8 @@ Suggests:
     rmarkdown,
     reactome.db,
     AnnotationDbi,
-    parallel
+    parallel,
+    org.Mm.eg.db
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp
