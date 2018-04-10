@@ -10,6 +10,7 @@ test_that("plotGseaTable works", {
     png(filename = tf, width=2000, height=1600, res = 300)
     plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes, gseaParam=0.5)
     dev.off()
+    expect_true(TRUE) # check that didn't fail before
 })
 
 test_that("plotEnrichment works", {
@@ -19,4 +20,5 @@ test_that("plotEnrichment works", {
                         exampleRanks)
     tf <- tempfile("plot", fileext = ".png")
     ggsave(tf, plot=g)
+    expect_true(TRUE) # check that didn't fail before
 })

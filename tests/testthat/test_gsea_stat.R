@@ -1,7 +1,7 @@
 context("GSEA stat calculation")
 
 test_that("calcGseaStats works", {
-    stats <- -10:10
+    stats <- 10:-10
 
     sample <- 1:5
     expect_equal(calcGseaStat(stats, selectedStats = sample), 1)
@@ -13,7 +13,7 @@ test_that("calcGseaStats works", {
 })
 
 test_that("calcGseaStats(returnLeadingEdge=TRUE) works", {
-    stats <- -10:10
+    stats <- 10:-10
 
     sample <- c(10, 1:5)
     gseaRes <- calcGseaStat(stats, selectedStats = sample,
@@ -41,7 +41,7 @@ test_that("calcGseaStats(returnLeadingEdge=TRUE) works", {
 })
 
 test_that("calcGseaStats returns zero when both sides are equally enriched", {
-    stats <- -10:10
+    stats <- 10:-10
     sample <- 10:12
     expect_equal(calcGseaStat(stats, selectedStats = sample), 0)
 
