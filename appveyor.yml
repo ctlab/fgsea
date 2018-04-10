@@ -13,7 +13,7 @@ install:
 # Adapt as necessary starting from here
 
 build_script:
-  - travis-tool.sh install_bioc testthat knitr rmarkdown reactome.db AnnotationDbi parallel ggplot2 snow
+  - travis-tool.sh install_bioc testthat knitr rmarkdown reactome.db AnnotationDbi parallel ggplot2 snow org.Mm.eg.db limma GEOquery
   - travis-tool.sh install_bioc_deps
 
 test_script:
