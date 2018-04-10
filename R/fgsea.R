@@ -331,10 +331,10 @@ calcGseaStatBatch <- function(stats, selectedStats, geneRanks=seq_along(stats),
 #'
 #' @export
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(limma)
 #' library(GEOquery)
-#' es <- getGEO("GSE19429", AnnotGPL = TRUE")[[1]]
+#' es <- getGEO("GSE19429", AnnotGPL = TRUE)[[1]]
 #' exprs(es) <- normalizeBetweenArrays(log2(exprs(es)+1), method="quantile")
 #' es <- es[!grepl("///", fData(es)$`Gene ID`), ]
 #' es <- es[fData(es)$`Gene ID` != "", ]
@@ -347,6 +347,7 @@ calcGseaStatBatch <- function(stats, selectedStats, geneRanks=seq_along(stats),
 #' labels <- as.numeric(as.factor(gsub(" .*", "", es$title)))
 #' fgseaRes <- fgseaLabel(pathways, mat, labels, nperm = 1000, minSize = 15, maxSize = 500)
 #' }
+#'
 #' @importFrom Matrix invPerm
 fgseaLabel <- function(pathways, mat, labels, nperm,
                       minSize=1, maxSize=Inf,

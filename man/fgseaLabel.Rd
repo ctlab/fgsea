@@ -49,10 +49,10 @@ The columns are the following:
 Runs label-permuring gene set enrichment analysis.
 }
 \examples{
-\dontrun{
+\donttest{
 library(limma)
 library(GEOquery)
-es <- getGEO("GSE19429", AnnotGPL = TRUE, destdir="~/Dropbox/phantasus-cache/")[[1]]
+es <- getGEO("GSE19429", AnnotGPL = TRUE)[[1]]
 exprs(es) <- normalizeBetweenArrays(log2(exprs(es)+1), method="quantile")
 es <- es[!grepl("///", fData(es)$`Gene ID`), ]
 es <- es[fData(es)$`Gene ID` != "", ]
@@ -65,4 +65,5 @@ mat <- exprs(es)
 labels <- as.numeric(as.factor(gsub(" .*", "", es$title)))
 fgseaRes <- fgseaLabel(pathways, mat, labels, nperm = 1000, minSize = 15, maxSize = 500)
 }
+
 }

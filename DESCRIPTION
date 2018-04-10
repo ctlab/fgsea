@@ -29,7 +29,9 @@ Suggests:
     reactome.db,
     AnnotationDbi,
     parallel,
-    org.Mm.eg.db
+    org.Mm.eg.db,
+    limma,
+    GEOquery
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp

@@ -76,6 +76,12 @@ test_that("fgseaLabel works", {
     expect_true(!is.null(fgseaRes))
 })
 
+test_that("fgseaLabel example works", {
+    skip_on_bioc()
+    example("fgseaLabel", run.donttest = TRUE, local = FALSE)
+    expect_true(!is.null(fgseaRes))
+})
+
 test_that("Ties detection in ranking works", {
     data(examplePathways)
     data(exampleRanks)
