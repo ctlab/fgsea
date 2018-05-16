@@ -27,6 +27,7 @@ bioc_packages:
   - BiocCheck
   - BiocParallel
   - reactome.db
+  - org.Mm.eg.db
 
 # Set CXX1X for R-devel, as R-devel does not detect CXX1X support for gcc 4.6.3,
 # see https://github.com/travis-ci/travis-ci/issues/6587
