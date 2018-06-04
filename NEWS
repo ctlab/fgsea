@@ -1,3 +1,7 @@
+CHANGES IN VERSION 1.7.1
+* Setting colwidth to zero make column not to be drawn
+* Changable line width in plotEnrichment
+
 CHANGES IN VERSION 1.5.2
 * fgsea throws warning for rank ties
 * fgsea throws warning for duplicate gene names
