@@ -19,7 +19,7 @@ values closer to 0 flatten plots. Default = 1, value of 0.5 is a good
 choice too.}
 
 \item{colwidths}{Vector of five elements corresponding to column width for
-grid.arrange.}
+grid.arrange. If column width is set to zero, the column is not drawn.}
 }
 \value{
 TableGrob object returned by grid.arrange.

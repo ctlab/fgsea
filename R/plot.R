@@ -6,7 +6,7 @@
 #'      values closer to 0 flatten plots. Default = 1, value of 0.5 is a good
 #'      choice too.
 #' @param colwidths Vector of five elements corresponding to column width for
-#'      grid.arrange.
+#'      grid.arrange. If column width is set to zero, the column is not drawn.
 #' @return TableGrob object returned by grid.arrange.
 #' @import ggplot2
 #' @import gridExtra
@@ -85,19 +85,29 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
               panel.spacing = unit(c(0,0,0,0), "npc")
         )
 
-    grid.arrange(grobs=c(
-            lapply(c("Pathway", "Gene ranks", "NES", "pval", "padj"), textGrob),
-            unlist(ps, recursive = FALSE),
-            list(nullGrob(),
-                 rankPlot
-                 )),
-        ncol=5, widths=colwidths)
+    grobs <- c(
+        lapply(c("Pathway", "Gene ranks", "NES", "pval", "padj"), textGrob),
+        unlist(ps, recursive = FALSE),
+        list(nullGrob(),
+             rankPlot,
+             nullGrob(),
+             nullGrob(),
+             nullGrob()))
+
+    # not drawing column if corresponding colwidth is set to zero
+    grobsToDraw <- rep(colwidths != 0, length(grobs)/length(colwidths))
+
+
+    grid.arrange(grobs=grobs[grobsToDraw],
+                 ncol=sum(colwidths != 0),
+                 widths=colwidths[colwidths != 0])
 }
 
 #' Plots GSEA enrichment plot.
 #' @param pathway Gene set to plot.
 #' @param stats Gene-level statistics.
 #' @param gseaParam GSEA parameter.
+#' @param ticksSize width of vertical line corresponding to a gene (default: 0.2)
 #' @return ggplot object with the enrichment plot.
 #' @export
 #' @examples
@@ -108,7 +118,8 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
 #'                exampleRanks)
 #' }
 plotEnrichment <- function(pathway, stats,
-                          gseaParam=1) {
+                          gseaParam=1,
+                          ticksSize=0.2) {
 
     rnk <- rank(-stats)
     ord <- order(rnk)
@@ -144,7 +155,7 @@ plotEnrichment <- function(pathway, stats,
         geom_segment(data=data.frame(x=pathway),
                      mapping=aes(x=x, y=-diff/2,
                                  xend=x, yend=diff/2),
-                     size=0.2) +
+                     size=ticksSize) +
 
         theme(panel.border=element_blank(),
               panel.grid.minor=element_blank()) +

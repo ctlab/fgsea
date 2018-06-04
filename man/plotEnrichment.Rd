@@ -4,7 +4,7 @@
 \alias{plotEnrichment}
 \title{Plots GSEA enrichment plot.}
 \usage{
-plotEnrichment(pathway, stats, gseaParam = 1)
+plotEnrichment(pathway, stats, gseaParam = 1, ticksSize = 0.2)
 }
 \arguments{
 \item{pathway}{Gene set to plot.}
@@ -12,6 +12,8 @@ plotEnrichment(pathway, stats, gseaParam = 1)
 \item{stats}{Gene-level statistics.}
 
 \item{gseaParam}{GSEA parameter.}
+
+\item{ticksSize}{width of vertical line corresponding to a gene (default: 0.2)}
 }
 \value{
 ggplot object with the enrichment plot.
