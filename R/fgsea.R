@@ -141,12 +141,12 @@ fgsea <- function(pathways, stats, nperm,
         warning("There are ties in the preranked stats (",
                 paste(round(ties * 100 / length(stats), digits = 2)),
                 "% of the list).\n",
-                "The order of those tied genes will be arbitrary, which may produce unexpected results.")
+                "The order of those tied genes will be arbitrary, which may produce unexpected results.\n")
     }
 
     # Warning message for duplicate gene names
     if (any(duplicated(names(stats)))) {
-        warning("There are duplicate gene names, fgsea may produce unexpected results")
+        warning("There are duplicate gene names, fgsea may produce unexpected results.\n")
     }
 
     granularity <- 1000
@@ -508,7 +508,7 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
 #'                       of enrichment of one pathways on background of another
 #'                       is greater then `pval.threshold`.
 #' @param nperm Number of permutations to test for independence, should be
-#'              several times greater than `1/pval.threhold`.
+#'              several times greater than `1/pval.threshold`.
 #'              Default value: `10/pval.threshold`.
 #' @param gseaParam GSEA parameter, same as for `fgsea()`
 #' @return Named list with two elments: `mainPathways` containing IDs of pathways
