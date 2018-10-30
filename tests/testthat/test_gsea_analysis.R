@@ -121,3 +121,18 @@ test_that("fgsea returns leading edge ordered by decreasing of absolute statisti
     expect_true(abs(exampleRanks[fgseaRes$leadingEdge[[2]][1]]) >
                 abs(exampleRanks[fgseaRes$leadingEdge[[2]][2]]))
 })
+
+test_that("collapsePathways work", {
+    data(examplePathways)
+    data(exampleRanks)
+    set.seed(42)
+    nperm <- 100
+    pathways <- list(p1=examplePathways$`5991851_Mitotic_Prometaphase`)
+    pathways <- c(pathways, list(p2=unique(c(pathways$p1, sample(names(exampleRanks), 20)))))
+    pathways <- c(pathways, list(p3=sample(pathways$p1, floor(length(pathways$p1) * 0.8))))
+    fgseaRes <- fgsea(pathways, exampleRanks, nperm=nperm, maxSize=500)
+    collapsedPathways <- collapsePathways(fgseaRes[order(pval)],
+                                          pathways, exampleRanks)
+    collapsedPathways$mainPathways
+    expect_identical("p1", collapsedPathways$mainPathways)
+})
