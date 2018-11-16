@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.9.2
+* Added fgseaMultilevel function for more accurate logPval estimation
+
 CHANGES IN VERSION 1.7.1
 * Setting colwidth to zero make column not to be drawn
 * Changable line width in plotEnrichment
