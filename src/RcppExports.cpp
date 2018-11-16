@@ -47,3 +47,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fgseaMultilevelCpp
+NumericVector fgseaMultilevelCpp(const NumericVector& inpSizes, const NumericVector inpEs, const NumericVector& ranks, int samplesSize, int seed, double absEps, bool sign);
+RcppExport SEXP _fgsea_fgseaMultilevelCpp(SEXP inpSizesSEXP, SEXP inpEsSEXP, SEXP ranksSEXP, SEXP samplesSizeSEXP, SEXP seedSEXP, SEXP absEpsSEXP, SEXP signSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type inpSizes(inpSizesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector >::type inpEs(inpEsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type ranks(ranksSEXP);
+    Rcpp::traits::input_parameter< int >::type samplesSize(samplesSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type absEps(absEpsSEXP);
+    Rcpp::traits::input_parameter< bool >::type sign(signSEXP);
+    rcpp_result_gen = Rcpp::wrap(fgseaMultilevelCpp(inpSizes, inpEs, ranks, samplesSize, seed, absEps, sign));
+    return rcpp_result_gen;
+END_RCPP
+}

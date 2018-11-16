@@ -6,11 +6,13 @@
 SEXP _fgsea_calcGseaStatCumulativeBatch(SEXP statsSEXP, SEXP gseaParamSEXP, SEXP pathwayScoresSEXP, SEXP pathwaysSizesSEXP, SEXP iterationsSEXP, SEXP seedSEXP);
 SEXP _fgsea_calcGseaStatCumulative(SEXP statsSEXP, SEXP selectedStatsSEXP, SEXP gseaParamSEXP);
 SEXP _fgsea_calcGseaStatBatchCpp(SEXP statsSEXP, SEXP selectedGenesSEXP, SEXP geneRanksSEXP);
+SEXP _fgsea_fgseaMultilevelCpp(SEXP inpSizesSEXP, SEXP inpEsSEXP, SEXP ranksSEXP, SEXP samplesSizeSEXP, SEXP seedSEXP, SEXP absEpsSEXP, SEXP signSEXP);
 
 R_CallMethodDef callMethods[]  = {
   {"_fgsea_calcGseaStatCumulativeBatch", (DL_FUNC) &_fgsea_calcGseaStatCumulativeBatch, 6},
   {"_fgsea_calcGseaStatCumulative", (DL_FUNC) &_fgsea_calcGseaStatCumulative, 3},
   {"_fgsea_calcGseaStatBatchCpp", (DL_FUNC) &_fgsea_calcGseaStatBatchCpp, 3},
+  {"_fgsea_fgseaMultilevelCpp", (DL_FUNC) &_fgsea_fgseaMultilevelCpp, 7},
   {NULL, NULL, 0}
 };
 

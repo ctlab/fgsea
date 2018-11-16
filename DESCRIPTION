@@ -1,8 +1,9 @@
 Package: fgsea
 Title: Fast Gene Set Enrichment Analysis
-Version: 1.9.1
-Date: 2018-02-21
-Authors@R: c(person("Gennady", "Korotkevich", role = "ctb"),
+Version: 1.9.1.9000
+Date: 2018-12-16
+Authors@R: c(person("Gennady", "Korotkevich", role = "aut"),
+             person("Vladimir", "Sukhov", role = "aut"),
 			 person("Alexey", "Sergushichev", email = "alsergbox@gmail.com", role = c("aut", "cre")))
 Description: The package implements an algorithm for fast gene set enrichment
     analysis. Using the fast algorithm allows to make more permutations and get
@@ -35,8 +36,8 @@ Suggests:
     GEOquery
 License: MIT + file LICENCE
 LazyData: true
-LinkingTo: Rcpp
-RoxygenNote: 6.0.1
+LinkingTo: Rcpp, BH
+RoxygenNote: 6.1.1
 VignetteBuilder: knitr
 URL: https://github.com/ctlab/fgsea/
 BugReports: https://github.com/ctlab/fgsea/issues
