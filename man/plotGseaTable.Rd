@@ -4,8 +4,8 @@
 \alias{plotGseaTable}
 \title{Plots table of enrichment graphs using ggplot and gridExtra.}
 \usage{
-plotGseaTable(pathways, stats, fgseaRes, gseaParam = 1, colwidths = c(5, 3,
-  0.8, 1.2, 1.2))
+plotGseaTable(pathways, stats, fgseaRes, gseaParam = 1,
+  colwidths = c(5, 3, 0.8, 1.2, 1.2))
 }
 \arguments{
 \item{pathways}{Pathways to plot table, as in `fgsea` function.}

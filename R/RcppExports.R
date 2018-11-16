@@ -21,3 +21,7 @@ calcGseaStatBatchCpp <- function(stats, selectedGenes, geneRanks) {
     .Call('_fgsea_calcGseaStatBatchCpp', PACKAGE = 'fgsea', stats, selectedGenes, geneRanks)
 }
 
+fgseaMultilevelCpp <- function(inpSizes, inpEs, ranks, samplesSize, seed, absEps, sign) {
+    .Call('_fgsea_fgseaMultilevelCpp', PACKAGE = 'fgsea', inpSizes, inpEs, ranks, samplesSize, seed, absEps, sign)
+}
+
