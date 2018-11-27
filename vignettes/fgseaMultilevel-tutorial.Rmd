@@ -30,7 +30,7 @@ Running fgseaMultilevel:
 fgseaMultilevelRes <- fgseaMultilevel(pathways = examplePathways, 
                                   stats = exampleRanks,
                                   minSize=15,
-                                  maxSize=500)
+                                  maxSize=500, nproc=2)
 ```
 
 The resulting table contains enrichment scores and p-values:
@@ -70,10 +70,10 @@ Compare `fgsea` with `fgseaMultilevel` on example data.
 set.seed(42)
 
 fgseaRes <- fgsea(pathways=examplePathways, stats=exampleRanks,
-                  minSize=15, maxSize=500, nperm=1000000)
+                  minSize=15, maxSize=500, nperm=10000)
 
 fgseaMultilevelRes <- fgseaMultilevel(pathways=examplePathways, stats=exampleRanks,
-                                  minSize=15, maxSize=500, samplesSize=1000)
+                                  minSize=15, maxSize=500, samplesSize=300, nproc=2)
 
 logPvalsDf <- data.frame(fgseaData=-log10(fgseaRes$pval),
                          fgseaMultilevelData=-log10(fgseaMultilevelRes$pval))
