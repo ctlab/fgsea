@@ -72,7 +72,7 @@ Compare `fgsea` with `fgseaMultilevel` on example data.
 set.seed(42)
 
 fgseaRes <- fgsea(pathways=examplePathways, stats=exampleRanks,
-                  minSize=15, maxSize=500, nperm=10000)
+                  minSize=15, maxSize=500, nperm=10000, BPPARAM=SerialParam())
 
 fgseaMultilevelRes <- fgseaMultilevel(pathways=examplePathways, 
                                       stats=exampleRanks,
