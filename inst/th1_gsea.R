@@ -63,7 +63,7 @@ system2("java",
 ##### Running fast GSEA
 
 ranks <- read.table(rnk.file,
-                    header=T, colClasses = c("character", "numeric"))
+                    header=TRUE, colClasses = c("character", "numeric"))
 ranks <- structure(ranks$t, names=ranks$ID)
 
 set.seed(42)
@@ -97,12 +97,12 @@ fgseaRes <- fgsea(pathways = pathways, stats = ranks,
 print(sum(fgseaRes$padj < 1e-2)) # 77
 
 fgseaRes <- fgseaRes[order(pval)]
-write.table(fgseaRes, file="./inst/extdata/fgsea_res.tsv", sep="\t", quote = F, row.names = F)
+write.table(fgseaRes, file="./inst/extdata/fgsea_res.tsv", sep="\t", quote = FALSE, row.names = FALSE)
 
 system.time(x <- fgsea(pathways=pathways["5990988"], stats=ranks, nperm=1e6, nproc=4))
 
 plotGsea <- function(pathway, stats) {
-    stats <- sort(stats, decreasing = T)
+    stats <- sort(stats, decreasing = TRUE)
     S <- match(pathway, names(stats))
     r <- stats
     p <- 1
@@ -139,13 +139,13 @@ plotGsea <- function(pathway, stats) {
 p <- plotGsea(pathways[["5991022"]], stats=ranks)
 
 plotGseaUpdate <- function(rsample, k, stats) {
-    stats <- sort(stats, decreasing = T)
+    stats <- sort(stats, decreasing = TRUE)
     r <- stats
     p <- 1
 
     prevMax <- -1
 
-    while (T) {
+    while (TRUE) {
         S <- rsample[1:k]
         S <- sort(S)
 

@@ -1,108 +1,74 @@
-fetchSubDataTables <- function(pDt){
-    subDtPos <- pDt[pDt$ES >= 0, ]
-    if (nrow(subDtPos) > 0){
-        subDtPos <- setorder(subDtPos, -size, -ES)
-        subDtPos <- split(subDtPos, subDtPos$size)
-        subDtPos <- subDtPos[order(sample(1:length(subDtPos)))]
-    } else{
-        subDtPos <- NULL
-    }
-    subDtNeg <- pDt[pDt$ES < 0, ]
-    if (nrow(subDtNeg) > 0){
-        subDtNeg <- setorder(subDtNeg, -size, ES)
-        subDtNeg <- split(subDtNeg, subDtNeg$size)
-        subDtNeg <- subDtNeg[order(sample(1:length(subDtNeg)))]
-    } else{
-        subDtNeg <- NULL
-    }
-    return(list(pos=subDtPos, neg=subDtNeg))
-}
-
-lcalcPvals <- function(subDt, stats, samplesSize, seed, absEps, sign=FALSE, BPPARAM=NULL){
-    if (is.null(subDt[["pos"]])){
-        pvals <- bplapply(
-            subDt[["neg"]],
-            function(x) fgseaMultilevelCpp(as.numeric(x[, size]), as.numeric(x[, ES]),
-                                         stats, samplesSize, seed, absEps, sign),
-            BPPARAM=BPPARAM
-        )
-        return(list(pos=NULL, neg=pvals))
-    } else if (is.null(subDt[["neg"]])){
-        pvals <- bplapply(
-            subDt[["pos"]],
-            function(x) fgseaMultilevelCpp(as.numeric(x[, size]), as.numeric(x[, ES]),
-                                         stats, samplesSize, seed, absEps, sign),
-            BPPARAM=BPPARAM
-        )
-        return(list(pos=pvals, neg=NULL))
-    }
-    else{
-        resPos <- bplapply(
-            subDt[["pos"]],
-            function(x) fgseaMultilevelCpp(as.numeric(x[, size]), as.numeric(x[, ES]),
-                                         stats, samplesSize, seed, absEps, sign),
-            BPPARAM=BPPARAM
-        )
-        resNeg <- bplapply(
-            subDt[["neg"]],
-            function(x) fgseaMultilevelCpp(as.numeric(x[, size]), as.numeric(x[, ES]),
-                                         stats, samplesSize, seed, absEps, sign),
-            BPPARAM=BPPARAM
-        )
-        return(list(posEsPval=resPos, negEsPval=resNeg))
-    }
-
-}
-
-#'Runs preranked gene set enrichment analysis.
+#' Runs preranked gene set enrichment analysis.
 #'
-#' This approach is based on multilevel splitting approach,
-#' that server for estimating the probability of rare events.
+#' This feature is based on the adaptive multilevel splitting Monte Carlo approach.
+#' This allows us to exceed the results of simple sampling and calculate arbitrarily small P-values.
 #' @param pathways List of gene sets to check.
 #' @param stats Named vector of gene-level stats. Names should be the same as in 'pathways'
-#' @param samplesSize The size of a random set of genes which in turn has size = pathwaySize
+#' @param sampleSize The size of a random set of genes which in turn has size = pathwaySize
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
 #' @param absEps This parameter sets the boundary for calculating the p value.
-#' @param signed If TRUE returns two probabilities with a sign dependency.
 #' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
 #' @param BPPARAM Parallelization parameter used in bplapply.
+#'  Can be used to specify cluster to run. If not initialized explicitly or
+#'  by setting `nproc` default value `bpparam()` is used.
 #'@export
 #' @import fastmatch
 #' @import data.table
 #' @import BiocParallel
-#'@return A table with GSEA results. Each row corresponds to a tested pathway.
+#' @return A table with GSEA results. Each row corresponds to a tested pathway. The columns are the following
+#' \itemize{
+#' \item pathway -- name of the pathway as in `names(pathway)`;
+#' \item pval -- an enrichment p-value;
+#' \item padj -- a BH-adjusted p-value;
+#' \item ES -- enrichment score, same as in Broad GSEA implementation;
+#' \item NES -- enrichment score normalized to mean enrichment of random samples of the same size;
+#' \item nMoreExtreme` -- a number of times a random gene set had a more
+#' extreme enrichment score value;
+#' \item size -- size of the pathway after removing genes not present in `names(stats)`.
+#' \item leadingEdge -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
+#' }
 #' @examples
 #' data(examplePathways)
 #' data(exampleRanks)
 #' fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks, maxSize=500)
-fgseaMultilevel <- function(pathways, stats, samplesSize=101,
+fgseaMultilevel <- function(pathways, stats, sampleSize=101,
                             minSize=1, maxSize=Inf, absEps=0,
-                            signed = FALSE, nproc=0, BPPARAM=NULL)
+                            nproc=0, BPPARAM=NULL)
 {
+    #To avoid warnings during the check
+    log2err=nMoreExtreme=pathway=pval=padj=NULL
+    ES=NES=size=leadingEdge=NULL
+    .="damn notes"
+
+    nPermSimple <- 1000 # number of samples for initial fgseaSimple run: fast and good enough
+
+    # Warning message for duplicate gene names
+    if (any(duplicated(names(stats)))) {
+        warning("There are duplicate gene names, fgsea may produce unexpected results")
+    }
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing = TRUE)
-    if (samplesSize %% 2 == 0){
-        samplesSize <-  samplesSize + 1
+    if (sampleSize %% 2 == 0){
+        sampleSize <-  sampleSize + 1
     }
     pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, names(stats)))) })
     pathwaysSizes <- sapply(pathwaysFiltered, length)
 
     toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
     m <- length(toKeep)
-
     if (m == 0) {
         return(data.table(pathway=character(),
                           pval=numeric(),
                           padj=numeric(),
+                          log2err=numeric(),
                           ES=numeric(),
+                          NES=numeric(),
                           size=integer(),
                           leadingEdge=list()))
     }
     pathwaysFiltered <- pathwaysFiltered[toKeep]
     pathwaysSizes <- pathwaysSizes[toKeep]
-
-    K <- max(pathwaysSizes)
 
     gseaStatRes <- do.call(rbind,
                            lapply(pathwaysFiltered, calcGseaStat,
@@ -112,131 +78,82 @@ fgseaMultilevel <- function(pathways, stats, samplesSize=101,
     leadingEdges <- mapply("[", list(names(stats)), gseaStatRes[, "leadingEdge"], SIMPLIFY = FALSE)
     pathwayScores <- unlist(gseaStatRes[, "res"])
 
-
-    nperm <- 1000
-    granularity <- 1000
-    permPerProc <- rep(granularity, floor(nperm / granularity))
-    if (nperm - sum(permPerProc) > 0) {
-        permPerProc <- c(permPerProc, nperm - sum(permPerProc))
-    }
-
-    seeds <- sample.int(10^9, 1)
-
-    if (is.null(BPPARAM)) {
-        if (nproc != 0) {
-            if (.Platform$OS.type == "windows") {
-                # windows doesn't support multicore, using snow instead
-                BPPARAM <- SnowParam(workers = nproc)
-            } else {
-                BPPARAM <- MulticoreParam(workers = nproc)
-            }
-        } else {
-            BPPARAM <- bpparam()
-        }
-    }
-
     universe <- seq_along(stats)
 
-    counts <- bplapply(seq_along(permPerProc), function(i) {
-        nperm1 <- permPerProc[i]
-        leEs <- rep(0, m)
-        geEs <- rep(0, m)
-        leZero <- rep(0, m)
-        geZero <- rep(0, m)
-        leZeroSum <- rep(0, m)
-        geZeroSum <- rep(0, m)
-        if (m == 1) {
-            for (i in seq_len(nperm1)) {
-                randSample <- sample.int(length(universe), K)
-                randEsP <- calcGseaStat(
-                    stats = stats,
-                    selectedStats = randSample,
-                    gseaParam = 1)
-                leZero <- leZero + (randEsP <= 0)
-                geZero <- geZero + (randEsP >= 0)
-                leZeroSum <- leZeroSum + pmin(randEsP, 0)
-                geZeroSum <- geZeroSum + pmax(randEsP, 0)
-            }
-        } else {
-            aux <- calcGseaStatCumulativeBatch(
-                stats = stats,
-                gseaParam = 1,
-                pathwayScores = pathwayScores,
-                pathwaysSizes = pathwaysSizes,
-                iterations = nperm1,
-                seed = seeds[i])
-            leEs = get("leEs", aux)
-            geEs = get("geEs", aux)
-            leZero = get("leZero", aux)
-            geZero = get("geZero", aux)
-            leZeroSum = get("leZeroSum", aux)
-            geZeroSum = get("geZeroSum", aux)
-        }
-        data.table(pathway=seq_len(m),
-                   leEs=leEs, geEs=geEs,
-                   leZero=leZero, geZero=geZero,
-                   leZeroSum=leZeroSum, geZeroSum=geZeroSum
-        )
-    }, BPPARAM = BPPARAM)
+    seeds <- sample.int(10^9, 1)
+    BPPARAM <- setUpBPPARAM(nproc=nproc, BPPARAM=BPPARAM)
 
-    counts <- rbindlist(counts)
-    dtES <- counts[, list(leZeroMean = sum(leZeroSum) / sum(leZero),
-                          geZeroMean = sum(geZeroSum) / sum(geZero)), by=.(pathway)]
-    dtES[, ES := pathwayScores[pathway]]
-    dtES[, NES := ES / ifelse(ES > 0, geZeroMean, abs(leZeroMean))]
+    simpleFgseaRes <- fgseaSimpleImpl(pathwayScores=pathwayScores, pathwaysSizes=pathwaysSizes,
+                                      pathwaysFiltered=pathwaysFiltered, leadingEdges=leadingEdges,
+                                      permPerProc=nPermSimple, seeds=seeds, toKeepLength=m,
+                                      stats=stats, BPPARAM=SerialParam())
+    simpleError <- 1/log(2)*(trigamma(simpleFgseaRes$nMoreExtreme) - trigamma(nPermSimple))
+    multError <- sapply((simpleFgseaRes$nMoreExtreme + 1) / nPermSimple, multilevelError, sampleSize)
 
 
-    pathwaysDt <-  data.table(pathway = names(pathwaysFiltered), size = pathwaysSizes,
-                         ES = pathwayScores, NES = dtES$NES,
-                         leadingEdge = I(leadingEdges))
-    subDt <- fetchSubDataTables(pathwaysDt)
-
-    if (is.null(subDt[["pos"]])){
-        result <- rbindlist(subDt[["neg"]])
-    } else if (is.null(subDt[["neg"]])){
-        result <- rbindlist(subDt[["pos"]])
-    } else{
-        result <- rbindlist(c(subDt[["pos"]], subDt[["neg"]]))
+    if (all(multError > simpleError)){
+        simpleFgseaRes[, log2err := 1/log(2)*(trigamma(nMoreExtreme) - trigamma((nPermSimple)))]
+        setorder(simpleFgseaRes, pathway)
+        simpleFgseaRes <- simpleFgseaRes[, .(pathway, pval, padj, log2err, ES, NES, size, leadingEdge)]
+        simpleFgseaRes <- simpleFgseaRes[]
+        return(simpleFgseaRes)
     }
+
+    dtSimpleFgsea <- simpleFgseaRes[simpleError < multError]
+    dtSimpleFgsea[, log2err := 1/log(2)*(trigamma(nMoreExtreme) - trigamma(nPermSimple))]
+
+    dtMultilevel <- simpleFgseaRes[multError < simpleError]
+    dtMultilevel <- dtMultilevel[order(-dtMultilevel$size, -abs(dtMultilevel$ES)), ]
+
+    pathwaysList <- split(dtMultilevel, by="size")
+    # In most cases, this gives a speed increase with parallel launches.
+    indxs <- sample(1:length(pathwaysList))
+    pathwaysList <- pathwaysList[indxs]
 
     seed=sample.int(1e9, size=1)
-    if (signed){
-        pvals_plus <- lcalcPvals(subDt, stats, samplesSize,
-                            seed, absEps, sign=TRUE, BPPARAM=BPPARAM)
-        stats <- sort(stats)
-        pvals_minus <- lcalcPvals(subDt, stats, samplesSize,
-                                 seed, absEps, sign=TRUE, BPPARAM=BPPARAM)
-    } else{
-        pvals <- lcalcPvals(subDt, stats, samplesSize,
-                            seed, absEps, sign=FALSE, BPPARAM=BPPARAM)
-    }
-    if (signed){
-        result[, p_plus := unlist(pvals_plus)]
-        result[, p_minus := unlist(pvals_minus)]
-        result[, p_minus_adj := p.adjust(p_minus, method = "BH")]
-        result[, p_plus_adj := p.adjust(p_plus, method = "BH")]
-        setcolorder(result, c("pathway", "p_plus", "p_plus_adj", "p_minus", "p_minus_adj", "ES", "NES", "size", "leadingEdge"))
-        setorder(result, pathway)
-    } else{
-        result[, pval := unlist(pvals)]
-        result[, padj := p.adjust(pval, method = "BH")]
-        result[, log2err := sqrt(floor(-log2(pval) + 1) * (trigamma((samplesSize+1)/2) - trigamma(samplesSize+1))/log(2))]
-        setcolorder(result, c("pathway", "pval", "padj", "log2err", "ES", "NES", "size", "leadingEdge"))
-        setorder(result, pathway)
-    }
+    pvals <- multilevelImpl(pathwaysList, stats, sampleSize,
+                            seed, absEps, BPPARAM=BPPARAM)
+    result <- rbindlist(pathwaysList)
+    result[, pval := unlist(pvals)]
+    result[, padj := p.adjust(pval, method = "BH")]
+    result[, log2err := sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1))/log(2))]
+    result <- rbindlist(list(result, dtSimpleFgsea), use.names = TRUE)
+    result <- result[, .(pathway, pval, padj, log2err, ES, NES, size, leadingEdge)]
+    setorder(result, pathway)
     result <- result[]
-
     result
 }
 
-#'Calculates the expected error.
+#'Calculates the expected error for the standard deviation of the P-value logarithm.
 #'
 #' @param pval P-value
-#' @param C equivavlent to samplesSize
+#' @param sampleSize equivavlent to sampleSize in fgseaMultilevel
 #'@export
 #'@return The value of the expected error
 #' @examples
-#' expectedError <- multilevelError(pval=1e-10, C=1001)
-multilevelError <- function(pval, C){
-    return(sqrt(floor(-log2(pval) + 1) * (trigamma((C+1)/2) - trigamma(C+1))/log(2)))
+#' expectedError <- multilevelError(pval=1e-10, sampleSize=1001)
+multilevelError <- function(pval, sampleSize){
+    return(sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1))/log(2)))
+}
+
+#' Calculates P-values for preprocessed data.
+#' @param multilevelPathwaysList List of pathways for which P-values will be calculated.
+#' @param stats Named vector of gene-level stats. Names should be the same as in 'pathways'
+#' @param sampleSize The size of a random set of genes which in turn has size = pathwaySize
+#' @param seed `seed` parameter from `fgseaMultilevel`
+#' @param absEps This parameter sets the boundary for calculating the p value.
+#' @param sign This option will be used in future implementations.
+#' @param BPPARAM Parallelization parameter used in bplapply.
+#'  Can be used to specify cluster to run. If not initialized explicitly or
+#'  by setting `nproc` default value `bpparam()` is used.
+#' @return List of P-values.
+multilevelImpl <- function(multilevelPathwaysList, stats, sampleSize, seed, absEps, sign=FALSE, BPPARAM=NULL){
+    #To avoid warnings during the check
+    size=ES=NULL
+    pvals <- bplapply(multilevelPathwaysList,
+                      function(x) fgseaMultilevelCpp(as.numeric(x[, ES]),
+                                                     stats, unique(x[, size]),
+                                                     sampleSize, seed, absEps, sign),
+                      BPPARAM=BPPARAM)
+    return(pvals)
 }

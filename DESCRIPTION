@@ -38,6 +38,7 @@ License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp, BH
 RoxygenNote: 6.1.1
+Encoding: UTF-8
 VignetteBuilder: knitr
 URL: https://github.com/ctlab/fgsea/
 BugReports: https://github.com/ctlab/fgsea/issues
