@@ -30,7 +30,7 @@ void calcPvalues(EsPvalConnection &esPvalObj, vector<double> S, int pathwaySize,
 
 
 // [[Rcpp::plugins(cpp17)]]
-double findEsPval(const EsPvalConnection &esPvalObj, double enrichmentScores, int sampleSize, bool sign);
+double findEsPval(const EsPvalConnection &esPvalObj, double enrichmentScore, int sampleSize, bool sign);
 
 
 // [[Rcpp::plugins(cpp17)]]

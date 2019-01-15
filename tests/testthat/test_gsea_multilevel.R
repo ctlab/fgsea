@@ -66,3 +66,21 @@ test_that("fgseaMultilevel throws a warning when there are duplicate gene names"
     expect_warning(fgseaMultilevel(examplePathways, exampleRanks.dupNames, sampleSize=100, minSize=10, maxSize=50, nproc=1))
 
 })
+
+test_that("fgseaMultilevel: Ties detection in ranking works", {
+    data(examplePathways)
+    data(exampleRanks)
+    exampleRanks.ties <- exampleRanks
+    exampleRanks.ties[41] <- exampleRanks.ties[42]
+    exampleRanks.ties.zero <- exampleRanks.ties
+    exampleRanks.ties.zero[41] <- exampleRanks.ties.zero[42] <- 0
+
+    expect_silent(fgseaMultilevel(examplePathways, exampleRanks,
+                                  minSize=10, maxSize=50, nproc=1))
+
+    expect_warning(fgseaMultilevel(examplePathways, exampleRanks.ties,
+                                   minSize=10, maxSize=50, nproc=1))
+
+    expect_silent(fgseaMultilevel(examplePathways, exampleRanks.ties.zero,
+                                  minSize=10, maxSize=50, nproc=1))
+})
