@@ -421,6 +421,7 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
 #'                                       examplePathways, exampleRanks)
 #' mainPathways <- fgseaRes[pathway %in% collapsedPathways$mainPathways][
 #'                          order(-NES), pathway]
+#' @import progress
 #' @export
 collapsePathways <- function(fgseaRes,
                              pathways,
@@ -435,9 +436,15 @@ collapsePathways <- function(fgseaRes,
 
     parentPathways <- setNames(rep(NA, length(pathways)), names(pathways))
 
+    pb <- progress_bar$new(
+        format = "[:bar] :percent eta: :eta",
+        total = length(pathways), clear = FALSE, width= 60)
+    pb$tick(0)
+
     for (i in seq_along(pathways)) {
         p <- names(pathways)[i]
         if (!is.na(parentPathways[p])) {
+            pb$tick()
             next
         }
 
@@ -462,7 +469,10 @@ collapsePathways <- function(fgseaRes,
         minPval[fgseaRes2$pathway] <- pmin(minPval[fgseaRes2$pathway], fgseaRes2$pval)
 
         parentPathways[names(which(minPval > pval.threshold))] <- p
+        pb$tick()
     }
+
+    pb$terminate()
 
     return(list(mainPathways=names(which(is.na(parentPathways))),
                 parentPathways=parentPathways))

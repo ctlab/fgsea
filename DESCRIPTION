@@ -23,7 +23,8 @@ Imports:
     grid,
     fastmatch,
     Matrix,
-    utils
+    utils,
+    progress
 Suggests:
     testthat,
     knitr,
