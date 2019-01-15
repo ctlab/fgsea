@@ -15,7 +15,6 @@ struct EsPvalConnection
     vector<vector<int> > sets;
     vector<pair<double, double> > random_pairs;
     vector<double> cutoffs;
-    // vector<int> posStatNum;
     int posStatNum;
     EsPvalConnection(int setsSize)
     {
@@ -26,12 +25,12 @@ struct EsPvalConnection
 
 // [[Rcpp::plugins(cpp17)]]
 void calcPvalues(EsPvalConnection &esPvalObj, vector<double> S, int pathwaySize,
-                 double ES, int samplesSize, int seed, double absEps);
+                 double ES, int sampleSize, int seed, double absEps);
 
 
 
 // [[Rcpp::plugins(cpp17)]]
-double findEsPval(const EsPvalConnection &esPvalObj, double inpES, int samplesSize, bool sign);
+double findEsPval(const EsPvalConnection &esPvalObj, double enrichmentScores, int sampleSize, bool sign);
 
 
 // [[Rcpp::plugins(cpp17)]]

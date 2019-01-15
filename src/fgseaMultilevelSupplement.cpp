@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <set>
 using namespace std;
 
 
@@ -21,11 +22,11 @@ double calcES(const vector<double>& S, const vector<int>& p, double NS) {
   int last = -1;
   for (int pos : p) {
     cur -= q1 * (pos - last - 1);
-    if (fabs(cur) > fabs(res)) {
+    if (abs(cur) > abs(res)) {
       res = cur;
     }
     cur += q2 * S[pos];
-    if (fabs(cur) > fabs(res)) {
+    if (abs(cur) > abs(res)) {
       res = cur;
     }
     last = pos;
@@ -134,10 +135,12 @@ void sort_by_scores(const vector<double>& S, vector< vector<int> >& sets)
   }
   sort(scores_pos.begin(), scores_pos.end());
 
-  for (int i = 0; i < (sets.size() / 2); i++)
-  {
-    swap(sets[i], sets[scores_pos[i].second]);
-  }
+  vector<vector<int> > res(sets.size());
+
+  for (int i = 0; i < sets.size(); i++) {
+      swap(res[i], sets[scores_pos[i].second]);
+   }
+  swap(res, sets);
 }
 
 bool check_medians(const vector<double>& S,const vector<vector<int> >& sets)
@@ -153,82 +156,75 @@ bool check_medians(const vector<double>& S,const vector<vector<int> >& sets)
     vector<double> left_part(ES_vector.begin(), middle_it - 1);
     vector<double> right_part(middle_it + 1, ES_vector.end());
 
-    sort(left_part.begin(), left_part.end());
-    sort(right_part.begin(), right_part.end());
+    nth_element(left_part.begin(),
+                left_part.begin() + left_part.size() / 2,
+                left_part.end());
+     nth_element(right_part.begin(),
+                 right_part.begin() + right_part.size() / 2,
+                 right_part.end());
 
-    if (left_part[left_part.size() / 2] > right_part[right_part.size() / 2])
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    double left_median = left_part[left_part.size() / 2];
+    double right_median = right_part[right_part.size() / 2]; 
+    return (left_median > right_median);
   }
   else if (ES_vector.size() == 2)
   {
-    if (ES_vector[0] > ES_vector[1])
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return ES_vector[0] > ES_vector[1];
   }
   else return false;
 }
 
-void samplesDichotomy(EsPvalConnection &esPvalObj, int samplesSize, const vector<double> &S)
+void duplicateSets(EsPvalConnection &esPvalObj, int sampleSize, const vector<double> &S)
 {
-    int posStatCount = 0;
-    vector<pair<double, int> > stats(samplesSize);
-    for (int sample_id = 0; sample_id < samplesSize; sample_id++)
-    {
-        double stat = calcPositiveES(S, esPvalObj.sets[sample_id]);
-        double stat_real = calcES(S, esPvalObj.sets[sample_id]);
-        if (esPvalObj.cutoffs.empty())
-        {
-            esPvalObj.random_pairs.emplace_back(stat, stat_real);
-        }
-        if (stat_real > 0)
-        {
-            posStatCount++;
-        }
-        stats[sample_id] = make_pair(stat, sample_id);
-    }
-    sort(stats.begin(), stats.end());
-    if (esPvalObj.posStatNum == 0)
-    {
-        esPvalObj.posStatNum = posStatCount;
-    }
+  // Duplicate sets of genes with enrichment score greater than the median value.
+  int posStatCount = 0;
+  vector<pair<double, int> > stats(sampleSize);
+  for (int sample_id = 0; sample_id < sampleSize; sample_id++)
+  {
+      double stat = calcPositiveES(S, esPvalObj.sets[sample_id]);
+      double stat_real = calcES(S, esPvalObj.sets[sample_id]);
+      if (esPvalObj.cutoffs.empty())
+      {
+          esPvalObj.random_pairs.emplace_back(stat, stat_real);
+      }
+      if (stat_real > 0)
+      {
+          posStatCount++;
+      }
+      stats[sample_id] = make_pair(stat, sample_id);
+  }
+  sort(stats.begin(), stats.end());
+  if (esPvalObj.posStatNum == 0)
+  {
+      esPvalObj.posStatNum = posStatCount;
+  }
 
 
-    for (int sample_id = 0; 2 * sample_id < samplesSize; sample_id++) {
-      esPvalObj.cutoffs.emplace_back(stats[sample_id].first);
-    }
+  for (int sample_id = 0; 2 * sample_id < sampleSize; sample_id++) {
+    esPvalObj.cutoffs.emplace_back(stats[sample_id].first);
+  }
 
 
 
-    vector< vector<int> > new_sets;
-    for (int sample_id = 0; 2 * sample_id < samplesSize - 2; sample_id++) {
-        for (int rep = 0; rep < 2; rep++) {
-            new_sets.push_back(esPvalObj.sets[stats[samplesSize - 1 - sample_id].second]);
-        }
-    }
+  vector< vector<int> > new_sets;
+  for (int sample_id = 0; 2 * sample_id < sampleSize - 2; sample_id++) {
+      for (int rep = 0; rep < 2; rep++) {
+          new_sets.push_back(esPvalObj.sets[stats[sampleSize - 1 - sample_id].second]);
+      }
+  }
 
-    new_sets.push_back(esPvalObj.sets[stats[samplesSize >> 1].second]);
-    swap(esPvalObj.sets, new_sets);
-    sort_by_scores(S, esPvalObj.sets);
-    return;
+  new_sets.push_back(esPvalObj.sets[stats[sampleSize >> 1].second]);
+  swap(esPvalObj.sets, new_sets);
+  sort_by_scores(S, esPvalObj.sets);
+  return;
 }
 
 void calcPvalues(EsPvalConnection &esPvalObj, vector<double> S, int pathwaySize,
-                 double ES, int samplesSize, int seed, double absEps)
+                 double ES, int sampleSize, int seed, double absEps)
 {
     mt19937 gen(seed);
     uniform_int_distribution<> uid_n(0, S.size() - 1);
-    for (int sample_id = 0; sample_id < samplesSize; sample_id++)
+    for (int sample_id = 0; sample_id < sampleSize; sample_id++)
     {
 
         set<int> random_set;
@@ -239,11 +235,11 @@ void calcPvalues(EsPvalConnection &esPvalObj, vector<double> S, int pathwaySize,
         esPvalObj.sets[sample_id] = vector<int>(random_set.begin(), random_set.end());
     }
 
-    samplesDichotomy(esPvalObj, samplesSize, S);
+    duplicateSets(esPvalObj, sampleSize, S);
 
     while (true)
     {
-      int k = 2*(esPvalObj.cutoffs.size()/(samplesSize + 1));
+      int k = 2 * (esPvalObj.cutoffs.size() / (sampleSize + 1));
       if (ES < esPvalObj.cutoffs.back() || k > -log2(absEps)){
         break;
       }
@@ -254,40 +250,40 @@ void calcPvalues(EsPvalConnection &esPvalObj, vector<double> S, int pathwaySize,
           median_checker = true;
           todo_num = i*4;
         }
-        for (int sample_id = 0; sample_id < samplesSize; sample_id++) {
+        for (int sample_id = 0; sample_id < sampleSize; sample_id++) {
             perturbate(S, esPvalObj.sets[sample_id], esPvalObj.cutoffs.back(), gen, 0.1);
         }
       }
-      samplesDichotomy(esPvalObj, samplesSize, S);
+      duplicateSets(esPvalObj, sampleSize, S);
     }
     return;
 }
 
 
-double findEsPval(const EsPvalConnection &esPvalObj, double inpES, int samplesSize, bool sign)
+double findEsPval(const EsPvalConnection &esPvalObj, double enrichmentScores, int sampleSize, bool sign)
 {
-    int halfSize = (samplesSize + 1) / 2;
+    int halfSize = (sampleSize + 1) / 2;
     double pval = 0;
-    double probStatPos = pow(M_E, boost::math::digamma(esPvalObj.posStatNum) - boost::math::digamma(samplesSize + 1));
-    if (inpES < esPvalObj.cutoffs.front())
+    double probStatPos = pow(M_E, boost::math::digamma(esPvalObj.posStatNum) - boost::math::digamma(sampleSize + 1));
+    if (enrichmentScores < esPvalObj.cutoffs.front())
     {
-        pval = pow(M_E, boost::math::digamma(samplesSize) - boost::math::digamma(samplesSize + 1));
+        pval = pow(M_E, boost::math::digamma(sampleSize) - boost::math::digamma(sampleSize + 1));
     }
-    else if (inpES > esPvalObj.cutoffs.back())
+    else if (enrichmentScores > esPvalObj.cutoffs.back())
     {
       int k = (esPvalObj.cutoffs.size()/halfSize);
-      int remainder = samplesSize - (esPvalObj.cutoffs.size()) % (halfSize);
-      double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(samplesSize + 1);
-      double adjLogPval = k*adjLog + (boost::math::digamma(remainder) - boost::math::digamma(samplesSize + 1));
+      int remainder = sampleSize - (esPvalObj.cutoffs.size()) % (halfSize);
+      double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(sampleSize + 1);
+      double adjLogPval = k*adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
       pval = pow(M_E, adjLogPval);
     }
     else
     {
-      auto it = lower_bound(esPvalObj.cutoffs.begin(), esPvalObj.cutoffs.end(), inpES);
+      auto it = lower_bound(esPvalObj.cutoffs.begin(), esPvalObj.cutoffs.end(), enrichmentScores);
       int k = ((it - esPvalObj.cutoffs.begin()))/halfSize;
-      int remainder = samplesSize - (it - esPvalObj.cutoffs.begin()) % (halfSize);
-      double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(samplesSize + 1);
-      double adjLogPval = k*adjLog + (boost::math::digamma(remainder) - boost::math::digamma(samplesSize + 1));
+      int remainder = sampleSize - (it - esPvalObj.cutoffs.begin()) % (halfSize);
+      double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(sampleSize + 1);
+      double adjLogPval = k*adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
       pval = pow(M_E, adjLogPval);
     }
     if (sign){
@@ -299,9 +295,9 @@ double findEsPval(const EsPvalConnection &esPvalObj, double inpES, int samplesSi
       int totalSets = 0;
       for (auto &pp : esPvalObj.random_pairs)
       {
-          if (pp.second <= inpES)
+          if (pp.second <= enrichmentScores)
           {
-              badSets += (pp.first > inpES);
+              badSets += (pp.first > enrichmentScores);
           }
           totalSets++;
       }

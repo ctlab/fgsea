@@ -22,8 +22,8 @@ fit <- lmFit(es, es.design)
 fit2 <- contrasts.fit(fit, makeContrasts(conditionTh1-conditionNaive,
                                          levels=es.design))
 fit2 <- eBayes(fit2)
-de <- data.table(topTable(fit2, adjust.method="BH", number=12000, sort.by = "B"), keep.rownames = T)
+de <- data.table(topTable(fit2, adjust.method="BH", number=12000, sort.by = "B"), keep.rownames = TRUE)
 
 
 ranks <- de[order(t), list(rn, t)]
-write.table(ranks, "inst/extdata/naive.vs.th1.rnk", sep="\t", quote = F, row.names = F)
+write.table(ranks, "inst/extdata/naive.vs.th1.rnk", sep="\t", quote = FALSE, row.names = FALSE)
