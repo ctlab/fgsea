@@ -78,9 +78,17 @@ test_that("fgseaLabel works", {
 
 test_that("fgseaLabel example works", {
     skip_on_bioc()
-    skip_on_travis() # not working on travis for some reason, check later (2018-04-10)
-    example("fgseaLabel", run.donttest = TRUE, local = FALSE)
-    expect_true(!is.null(fgseaRes))
+
+    # hack to run the example
+    helpFile <- system.file("../man/fgseaLabel.Rd", package="fgsea")
+    expect_true(!is.null(helpFile))
+
+    tcon <- textConnection("exampleCode", open="w", local=TRUE)
+    tools::Rd2ex(helpFile, out=tcon)
+    close(tcon)
+
+    econ <- textConnection(exampleCode, open="r")
+    source(econ)
 })
 
 test_that("Ties detection in ranking works", {
