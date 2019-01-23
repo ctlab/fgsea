@@ -79,16 +79,21 @@ test_that("fgseaLabel works", {
 test_that("fgseaLabel example works", {
     skip_on_bioc()
 
-    # hack to run the example
+    # hack to run the example with devtools
     helpFile <- system.file("../man/fgseaLabel.Rd", package="fgsea")
-    expect_true(!is.null(helpFile))
 
-    tcon <- textConnection("exampleCode", open="w", local=TRUE)
-    tools::Rd2ex(helpFile, out=tcon)
-    close(tcon)
+    if (helpFile == "") {
+        example("fgseaLabel", run.donttest = TRUE, local = FALSE)
+    } else {
+        tcon <- textConnection("exampleCode", open="w", local=TRUE)
+        tools::Rd2ex(helpFile, out=tcon)
+        close(tcon)
 
-    econ <- textConnection(exampleCode, open="r")
-    source(econ)
+        econ <- textConnection(exampleCode, open="r")
+        source(econ)
+    }
+
+    expect_true(!is.null(fgseaRes))
 })
 
 test_that("Ties detection in ranking works", {
