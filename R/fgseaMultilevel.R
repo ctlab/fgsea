@@ -41,7 +41,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
     }
 
     # Error if stats is not named
-    if (!is.null(names(stats))) {
+    if (is.null(names(stats))) {
         stop("stats should be named")
     }
 

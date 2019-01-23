@@ -134,14 +134,14 @@ fgsea <- function(pathways, stats, nperm,
                   nproc=0,
                   gseaParam=1,
                   BPPARAM=NULL) {
-  
+
     # Error if pathways is not a list
     if (!is.list(pathways)) {
         stop("pathways should be a list with each element containing names of the stats argument")
     }
-    
+
     # Error if stats is not named
-    if (!is.null(names(stats))) {
+    if (is.null(names(stats))) {
         stop("stats should be named")
     }
 
