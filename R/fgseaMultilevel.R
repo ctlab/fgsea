@@ -35,6 +35,16 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
                             minSize=1, maxSize=Inf, absEps=0,
                             nproc=0, BPPARAM=NULL)
 {
+    # Error if pathways is not a list
+    if (!is.list(pathways)) {
+        stop("pathways should be a list with each element containing names of the stats argument")
+    }
+
+    # Error if stats is not named
+    if (!is.null(names(stats))) {
+        stop("stats should be named")
+    }
+
     # Warning message for ties in stats
     ties <- sum(duplicated(stats[stats != 0]))
     if (ties != 0) {
