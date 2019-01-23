@@ -200,7 +200,7 @@ void duplicateSets(EsPvalConnection &esPvalObj, int sampleSize, const vector<dou
   }
 
 
-  for (int sample_id = 0; 2 * sample_id < sampleSize; sample_id++) {
+  for (int sample_id = 0; 2 * sample_id < sampleSize - 1; sample_id++) {
     esPvalObj.cutoffs.emplace_back(stats[sample_id].first);
   }
 
@@ -260,30 +260,30 @@ void calcPvalues(EsPvalConnection &esPvalObj, vector<double> S, int pathwaySize,
 }
 
 
-double findEsPval(const EsPvalConnection &esPvalObj, double enrichmentScores, int sampleSize, bool sign)
+double findEsPval(const EsPvalConnection &esPvalObj, double enrichmentScore, int sampleSize, bool sign)
 {
     int halfSize = (sampleSize + 1) / 2;
     double pval = 0;
     double probStatPos = pow(M_E, boost::math::digamma(esPvalObj.posStatNum) - boost::math::digamma(sampleSize + 1));
-    if (enrichmentScores < esPvalObj.cutoffs.front())
+    if (enrichmentScore < esPvalObj.cutoffs.front())
     {
         pval = pow(M_E, boost::math::digamma(sampleSize) - boost::math::digamma(sampleSize + 1));
     }
-    else if (enrichmentScores > esPvalObj.cutoffs.back())
+    else if (enrichmentScore > esPvalObj.cutoffs.back())
     {
-      int k = (esPvalObj.cutoffs.size()/halfSize);
+      int k = (esPvalObj.cutoffs.size() / halfSize);
       int remainder = sampleSize - (esPvalObj.cutoffs.size()) % (halfSize);
       double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(sampleSize + 1);
-      double adjLogPval = k*adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
+      double adjLogPval = k * adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
       pval = pow(M_E, adjLogPval);
     }
     else
     {
-      auto it = lower_bound(esPvalObj.cutoffs.begin(), esPvalObj.cutoffs.end(), enrichmentScores);
-      int k = ((it - esPvalObj.cutoffs.begin()))/halfSize;
+      auto it = lower_bound(esPvalObj.cutoffs.begin(), esPvalObj.cutoffs.end(), enrichmentScore);
+      int k = ((it - esPvalObj.cutoffs.begin())) / halfSize;
       int remainder = sampleSize - (it - esPvalObj.cutoffs.begin()) % (halfSize);
       double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(sampleSize + 1);
-      double adjLogPval = k*adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
+      double adjLogPval = k * adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
       pval = pow(M_E, adjLogPval);
     }
     if (sign){
@@ -295,9 +295,9 @@ double findEsPval(const EsPvalConnection &esPvalObj, double enrichmentScores, in
       int totalSets = 0;
       for (auto &pp : esPvalObj.random_pairs)
       {
-          if (pp.second <= enrichmentScores)
+          if (pp.second <= enrichmentScore)
           {
-              badSets += (pp.first > enrichmentScores);
+              badSets += (pp.first > enrichmentScore);
           }
           totalSets++;
       }

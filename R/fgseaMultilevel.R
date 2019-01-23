@@ -21,10 +21,9 @@
 #' \item pathway -- name of the pathway as in `names(pathway)`;
 #' \item pval -- an enrichment p-value;
 #' \item padj -- a BH-adjusted p-value;
+#' \item log2err -- the expected error for the standard deviation of the P-value logarithm.
 #' \item ES -- enrichment score, same as in Broad GSEA implementation;
 #' \item NES -- enrichment score normalized to mean enrichment of random samples of the same size;
-#' \item nMoreExtreme` -- a number of times a random gene set had a more
-#' extreme enrichment score value;
 #' \item size -- size of the pathway after removing genes not present in `names(stats)`.
 #' \item leadingEdge -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
 #' }
@@ -36,17 +35,24 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
                             minSize=1, maxSize=Inf, absEps=0,
                             nproc=0, BPPARAM=NULL)
 {
+    # Warning message for ties in stats
+    ties <- sum(duplicated(stats[stats != 0]))
+    if (ties != 0) {
+        warning("There are ties in the preranked stats (",
+                paste(round(ties * 100 / length(stats), digits = 2)),
+                "% of the list).\n",
+                "The order of those tied genes will be arbitrary, which may produce unexpected results.")
+    }
+    # Warning message for duplicate gene names
+    if (any(duplicated(names(stats)))) {
+        warning("There are duplicate gene names, fgsea may produce unexpected results")
+    }
     #To avoid warnings during the check
     log2err=nMoreExtreme=pathway=pval=padj=NULL
     ES=NES=size=leadingEdge=NULL
     .="damn notes"
 
     nPermSimple <- 1000 # number of samples for initial fgseaSimple run: fast and good enough
-
-    # Warning message for duplicate gene names
-    if (any(duplicated(names(stats)))) {
-        warning("There are duplicate gene names, fgsea may produce unexpected results")
-    }
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing = TRUE)
     if (sampleSize %% 2 == 0){
@@ -101,19 +107,17 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
     dtSimpleFgsea <- simpleFgseaRes[simpleError < multError]
     dtSimpleFgsea[, log2err := 1/log(2)*(trigamma(nMoreExtreme) - trigamma(nPermSimple))]
-
     dtMultilevel <- simpleFgseaRes[multError < simpleError]
-    dtMultilevel <- dtMultilevel[order(-dtMultilevel$size, -abs(dtMultilevel$ES)), ]
 
-    pathwaysList <- split(dtMultilevel, by="size")
+    multilevelPathwaysList <- split(dtMultilevel, by="size")
     # In most cases, this gives a speed increase with parallel launches.
-    indxs <- sample(1:length(pathwaysList))
-    pathwaysList <- pathwaysList[indxs]
+    indxs <- sample(1:length(multilevelPathwaysList))
+    multilevelPathwaysList <- multilevelPathwaysList[indxs]
 
     seed=sample.int(1e9, size=1)
-    pvals <- multilevelImpl(pathwaysList, stats, sampleSize,
+    pvals <- multilevelImpl(multilevelPathwaysList, stats, sampleSize,
                             seed, absEps, BPPARAM=BPPARAM)
-    result <- rbindlist(pathwaysList)
+    result <- rbindlist(multilevelPathwaysList)
     result[, pval := unlist(pvals)]
     result[, padj := p.adjust(pval, method = "BH")]
     result[, log2err := sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1))/log(2))]
@@ -147,12 +151,12 @@ multilevelError <- function(pval, sampleSize){
 #'  Can be used to specify cluster to run. If not initialized explicitly or
 #'  by setting `nproc` default value `bpparam()` is used.
 #' @return List of P-values.
-multilevelImpl <- function(multilevelPathwaysList, stats, sampleSize, seed, absEps, sign=FALSE, BPPARAM=NULL){
+multilevelImpl <- function(multilevelPathwaysList, stats, sampleSize,
+                           seed, absEps, sign=FALSE, BPPARAM=NULL){
     #To avoid warnings during the check
     size=ES=NULL
     pvals <- bplapply(multilevelPathwaysList,
-                      function(x) fgseaMultilevelCpp(as.numeric(x[, ES]),
-                                                     stats, unique(x[, size]),
+                      function(x) fgseaMultilevelCpp(x[, ES], stats, unique(x[, size]),
                                                      sampleSize, seed, absEps, sign),
                       BPPARAM=BPPARAM)
     return(pvals)
