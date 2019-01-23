@@ -1,6 +1,6 @@
 Package: fgsea
 Title: Fast Gene Set Enrichment Analysis
-Version: 1.9.2
+Version: 1.9.3
 Date: 2019-01-15
 Authors@R: c(person("Gennady", "Korotkevich", role = "aut"),
              person("Vladimir", "Sukhov", role = "aut"),
