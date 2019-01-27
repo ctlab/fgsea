@@ -11,6 +11,7 @@ using namespace std;
 #include <Rcpp.h>
 using namespace Rcpp;
 
+
 double calcES(const vector<double>& S, const vector<int>& p, double NS) {
   // p must be sorted
   int n = (int) S.size();
@@ -34,6 +35,7 @@ double calcES(const vector<double>& S, const vector<int>& p, double NS) {
   return res;
 }
 
+
 double calcES(const vector<double>& S, const vector<int>& p) {
   // p must be sorted
   double NS = 0.0;
@@ -42,6 +44,7 @@ double calcES(const vector<double>& S, const vector<int>& p) {
   }
   return calcES(S, p, NS);
 }
+
 
 double calcPositiveES(const vector<double>& S, const vector<int>&p, double NS) {
   // p must be sorted
@@ -60,6 +63,7 @@ double calcPositiveES(const vector<double>& S, const vector<int>&p, double NS) {
   return res;
 }
 
+
 double calcPositiveES(const vector<double>& S, const vector<int>& p) {
   // p must be sorted
   double NS = 0.0;
@@ -68,6 +72,7 @@ double calcPositiveES(const vector<double>& S, const vector<int>& p) {
   }
   return calcPositiveES(S, p, NS);
 }
+
 
 int compareStat(const vector<double>& S, const vector<int>& p, double NS, double bound) {
   // p must be sorted
@@ -87,7 +92,8 @@ int compareStat(const vector<double>& S, const vector<int>& p, double NS, double
   return -1;
 }
 
-void perturbate(const vector<double> &S, vector<int> &p, double bound, mt19937& rng, double pert_coeff) {
+
+int perturbate(const vector<double> &S, vector<int> &p, double bound, mt19937& rng, double pert_coeff) {
   int n = (int) S.size();
   int k = (int) p.size();
   uniform_int_distribution<> uid_n(0, n - 1);
@@ -97,6 +103,7 @@ void perturbate(const vector<double> &S, vector<int> &p, double bound, mt19937& 
     NS += S[pos];
   }
   int iters = max(1, (int) (k * pert_coeff));
+  int moves = 0;
   for (int i = 0; i < iters; i++) {
     int id = uid_k(rng);
     int old = p[id];
@@ -121,58 +128,14 @@ void perturbate(const vector<double> &S, vector<int> &p, double bound, mt19937& 
         swap(p[id], p[id + 1]);
         id++;
       }
+    } else {
+      moves ++;
     }
     NS += S[p[id]];
   }
+  return moves;
 }
 
-void sort_by_scores(const vector<double>& S, vector< vector<int> >& sets)
-{
-  vector< pair<double, int>> scores_pos;
-  for (int i = 0; i < sets.size(); i++)
-  {
-    scores_pos.push_back(make_pair(calcPositiveES(S, sets[i]), i));
-  }
-  sort(scores_pos.begin(), scores_pos.end());
-
-  vector<vector<int> > res(sets.size());
-
-  for (int i = 0; i < sets.size(); i++) {
-      swap(res[i], sets[scores_pos[i].second]);
-   }
-  swap(res, sets);
-}
-
-bool check_medians(const vector<double>& S,const vector<vector<int> >& sets)
-{
-  vector<double> ES_vector(sets.size());
-  for (int i = 0; i < ES_vector.size(); i++)
-  {
-    ES_vector[i] = calcPositiveES(S, sets[i]);
-  }
-  if (ES_vector.size() > 2)
-  {
-    auto middle_it = ES_vector.begin() + (ES_vector.size()/2);
-    vector<double> left_part(ES_vector.begin(), middle_it - 1);
-    vector<double> right_part(middle_it + 1, ES_vector.end());
-
-    nth_element(left_part.begin(),
-                left_part.begin() + left_part.size() / 2,
-                left_part.end());
-     nth_element(right_part.begin(),
-                 right_part.begin() + right_part.size() / 2,
-                 right_part.end());
-
-    double left_median = left_part[left_part.size() / 2];
-    double right_median = right_part[right_part.size() / 2]; 
-    return (left_median > right_median);
-  }
-  else if (ES_vector.size() == 2)
-  {
-    return ES_vector[0] > ES_vector[1];
-  }
-  else return false;
-}
 
 void duplicateSets(EsPvalConnection &esPvalObj, int sampleSize, const vector<double> &S)
 {
@@ -200,7 +163,7 @@ void duplicateSets(EsPvalConnection &esPvalObj, int sampleSize, const vector<dou
   }
 
 
-  for (int sample_id = 0; 2 * sample_id < sampleSize - 1; sample_id++) {
+  for (int sample_id = 0; 2 * sample_id < sampleSize; sample_id++) {
     esPvalObj.cutoffs.emplace_back(stats[sample_id].first);
   }
 
@@ -215,9 +178,9 @@ void duplicateSets(EsPvalConnection &esPvalObj, int sampleSize, const vector<dou
 
   new_sets.push_back(esPvalObj.sets[stats[sampleSize >> 1].second]);
   swap(esPvalObj.sets, new_sets);
-  sort_by_scores(S, esPvalObj.sets);
   return;
 }
+
 
 void calcPvalues(EsPvalConnection &esPvalObj, vector<double> S, int pathwaySize,
                  double ES, int sampleSize, int seed, double absEps)
@@ -243,18 +206,12 @@ void calcPvalues(EsPvalConnection &esPvalObj, vector<double> S, int pathwaySize,
       if (ES < esPvalObj.cutoffs.back() || k > -log2(absEps)){
         break;
       }
-      bool median_checker = false;
-      int  todo_num = 0;
-      for (int i = 0; (!median_checker) || (i < todo_num); i++){
-        if (check_medians(S, esPvalObj.sets) && todo_num == 0){
-          median_checker = true;
-          todo_num = i*4;
-        }
-        for (int sample_id = 0; sample_id < sampleSize; sample_id++) {
-            perturbate(S, esPvalObj.sets[sample_id], esPvalObj.cutoffs.back(), gen, 0.1);
-        }
-      }
-      duplicateSets(esPvalObj, sampleSize, S);
+      for (int moves = 0; moves < sampleSize * pathwaySize; ){
+         for (int sample_id = 0; sample_id < sampleSize; sample_id++) {
+           moves += perturbate(S, esPvalObj.sets[sample_id], esPvalObj.cutoffs.back(), gen, 0.1);
+         }
+       }
+       duplicateSets(esPvalObj, sampleSize, S);
     }
     return;
 }
@@ -264,28 +221,15 @@ double findEsPval(const EsPvalConnection &esPvalObj, double enrichmentScore, int
 {
     int halfSize = (sampleSize + 1) / 2;
     double pval = 0;
-    double probStatPos = pow(M_E, boost::math::digamma(esPvalObj.posStatNum) - boost::math::digamma(sampleSize + 1));
-    if (enrichmentScore < esPvalObj.cutoffs.front())
-    {
-        pval = pow(M_E, boost::math::digamma(sampleSize) - boost::math::digamma(sampleSize + 1));
-    }
-    else if (enrichmentScore > esPvalObj.cutoffs.back())
-    {
-      int k = (esPvalObj.cutoffs.size() / halfSize);
-      int remainder = sampleSize - (esPvalObj.cutoffs.size()) % (halfSize);
-      double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(sampleSize + 1);
-      double adjLogPval = k * adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
-      pval = pow(M_E, adjLogPval);
-    }
-    else
-    {
-      auto it = lower_bound(esPvalObj.cutoffs.begin(), esPvalObj.cutoffs.end(), enrichmentScore);
-      int k = ((it - esPvalObj.cutoffs.begin())) / halfSize;
-      int remainder = sampleSize - (it - esPvalObj.cutoffs.begin()) % (halfSize);
-      double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(sampleSize + 1);
-      double adjLogPval = k * adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
-      pval = pow(M_E, adjLogPval);
-    }
+    double probStatPos = exp(boost::math::digamma(esPvalObj.posStatNum) - boost::math::digamma(sampleSize + 1));
+
+    auto it = lower_bound(esPvalObj.cutoffs.begin(), esPvalObj.cutoffs.end(), enrichmentScore);
+    int k = ((it - esPvalObj.cutoffs.begin())) / halfSize;
+    int remainder = sampleSize - (it - esPvalObj.cutoffs.begin()) % (halfSize);
+    double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(sampleSize + 1);
+    double adjLogPval = k * adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
+    pval = exp(adjLogPval);
+
     if (sign){
       pval = max(0.0, min(1.0, pval));
     }
