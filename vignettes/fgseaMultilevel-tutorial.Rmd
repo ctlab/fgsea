@@ -15,6 +15,7 @@ vignette: >
 library(fgsea)
 library(ggplot2)
 library(BiocParallel)
+register(SerialParam())
 ```
 
 ## Quick run
@@ -31,8 +32,7 @@ Running fgseaMultilevel:
 fgseaMultilevelRes <- fgseaMultilevel(pathways = examplePathways, 
                                       stats = exampleRanks,
                                       minSize=15,
-                                      maxSize=500,
-                                      BPPARAM=SerialParam())
+                                      maxSize=500)
 ```
 
 The resulting table contains enrichment scores and p-values:
