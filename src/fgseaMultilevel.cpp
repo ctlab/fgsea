@@ -20,16 +20,16 @@ NumericVector fgseaMultilevelCpp(const NumericVector& enrichmentScores,
 
     const vector<double> esVector = as<std::vector<double> >(enrichmentScores);
 
-    EsPvalConnection epcPosSide(sampleSize);
-    EsPvalConnection epcNegSide(sampleSize);
+    EsRuler esRulerPos(posRanks, sampleSize, pathwaySize);
+    EsRuler esRulerNeg(negRanks, sampleSize, pathwaySize);
 
     double maxES = *max_element(begin(esVector), end(esVector));
     double minES = *min_element(begin(esVector), end(esVector));
     if (maxES >= 0){
-        calcPvalues(epcPosSide, posRanks, pathwaySize, abs(maxES), sampleSize, seed, absEps);
+        esRulerPos.extend(abs(maxES), seed, absEps);
     }
     if (minES < 0){
-        calcPvalues(epcNegSide, negRanks, pathwaySize, abs(minES), sampleSize, seed, absEps);
+        esRulerNeg.extend(abs(minES), seed, absEps);
     }
 
     vector<double> result;
@@ -38,11 +38,11 @@ NumericVector fgseaMultilevelCpp(const NumericVector& enrichmentScores,
         double pvalue;
         double currentES = esVector[i];
         if (currentES >= 0.0){
-            pvalue = findEsPval(epcPosSide, abs(currentES), sampleSize, sign);
+            pvalue = esRulerPos.getPvalue(abs(currentES), absEps, sign);
             result.emplace_back(pvalue);
         }
         else{
-            pvalue = findEsPval(epcNegSide, abs(currentES), sampleSize, sign);
+            pvalue = esRulerNeg.getPvalue(abs(currentES), absEps, sign);
             result.emplace_back(pvalue);
         }
     }

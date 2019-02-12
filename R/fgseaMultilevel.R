@@ -53,10 +53,18 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
                 "% of the list).\n",
                 "The order of those tied genes will be arbitrary, which may produce unexpected results.")
     }
+
     # Warning message for duplicate gene names
     if (any(duplicated(names(stats)))) {
         warning("There are duplicate gene names, fgsea may produce unexpected results")
     }
+
+    # Warning message for to small value for sampleSize
+    if (sampleSize < 3){
+        warning("sampleSize is too small, so sampleSize = 3 is set.")
+        sampleSize <- max(3, sampleSize)
+    }
+
     #To avoid warnings during the check
     log2err=nMoreExtreme=pathway=pval=padj=NULL
     ES=NES=size=leadingEdge=NULL
@@ -64,6 +72,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
     nPermSimple <- 1000 # number of samples for initial fgseaSimple run: fast and good enough
     minSize <- max(minSize, 1)
+    absEps <- max(0, min(1, absEps))
     stats <- sort(stats, decreasing = TRUE)
     if (sampleSize %% 2 == 0){
         sampleSize <-  sampleSize + 1
@@ -127,11 +136,15 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
     seed=sample.int(1e9, size=1)
     pvals <- multilevelImpl(multilevelPathwaysList, stats, sampleSize,
                             seed, absEps, BPPARAM=BPPARAM)
+
     result <- rbindlist(multilevelPathwaysList)
     result[, pval := unlist(pvals)]
-    result[, padj := p.adjust(pval, method = "BH")]
     result[, log2err := sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1))/log(2))]
     result <- rbindlist(list(result, dtSimpleFgsea), use.names = TRUE)
+
+    result[pval < absEps, c("pval", "log2err") := list(absEps, NA)]
+    result[, padj := p.adjust(pval, method = "BH")]
+
     result <- result[, .(pathway, pval, padj, log2err, ES, NES, size, leadingEdge)]
     setorder(result, pathway)
     result <- result[]

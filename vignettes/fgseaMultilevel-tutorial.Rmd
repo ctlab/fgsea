@@ -71,13 +71,12 @@ Compare `fgsea` with `fgseaMultilevel` on example data.
 set.seed(42)
 
 fgseaRes <- fgsea(pathways=examplePathways, stats=exampleRanks,
-                  minSize=15, maxSize=500, nperm=10000, BPPARAM=SerialParam())
+                  minSize=15, maxSize=500, nperm=10000)
 
 fgseaMultilevelRes <- fgseaMultilevel(pathways=examplePathways, 
                                       stats=exampleRanks,
                                       minSize=15, maxSize=500, 
-                                      sampleSize=100,
-                                      BPPARAM=SerialParam())
+                                      sampleSize=100)
 
 logPvalsDf <- data.frame(fgseaData=-log10(fgseaRes$pval),
                          fgseaMultilevelData=-log10(fgseaMultilevelRes$pval))

@@ -1,252 +1,206 @@
 #include "fgseaMultilevelSupplement.h"
+#include "esCalculation.h"
 
-#include <random>
-#include <vector>
-#include <cmath>
-#include <algorithm>
-#include <set>
-using namespace std;
-
-
-#include <Rcpp.h>
-using namespace Rcpp;
-
-
-double calcES(const vector<double>& S, const vector<int>& p, double NS) {
-  // p must be sorted
-  int n = (int) S.size();
-  int k = (int) p.size();
-  double res = 0.0;
-  double cur = 0.0;
-  double q1 = 1.0 / (n - k);
-  double q2 = 1.0 / NS;
-  int last = -1;
-  for (int pos : p) {
-    cur -= q1 * (pos - last - 1);
-    if (abs(cur) > abs(res)) {
-      res = cur;
-    }
-    cur += q2 * S[pos];
-    if (abs(cur) > abs(res)) {
-      res = cur;
-    }
-    last = pos;
-  }
-  return res;
+double betaMeanLog(unsigned long a, unsigned long b) {
+    return boost::math::digamma(a) - boost::math::digamma(b + 1);
 }
 
+double calcLogCorrection(const vector<unsigned int> &probCorrector, long probCorrIndx,
+                         const pair<unsigned int, unsigned int> posUnifScoreCount, unsigned int sampleSize){
+    double result = 0.0;
+    result -= betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second);
 
-double calcES(const vector<double>& S, const vector<int>& p) {
-  // p must be sorted
-  double NS = 0.0;
-  for (int pos : p) {
-    NS += S[pos];
-  }
-  return calcES(S, p, NS);
-}
+    unsigned long halfSize = (sampleSize + 1) / 2;
+    unsigned long remainder = sampleSize - probCorrIndx % (halfSize);
 
-
-double calcPositiveES(const vector<double>& S, const vector<int>&p, double NS) {
-  // p must be sorted
-  int n = (int) S.size();
-  int k = (int) p.size();
-  double res = 0.0;
-  double cur = 0.0;
-  double q1 = 1.0 / (n - k);
-  double q2 = 1.0 / NS;
-  int last = -1;
-  for (int pos : p) {
-    cur += q2 * S[pos] - q1 * (pos - last - 1);
-    res = max(res, cur);
-    last = pos;
-  }
-  return res;
-}
-
-
-double calcPositiveES(const vector<double>& S, const vector<int>& p) {
-  // p must be sorted
-  double NS = 0.0;
-  for (int pos : p) {
-    NS += S[pos];
-  }
-  return calcPositiveES(S, p, NS);
-}
-
-
-int compareStat(const vector<double>& S, const vector<int>& p, double NS, double bound) {
-  // p must be sorted
-  int n = (int) S.size();
-  int k = (int) p.size();
-  double cur = 0.0;
-  double q1 = 1.0 / (n - k);
-  double q2 = 1.0 / NS;
-  int last = -1;
-  for (int pos : p) {
-    cur += q2 * S[pos] - q1 * (pos - last - 1);
-    if (cur > bound) {
-      return 1;
-    }
-    last = pos;
-  }
-  return -1;
-}
-
-
-int perturbate(const vector<double> &S, vector<int> &p, double bound, mt19937& rng, double pert_coeff) {
-  int n = (int) S.size();
-  int k = (int) p.size();
-  uniform_int_distribution<> uid_n(0, n - 1);
-  uniform_int_distribution<> uid_k(0, k - 1);
-  double NS = 0;
-  for (int pos : p) {
-    NS += S[pos];
-  }
-  int iters = max(1, (int) (k * pert_coeff));
-  int moves = 0;
-  for (int i = 0; i < iters; i++) {
-    int id = uid_k(rng);
-    int old = p[id];
-    NS -= S[p[id]];
-    p[id] = uid_n(rng);
-    while (id > 0 && p[id] < p[id - 1]) {
-      swap(p[id], p[id - 1]);
-      id--;
-    }
-    while (id < k - 1 && p[id] > p[id + 1]) {
-      swap(p[id], p[id + 1]);
-      id++;
-    }
-    if ((id > 0 && p[id] == p[id - 1]) || (id < k - 1 && p[id] == p[id + 1]) || compareStat(S, p, NS + S[p[id]], bound) == -1) {
-      // revert changes...
-      p[id] = old;
-      while (id > 0 && p[id] < p[id - 1]) {
-        swap(p[id], p[id - 1]);
-        id--;
-      }
-      while (id < k - 1 && p[id] > p[id + 1]) {
-        swap(p[id], p[id + 1]);
-        id++;
-      }
-    } else {
-      moves ++;
-    }
-    NS += S[p[id]];
-  }
-  return moves;
-}
-
-
-void duplicateSets(EsPvalConnection &esPvalObj, int sampleSize, const vector<double> &S)
-{
-  // Duplicate sets of genes with enrichment score greater than the median value.
-  int posStatCount = 0;
-  vector<pair<double, int> > stats(sampleSize);
-  for (int sample_id = 0; sample_id < sampleSize; sample_id++)
-  {
-      double stat = calcPositiveES(S, esPvalObj.sets[sample_id]);
-      double stat_real = calcES(S, esPvalObj.sets[sample_id]);
-      if (esPvalObj.cutoffs.empty())
-      {
-          esPvalObj.random_pairs.emplace_back(stat, stat_real);
-      }
-      if (stat_real > 0)
-      {
-          posStatCount++;
-      }
-      stats[sample_id] = make_pair(stat, sample_id);
-  }
-  sort(stats.begin(), stats.end());
-  if (esPvalObj.posStatNum == 0)
-  {
-      esPvalObj.posStatNum = posStatCount;
-  }
-
-
-  for (int sample_id = 0; 2 * sample_id < sampleSize; sample_id++) {
-    esPvalObj.cutoffs.emplace_back(stats[sample_id].first);
-  }
-
-
-
-  vector< vector<int> > new_sets;
-  for (int sample_id = 0; 2 * sample_id < sampleSize - 2; sample_id++) {
-      for (int rep = 0; rep < 2; rep++) {
-          new_sets.push_back(esPvalObj.sets[stats[sampleSize - 1 - sample_id].second]);
-      }
-  }
-
-  new_sets.push_back(esPvalObj.sets[stats[sampleSize >> 1].second]);
-  swap(esPvalObj.sets, new_sets);
-  return;
-}
-
-
-void calcPvalues(EsPvalConnection &esPvalObj, vector<double> S, int pathwaySize,
-                 double ES, int sampleSize, int seed, double absEps)
-{
-    mt19937 gen(seed);
-    uniform_int_distribution<> uid_n(0, S.size() - 1);
-    for (int sample_id = 0; sample_id < sampleSize; sample_id++)
-    {
-
-        set<int> random_set;
-        while ((int) random_set.size() < pathwaySize)
-        {
-            random_set.insert(uid_n(gen));
-        }
-        esPvalObj.sets[sample_id] = vector<int>(random_set.begin(), random_set.end());
-    }
-
-    duplicateSets(esPvalObj, sampleSize, S);
-
-    while (true)
-    {
-      int k = 2 * (esPvalObj.cutoffs.size() / (sampleSize + 1));
-      if (ES < esPvalObj.cutoffs.back() || k > -log2(absEps)){
-        break;
-      }
-      for (int moves = 0; moves < sampleSize * pathwaySize; ){
-         for (int sample_id = 0; sample_id < sampleSize; sample_id++) {
-           moves += perturbate(S, esPvalObj.sets[sample_id], esPvalObj.cutoffs.back(), gen, 0.1);
-         }
-       }
-       duplicateSets(esPvalObj, sampleSize, S);
-    }
-    return;
-}
-
-
-double findEsPval(const EsPvalConnection &esPvalObj, double enrichmentScore, int sampleSize, bool sign)
-{
-    int halfSize = (sampleSize + 1) / 2;
-    double pval = 0;
-    double probStatPos = exp(boost::math::digamma(esPvalObj.posStatNum) - boost::math::digamma(sampleSize + 1));
-
-    auto it = lower_bound(esPvalObj.cutoffs.begin(), esPvalObj.cutoffs.end(), enrichmentScore);
-    int k = ((it - esPvalObj.cutoffs.begin())) / halfSize;
-    int remainder = sampleSize - (it - esPvalObj.cutoffs.begin()) % (halfSize);
-    double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(sampleSize + 1);
-    double adjLogPval = k * adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
-    pval = exp(adjLogPval);
-
-    if (sign){
-      pval = max(0.0, min(1.0, pval));
+    if (probCorrector[probCorrIndx] != 0){
+        result += betaMeanLog(probCorrector[probCorrIndx], remainder);
     }
     else{
-      double correction;
-      int badSets = 0;
-      int totalSets = 0;
-      for (auto &pp : esPvalObj.random_pairs)
-      {
-          if (pp.second <= enrichmentScore)
-          {
-              badSets += (pp.first > enrichmentScore);
-          }
-          totalSets++;
-      }
-      correction = badSets*1.0 / totalSets;
-      pval = max(0.0, min(1.0, (pval - correction)/probStatPos));
+        unsigned long nmrtr = 0;
+        unsigned long dnmntr = remainder;
+
+        unsigned long begIndx = (probCorrIndx / halfSize) * halfSize + halfSize;
+        for (unsigned long i = begIndx; i < probCorrector.size(); i += halfSize)
+        {
+            dnmntr += sampleSize;
+            if (probCorrector[i] != 0)
+            {
+                nmrtr = probCorrector[i];
+                break;
+            }
+        }
+        result += betaMeanLog(nmrtr, dnmntr);
     }
-    return pval;
+
+    return result;
+}
+
+void fillRandomSample(set<int> &randomSample, mt19937 &gen,
+                      const unsigned long ranksSize, const unsigned int pathwaySize) {
+    randomSample.clear();
+    uniform_int_distribution<> uid_n(0, static_cast<int>(ranksSize - 1));
+    while (static_cast<int>(randomSample.size()) < pathwaySize) {
+        randomSample.insert(uid_n(gen));
+    }
+}
+
+
+EsRuler::EsRuler(const vector<double> &inpRanks, unsigned int inpSampleSize, unsigned int inpPathwaySize) :
+    ranks(inpRanks), sampleSize(inpSampleSize), pathwaySize(inpPathwaySize) {
+    posUnifScoreCount = make_pair(0, 0);
+    currentSamples.resize(inpSampleSize);
+}
+
+EsRuler::~EsRuler() = default;
+
+
+void EsRuler::duplicateSamples() {
+    /*
+     * Removes samples with an enrichment score less than the median value and
+     * replaces them with samples with an enrichment score greater than the median
+     * value
+    */
+    vector<pair<double, int> > stats(sampleSize);
+    vector<int> posEsIndxs;
+    int totalPosEsCount = 0;
+
+    for (int sampleId = 0; sampleId < sampleSize; sampleId++) {
+        double sampleEsPos = calcPositiveES(ranks, currentSamples[sampleId]);
+        double sampleEs = calcES(ranks, currentSamples[sampleId]);
+        if (sampleEs > 0) {
+            totalPosEsCount++;
+            posEsIndxs.push_back(sampleId);
+        }
+        stats[sampleId] = make_pair(sampleEsPos, sampleId);
+    }
+    sort(stats.begin(), stats.end());
+    for (int sampleId = 0; 2 * sampleId < sampleSize; sampleId++) {
+        enrichmentScores.emplace_back(stats[sampleId].first);
+        if (find(posEsIndxs.begin(), posEsIndxs.end(), stats[sampleId].second) != posEsIndxs.end()) {
+            totalPosEsCount--;
+        }
+        probCorrector.emplace_back(totalPosEsCount);
+    }
+
+    vector<vector<int> > new_sets;
+    for (int sampleId = 0; 2 * sampleId < sampleSize - 2; sampleId++) {
+        for (int rep = 0; rep < 2; rep++) {
+            new_sets.push_back(currentSamples[stats[sampleSize - 1 - sampleId].second]);
+        }
+    }
+    new_sets.push_back(currentSamples[stats[sampleSize >> 1].second]);
+    swap(currentSamples, new_sets);
+}
+
+void EsRuler::extend(double ES, int seed, double absEps) {
+    unsigned int posCount = 0;
+    unsigned int totalCount = 0;
+    mt19937 gen(seed);
+
+    for (int sampleId = 0; sampleId < sampleSize; sampleId++) {
+        set<int> randomSample;
+        fillRandomSample(randomSample, gen, ranks.size(), pathwaySize);
+        currentSamples[sampleId] = vector<int>(randomSample.begin(), randomSample.end());
+        double currentES = calcES(ranks, currentSamples[sampleId]);
+        while (currentES <= 0) {
+            fillRandomSample(randomSample, gen, ranks.size(), pathwaySize);
+            currentES = calcES(ranks, vector<int>(randomSample.begin(), randomSample.end()));
+            totalCount++;
+        }
+        posCount++;
+        totalCount++;
+    }
+
+    posUnifScoreCount = make_pair(posCount, totalCount);
+
+    duplicateSamples();
+    while (ES > enrichmentScores.back() || checkZeroTail(probCorrector, sampleSize)){
+        for (int moves = 0; moves < sampleSize * pathwaySize;) {
+            for (int sample_id = 0; sample_id < sampleSize; sample_id++) {
+                moves += perturbate(ranks, currentSamples[sample_id], enrichmentScores.back(), gen);
+            }
+        }
+        duplicateSamples();
+        if (absEps != 0 && (!checkZeroTail(probCorrector, sampleSize))){
+            unsigned long k = enrichmentScores.size() / ((sampleSize + 1) / 2);
+            if (k > - log2(0.5 * absEps * betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second))) break;
+        }
+    }
+}
+
+
+double EsRuler::getPvalue(double ES, double absEps, bool sign) {
+    unsigned long halfSize = (sampleSize + 1) / 2;
+    auto it = lower_bound(enrichmentScores.begin(), enrichmentScores.end(), ES);
+
+    unsigned long indx = 0;
+    (it - enrichmentScores.begin()) > 0 ? (indx = (it - enrichmentScores.begin() - 1)) : indx = 0;
+
+    unsigned long k = (indx) / halfSize;
+    unsigned long remainder = sampleSize -  (indx % halfSize);
+
+    double adjLog = betaMeanLog(halfSize, sampleSize);
+    double adjLogPval = k * adjLog + betaMeanLog(remainder, sampleSize);
+
+    if (sign) {
+        return max(0.0, min(1.0, exp(adjLogPval)));
+    } else {
+        if (exp(adjLogPval) < (0.5 * absEps * betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second)))
+        {
+            return max(0.0, min(1.0, exp(adjLogPval)));
+        }
+        double adjLogCorrection = calcLogCorrection(probCorrector, indx, posUnifScoreCount, sampleSize);
+        double resLog = adjLogPval + adjLogCorrection;
+        return max(0.0, min(1.0, exp(resLog)));
+    }
+}
+
+
+int perturbate(const vector<double> &ranks, vector<int> &sample,
+               double bound, mt19937 &rng) {
+    double pertPrmtr = 0.1;
+    int n = (int) ranks.size();
+    int k = (int) sample.size();
+    uniform_int_distribution<> uid_n(0, n - 1);
+    uniform_int_distribution<> uid_k(0, k - 1);
+    double NS = 0;
+    for (int pos : sample) {
+        NS += ranks[pos];
+    }
+    int iters = max(1, (int) (k * pertPrmtr));
+    int moves = 0;
+    for (int i = 0; i < iters; i++) {
+        int id = uid_k(rng);
+        int old = sample[id];
+        NS -= ranks[sample[id]];
+
+        sample[id] = uid_n(rng);
+        while (id > 0 && sample[id] < sample[id - 1]) {
+            swap(sample[id], sample[id - 1]);
+            id--;
+        }
+        while (id < k - 1 && sample[id] > sample[id + 1]) {
+            swap(sample[id], sample[id + 1]);
+            id++;
+        }
+
+        if ((id > 0 && sample[id] == sample[id - 1]) || (id < k - 1 && sample[id] == sample[id + 1]) ||
+            !compareStat(ranks, sample, NS + ranks[sample[id]], bound)) {
+            // revert changes...
+            sample[id] = old;
+            while (id > 0 && sample[id] < sample[id - 1]) {
+                swap(sample[id], sample[id - 1]);
+                id--;
+            }
+            while (id < k - 1 && sample[id] > sample[id + 1]) {
+                swap(sample[id], sample[id + 1]);
+                id++;
+            }
+        } else {
+            moves++;
+        }
+        NS += ranks[sample[id]];
+    }
+    return moves;
 }
