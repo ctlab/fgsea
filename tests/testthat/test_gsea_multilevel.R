@@ -94,7 +94,7 @@ test_that("fgseaMultilevel gives valid P-value for 5990980_Cell_Cycle", {
     set.seed(42)
     fgseaMRes <- fgseaMultilevel(example.pathway, ranks)
     pval <- fgseaMRes$pval
-    expect_true(1e-28 <= pval && pval <= 1e-26)
+    expect_true(1e-29 <= pval && pval <= 1e-25)
 })
 
 test_that("The absEps parameter works correctly with 5990980_Cell_Cycle", {
