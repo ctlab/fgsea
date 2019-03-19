@@ -136,3 +136,25 @@ test_that("fgseaMultilevel works correctly with zeros in the tail of the conditi
                                seed = 333, absEps = 0.0, sign = FALSE)
     )
 })
+
+
+test_that("fgseaMultilevel throws  a warning when sampleSize is less than 3", {
+    data(exampleRanks)
+    data(examplePathways)
+    expect_silent(fgseaMultilevel(examplePathways, exampleRanks,
+                                  sampleSize = 5))
+    expect_warning(fgseaMultilevel(examplePathways, exampleRanks,
+                                   sampleSize = 1))
+})
+
+test_that("fgseaMultilevelCpp works with sign=TRUE", {
+    data(exampleRanks)
+    ranks <- sort(exampleRanks, decreasing = TRUE)
+    expect_silent(fgsea:::fgseaMultilevelCpp(enrichmentScores = 0.1,
+                                             ranks = ranks,
+                                             pathwaySize = 100,
+                                             sampleSize = 11,
+                                             seed = 333,
+                                             absEps = 0.0,
+                                             sign = TRUE))
+})

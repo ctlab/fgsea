@@ -146,10 +146,6 @@ double EsRuler::getPvalue(double ES, double absEps, bool sign) {
     if (sign) {
         return max(0.0, min(1.0, exp(adjLogPval)));
     } else {
-        if (exp(adjLogPval) < (0.5 * absEps * betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second)))
-        {
-            return max(0.0, min(1.0, exp(adjLogPval)));
-        }
         double adjLogCorrection = calcLogCorrection(probCorrector, indx, posUnifScoreCount, sampleSize);
         double resLog = adjLogPval + adjLogCorrection;
         return max(0.0, min(1.0, exp(resLog)));
