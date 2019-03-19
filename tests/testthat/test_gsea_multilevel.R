@@ -84,3 +84,55 @@ test_that("fgseaMultilevel: Ties detection in ranking works", {
     expect_silent(fgseaMultilevel(examplePathways, exampleRanks.ties.zero,
                                   minSize=10, maxSize=50, nproc=1))
 })
+
+test_that("fgseaMultilevel gives valid P-value for 5990980_Cell_Cycle", {
+    data(examplePathways)
+    data(exampleRanks)
+    ranks <- sort(exampleRanks, decreasing = TRUE)
+    example.pathway <- examplePathways["5990980_Cell_Cycle"]
+
+    set.seed(42)
+    fgseaMRes <- fgseaMultilevel(example.pathway, ranks)
+    pval <- fgseaMRes$pval
+    expect_true(1e-28 <= pval && pval <= 1e-26)
+})
+
+test_that("The absEps parameter works correctly with 5990980_Cell_Cycle", {
+    data(examplePathways)
+    data(exampleRanks)
+    ranks <- sort(exampleRanks, decreasing = TRUE)
+    example.pathway <- examplePathways["5990980_Cell_Cycle"]
+
+    set.seed(42)
+    fgseaMRes <- fgseaMultilevel(example.pathway, ranks, absEps = 1e-10)
+
+    pval <- fgseaMRes$pval
+    expect_true(pval == 1e-10)
+    expect_true(is.na(fgseaMRes$log2err))
+})
+
+test_that("The absEps parameter works correctly with 5991504_Extension_of_Telomeres", {
+    data(examplePathways)
+    data(exampleRanks)
+    example.pathway <- examplePathways["5991504_Extension_of_Telomeres"]
+
+    set.seed(42)
+    pvals <- replicate(fgseaMultilevel(example.pathway,
+                                       exampleRanks, absEps = 1e-5)$pval,
+                       n = 20)
+
+    expect_true(all(pvals >= 1e-5))
+
+})
+
+
+test_that("fgseaMultilevel works correctly with zeros in the tail of the conditional probability vector", {
+    data(exampleRanks)
+    ranks <- sort(exampleRanks, decreasing = TRUE)
+
+    expect_silent(
+        fgsea:::fgseaMultilevelCpp(enrichmentScores = 0.001, ranks = ranks,
+                               pathwaySize = 100, sampleSize = 3,
+                               seed = 333, absEps = 0.0, sign = FALSE)
+    )
+})
