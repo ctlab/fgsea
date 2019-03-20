@@ -124,7 +124,9 @@ void EsRuler::extend(double ES, int seed, double absEps) {
         duplicateSamples();
         if (absEps != 0 && (!checkZeroTail(probCorrector, sampleSize))){
             unsigned long k = enrichmentScores.size() / ((sampleSize + 1) / 2);
-            if (k > - log2(0.5 * absEps * betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second))) break;
+            if (k > - log2(0.5 * absEps * betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second))) {
+                break;
+            }
         }
     }
 }
