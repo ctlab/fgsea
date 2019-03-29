@@ -7,6 +7,8 @@
 #'      choice too.
 #' @param colwidths Vector of five elements corresponding to column width for
 #'      grid.arrange. If column width is set to zero, the column is not drawn.
+#' @param render If true, the plot is rendered to the current device.
+#'      Otherwise, the grob is returned. Default is true.
 #' @return TableGrob object returned by grid.arrange.
 #' @import ggplot2
 #' @import gridExtra
@@ -24,7 +26,8 @@
 #' }
 plotGseaTable <- function(pathways, stats, fgseaRes,
                           gseaParam=1,
-                          colwidths=c(5, 3, 0.8, 1.2, 1.2)) {
+                          colwidths=c(5, 3, 0.8, 1.2, 1.2),
+                          render=TRUE) {
 
     rnk <- rank(-stats)
     ord <- order(rnk)
@@ -98,9 +101,15 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
     grobsToDraw <- rep(colwidths != 0, length(grobs)/length(colwidths))
 
 
-    grid.arrange(grobs=grobs[grobsToDraw],
+    p <- arrangeGrob(grobs=grobs[grobsToDraw],
                  ncol=sum(colwidths != 0),
                  widths=colwidths[colwidths != 0])
+
+    if (render) {
+        grid.draw(p)
+    } else {
+        p
+    }
 }
 
 #' Plots GSEA enrichment plot.
