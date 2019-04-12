@@ -40,6 +40,9 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
         unname(as.vector(na.omit(match(p, names(statsAdj)))))
     })
 
+    # fixes #40
+    pathways <- pathways[sapply(pathways, length) > 0]
+
     ps <- lapply(names(pathways), function(pn) {
         p <- pathways[[pn]]
         annotation <- fgseaRes[match(pn, fgseaRes$pathway), ]

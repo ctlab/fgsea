@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.9.6
+* Small fixes for plotGseaTable
+
 CHANGES IN VERSION 1.9.2
 * Added fgseaMultilevel function for more accurate logPval estimation
 
