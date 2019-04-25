@@ -160,7 +160,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 #' @examples
 #' expectedError <- multilevelError(pval=1e-10, sampleSize=1001)
 multilevelError <- function(pval, sampleSize){
-    return(sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1))/log(2)))
+    return(sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1))))
 }
 
 #' Calculates P-values for preprocessed data.
