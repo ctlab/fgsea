@@ -21,7 +21,7 @@
 #' \item pathway -- name of the pathway as in `names(pathway)`;
 #' \item pval -- an enrichment p-value;
 #' \item padj -- a BH-adjusted p-value;
-#' \item log2err -- the expected error for the standard deviation of the P-value logarithm.
+#' \item logErr -- the expected error for the standard deviation of the P-value logarithm.
 #' \item ES -- enrichment score, same as in Broad GSEA implementation;
 #' \item NES -- enrichment score normalized to mean enrichment of random samples of the same size;
 #' \item size -- size of the pathway after removing genes not present in `names(stats)`.
@@ -66,7 +66,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
     }
 
     #To avoid warnings during the check
-    log2err=nMoreExtreme=pathway=pval=padj=NULL
+    logErr=nMoreExtreme=pathway=pval=padj=NULL
     ES=NES=size=leadingEdge=NULL
     .="damn notes"
 
@@ -86,7 +86,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
         return(data.table(pathway=character(),
                           pval=numeric(),
                           padj=numeric(),
-                          log2err=numeric(),
+                          logErr=numeric(),
                           ES=numeric(),
                           NES=numeric(),
                           size=integer(),
@@ -117,15 +117,15 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
 
     if (all(multError > simpleError)){
-        simpleFgseaRes[, log2err := 1/log(2)*(trigamma(nMoreExtreme) - trigamma((nPermSimple)))]
+        simpleFgseaRes[, logErr := 1/log(2)*(trigamma(nMoreExtreme) - trigamma((nPermSimple)))]
         setorder(simpleFgseaRes, pathway)
-        simpleFgseaRes <- simpleFgseaRes[, .(pathway, pval, padj, log2err, ES, NES, size, leadingEdge)]
+        simpleFgseaRes <- simpleFgseaRes[, .(pathway, pval, padj, logErr, ES, NES, size, leadingEdge)]
         simpleFgseaRes <- simpleFgseaRes[]
         return(simpleFgseaRes)
     }
 
     dtSimpleFgsea <- simpleFgseaRes[simpleError < multError]
-    dtSimpleFgsea[, log2err := 1/log(2)*(trigamma(nMoreExtreme) - trigamma(nPermSimple))]
+    dtSimpleFgsea[, logErr := 1/log(2)*(trigamma(nMoreExtreme) - trigamma(nPermSimple))]
     dtMultilevel <- simpleFgseaRes[multError < simpleError]
 
     multilevelPathwaysList <- split(dtMultilevel, by="size")
@@ -139,13 +139,13 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
     result <- rbindlist(multilevelPathwaysList)
     result[, pval := unlist(pvals)]
-    result[, log2err := sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1))/log(2))]
+    result[, logErr := sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1)))]
     result <- rbindlist(list(result, dtSimpleFgsea), use.names = TRUE)
 
-    result[pval < absEps, c("pval", "log2err") := list(absEps, NA)]
+    result[pval < absEps, c("pval", "logErr") := list(absEps, NA)]
     result[, padj := p.adjust(pval, method = "BH")]
 
-    result <- result[, .(pathway, pval, padj, log2err, ES, NES, size, leadingEdge)]
+    result <- result[, .(pathway, pval, padj, logErr, ES, NES, size, leadingEdge)]
     setorder(result, pathway)
     result <- result[]
     result
