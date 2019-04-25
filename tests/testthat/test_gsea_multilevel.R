@@ -108,7 +108,7 @@ test_that("The absEps parameter works correctly with 5990980_Cell_Cycle", {
 
     pval <- fgseaMRes$pval
     expect_true(pval == 1e-10)
-    expect_true(is.na(fgseaMRes$log2err))
+    expect_true(is.na(fgseaMRes$logErr))
 })
 
 test_that("The absEps parameter works correctly with 5991504_Extension_of_Telomeres", {
