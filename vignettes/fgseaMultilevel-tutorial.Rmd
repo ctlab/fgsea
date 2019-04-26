@@ -40,7 +40,7 @@ The resulting table contains enrichment scores and p-values:
 head(fgseaMultilevelRes[order(pval), ])
 ```
 
-The output table is similar in structure to the table obtained using the `fgsea` function, except for the `log2error` column. This column corresponds to the standard deviation of the P-value logarithm.
+The output table is similar in structure to the table obtained using the `fgsea` function, except for the `log2err` column. This column corresponds to the standard deviation of the P-value logarithm.
 
 ## Function argument
 

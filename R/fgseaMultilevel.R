@@ -112,12 +112,12 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
                                       pathwaysFiltered=pathwaysFiltered, leadingEdges=leadingEdges,
                                       permPerProc=nPermSimple, seeds=seeds, toKeepLength=m,
                                       stats=stats, BPPARAM=SerialParam())
-    simpleError <- 1/log(2)*(trigamma(simpleFgseaRes$nMoreExtreme) - trigamma(nPermSimple))
+    simpleError <- 1/log(2)*sqrt(trigamma(simpleFgseaRes$nMoreExtreme) - trigamma(nPermSimple))
     multError <- sapply((simpleFgseaRes$nMoreExtreme + 1) / nPermSimple, multilevelError, sampleSize)
 
 
     if (all(multError > simpleError)){
-        simpleFgseaRes[, log2err := 1/log(2)*(trigamma(nMoreExtreme) - trigamma((nPermSimple)))]
+        simpleFgseaRes[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme) - trigamma((nPermSimple)))]
         setorder(simpleFgseaRes, pathway)
         simpleFgseaRes <- simpleFgseaRes[, .(pathway, pval, padj, log2err, ES, NES, size, leadingEdge)]
         simpleFgseaRes <- simpleFgseaRes[]
@@ -125,7 +125,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
     }
 
     dtSimpleFgsea <- simpleFgseaRes[simpleError < multError]
-    dtSimpleFgsea[, log2err := 1/log(2)*(trigamma(nMoreExtreme) - trigamma(nPermSimple))]
+    dtSimpleFgsea[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme) - trigamma(nPermSimple))]
     dtMultilevel <- simpleFgseaRes[multError < simpleError]
 
     multilevelPathwaysList <- split(dtMultilevel, by="size")
@@ -139,7 +139,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
     result <- rbindlist(multilevelPathwaysList)
     result[, pval := unlist(pvals)]
-    result[, log2err := sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1))/log(2))]
+    result[, log2err := sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1)))/log(2)]
     result <- rbindlist(list(result, dtSimpleFgsea), use.names = TRUE)
 
     result[pval < absEps, c("pval", "log2err") := list(absEps, NA)]
@@ -160,7 +160,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 #' @examples
 #' expectedError <- multilevelError(pval=1e-10, sampleSize=1001)
 multilevelError <- function(pval, sampleSize){
-    return(sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1))/log(2)))
+    return(sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1)))/log(2))
 }
 
 #' Calculates P-values for preprocessed data.
