@@ -32,7 +32,7 @@ A table with GSEA results. Each row corresponds to a tested pathway. The columns
 \item pathway -- name of the pathway as in `names(pathway)`;
 \item pval -- an enrichment p-value;
 \item padj -- a BH-adjusted p-value;
-\item logErr -- the expected error for the standard deviation of the P-value logarithm.
+\item log2err -- the expected error for the standard deviation of the P-value logarithm.
 \item ES -- enrichment score, same as in Broad GSEA implementation;
 \item NES -- enrichment score normalized to mean enrichment of random samples of the same size;
 \item size -- size of the pathway after removing genes not present in `names(stats)`.
