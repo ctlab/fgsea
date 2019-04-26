@@ -1,4 +1,6 @@
 CHANGES IN VERSION 1.9.6
+* Fix in log2err calculation
+CHANGES IN VERSION 1.9.6
 * Small fixes for plotGseaTable
 
 CHANGES IN VERSION 1.9.2
