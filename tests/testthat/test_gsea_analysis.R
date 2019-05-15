@@ -78,8 +78,21 @@ test_that("fgseaLabel works", {
 
 test_that("fgseaLabel example works", {
     skip_on_bioc()
-    skip_on_travis() # not working on travis for some reason, check later (2018-04-10)
-    example("fgseaLabel", run.donttest = TRUE, local = FALSE)
+
+    # hack to run the example with devtools
+    helpFile <- system.file("../man/fgseaLabel.Rd", package="fgsea")
+
+    if (helpFile == "") {
+        example("fgseaLabel", run.donttest = TRUE, local = FALSE)
+    } else {
+        tcon <- textConnection("exampleCode", open="w", local=TRUE)
+        tools::Rd2ex(helpFile, out=tcon)
+        close(tcon)
+
+        econ <- textConnection(exampleCode, open="r")
+        source(econ)
+    }
+
     expect_true(!is.null(fgseaRes))
 })
 

@@ -4,16 +4,15 @@
 \alias{fgseaMultilevel}
 \title{Runs preranked gene set enrichment analysis.}
 \usage{
-fgseaMultilevel(pathways, stats, samplesSize = 101, minSize = 1,
-  maxSize = Inf, absEps = 0, signed = FALSE, nproc = 0,
-  BPPARAM = NULL)
+fgseaMultilevel(pathways, stats, sampleSize = 101, minSize = 1,
+  maxSize = Inf, absEps = 0, nproc = 0, BPPARAM = NULL)
 }
 \arguments{
 \item{pathways}{List of gene sets to check.}
 
 \item{stats}{Named vector of gene-level stats. Names should be the same as in 'pathways'}
 
-\item{samplesSize}{The size of a random set of genes which in turn has size = pathwaySize}
+\item{sampleSize}{The size of a random set of genes which in turn has size = pathwaySize}
 
 \item{minSize}{Minimal size of a gene set to test. All pathways below the threshold are excluded.}
 
@@ -21,18 +20,28 @@ fgseaMultilevel(pathways, stats, samplesSize = 101, minSize = 1,
 
 \item{absEps}{This parameter sets the boundary for calculating the p value.}
 
-\item{signed}{If TRUE returns two probabilities with a sign dependency.}
-
 \item{nproc}{If not equal to zero sets BPPARAM to use nproc workers (default = 0).}
 
-\item{BPPARAM}{Parallelization parameter used in bplapply.}
+\item{BPPARAM}{Parallelization parameter used in bplapply.
+Can be used to specify cluster to run. If not initialized explicitly or
+by setting `nproc` default value `bpparam()` is used.}
 }
 \value{
-A table with GSEA results. Each row corresponds to a tested pathway.
+A table with GSEA results. Each row corresponds to a tested pathway. The columns are the following
+\itemize{
+\item pathway -- name of the pathway as in `names(pathway)`;
+\item pval -- an enrichment p-value;
+\item padj -- a BH-adjusted p-value;
+\item log2err -- the expected error for the standard deviation of the P-value logarithm.
+\item ES -- enrichment score, same as in Broad GSEA implementation;
+\item NES -- enrichment score normalized to mean enrichment of random samples of the same size;
+\item size -- size of the pathway after removing genes not present in `names(stats)`.
+\item leadingEdge -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
+}
 }
 \description{
-This approach is based on multilevel splitting approach,
-that server for estimating the probability of rare events.
+This feature is based on the adaptive multilevel splitting Monte Carlo approach.
+This allows us to exceed the results of simple sampling and calculate arbitrarily small P-values.
 }
 \examples{
 data(examplePathways)

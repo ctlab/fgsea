@@ -5,7 +5,7 @@
 \title{Plots table of enrichment graphs using ggplot and gridExtra.}
 \usage{
 plotGseaTable(pathways, stats, fgseaRes, gseaParam = 1,
-  colwidths = c(5, 3, 0.8, 1.2, 1.2))
+  colwidths = c(5, 3, 0.8, 1.2, 1.2), render = TRUE)
 }
 \arguments{
 \item{pathways}{Pathways to plot table, as in `fgsea` function.}
@@ -20,6 +20,9 @@ choice too.}
 
 \item{colwidths}{Vector of five elements corresponding to column width for
 grid.arrange. If column width is set to zero, the column is not drawn.}
+
+\item{render}{If true, the plot is rendered to the current device.
+Otherwise, the grob is returned. Default is true.}
 }
 \value{
 TableGrob object returned by grid.arrange.

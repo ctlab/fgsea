@@ -2,21 +2,21 @@
 % Please edit documentation in R/fgseaMultilevel.R
 \name{multilevelError}
 \alias{multilevelError}
-\title{Calculates the expected error.}
+\title{Calculates the expected error for the standard deviation of the P-value logarithm.}
 \usage{
-multilevelError(pval, C)
+multilevelError(pval, sampleSize)
 }
 \arguments{
 \item{pval}{P-value}
 
-\item{C}{equivavlent to samplesSize}
+\item{sampleSize}{equivavlent to sampleSize in fgseaMultilevel}
 }
 \value{
 The value of the expected error
 }
 \description{
-Calculates the expected error.
+Calculates the expected error for the standard deviation of the P-value logarithm.
 }
 \examples{
-expectedError <- multilevelError(pval=1e-10, C=1001)
+expectedError <- multilevelError(pval=1e-10, sampleSize=1001)
 }

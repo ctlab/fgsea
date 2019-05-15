@@ -135,6 +135,16 @@ fgsea <- function(pathways, stats, nperm,
                   gseaParam=1,
                   BPPARAM=NULL) {
 
+    # Error if pathways is not a list
+    if (!is.list(pathways)) {
+        stop("pathways should be a list with each element containing names of the stats argument")
+    }
+
+    # Error if stats is not named
+    if (is.null(names(stats))) {
+        stop("stats should be named")
+    }
+
     # Warning message for ties in stats
     ties <- sum(duplicated(stats[stats != 0]))
     if (ties != 0) {
@@ -156,18 +166,7 @@ fgsea <- function(pathways, stats, nperm,
     }
     seeds <- sample.int(10^9, length(permPerProc))
 
-    if (is.null(BPPARAM)) {
-        if (nproc != 0) {
-            if (.Platform$OS.type == "windows") {
-                # windows doesn't support multicore, using snow instead
-                BPPARAM <- SnowParam(workers = nproc)
-            } else {
-                BPPARAM <- MulticoreParam(workers = nproc)
-            }
-        } else {
-            BPPARAM <- bpparam()
-        }
-    }
+    BPPARAM <- setUpBPPARAM(nproc=nproc, BPPARAM=BPPARAM)
 
     minSize <- max(minSize, 1)
     stats <- sort(stats, decreasing=TRUE)
@@ -193,8 +192,6 @@ fgsea <- function(pathways, stats, nperm,
     pathwaysFiltered <- pathwaysFiltered[toKeep]
     pathwaysSizes <- pathwaysSizes[toKeep]
 
-    K <- max(pathwaysSizes)
-
     gseaStatRes <- do.call(rbind,
                 lapply(pathwaysFiltered, calcGseaStat,
                        stats=stats,
@@ -206,87 +203,9 @@ fgsea <- function(pathways, stats, nperm,
 
 
 
-    universe <- seq_along(stats)
 
-    counts <- bplapply(seq_along(permPerProc), function(i) {
-        nperm1 <- permPerProc[i]
-        leEs <- rep(0, m)
-        geEs <- rep(0, m)
-        leZero <- rep(0, m)
-        geZero <- rep(0, m)
-        leZeroSum <- rep(0, m)
-        geZeroSum <- rep(0, m)
-        if (m == 1) {
-            for (i in seq_len(nperm1)) {
-                randSample <- sample.int(length(universe), K)
-                randEsP <- calcGseaStat(
-                    stats = stats,
-                    selectedStats = randSample,
-                    gseaParam = 1)
-                leEs <- leEs + (randEsP <= pathwayScores)
-                geEs <- geEs + (randEsP >= pathwayScores)
-                leZero <- leZero + (randEsP <= 0)
-                geZero <- geZero + (randEsP >= 0)
-                leZeroSum <- leZeroSum + pmin(randEsP, 0)
-                geZeroSum <- geZeroSum + pmax(randEsP, 0)
-            }
-        } else {
-            aux <- calcGseaStatCumulativeBatch(
-                stats = stats,
-                gseaParam = 1,
-                pathwayScores = pathwayScores,
-                pathwaysSizes = pathwaysSizes,
-                iterations = nperm1,
-                seed = seeds[i])
-            leEs = get("leEs", aux)
-            geEs = get("geEs", aux)
-            leZero = get("leZero", aux)
-            geZero = get("geZero", aux)
-            leZeroSum = get("leZeroSum", aux)
-            geZeroSum = get("geZeroSum", aux)
-        }
-        data.table(pathway=seq_len(m),
-                   leEs=leEs, geEs=geEs,
-                   leZero=leZero, geZero=geZero,
-                   leZeroSum=leZeroSum, geZeroSum=geZeroSum
-                   )
-    }, BPPARAM=BPPARAM)
-
-    counts <- rbindlist(counts)
-
-    # Getting rid of check NOTEs
-    leEs=leZero=geEs=geZero=leZeroSum=geZeroSum=NULL
-    pathway=padj=pval=ES=NES=geZeroMean=leZeroMean=NULL
-    nMoreExtreme=nGeEs=nLeEs=size=NULL
-    leadingEdge=NULL
-    .="damn notes"
-
-
-    pvals <- counts[,
-        list(pval=min((1+sum(leEs)) / (1 + sum(leZero)),
-                 (1+sum(geEs)) / (1 + sum(geZero))),
-             leZeroMean = sum(leZeroSum) / sum(leZero),
-             geZeroMean = sum(geZeroSum) / sum(geZero),
-             nLeEs=sum(leEs),
-             nGeEs=sum(geEs)
-             )
-        ,
-        by=.(pathway)]
-    pvals[, padj := p.adjust(pval, method="BH")]
-    pvals[, ES := pathwayScores[pathway]]
-    pvals[, NES := ES / ifelse(ES > 0, geZeroMean, abs(leZeroMean))]
-    pvals[, leZeroMean := NULL]
-    pvals[, geZeroMean := NULL]
-
-    pvals[, nMoreExtreme :=  ifelse(ES > 0, nGeEs, nLeEs)]
-    pvals[, nLeEs := NULL]
-    pvals[, nGeEs := NULL]
-
-    pvals[, size := pathwaysSizes[pathway]]
-    pvals[, pathway := names(pathwaysFiltered)[pathway]]
-
-    pvals[, leadingEdge := .(leadingEdges)]
-
+    pvals <- fgseaSimpleImpl(pathwayScores, pathwaysSizes, pathwaysFiltered,
+                             leadingEdges, permPerProc, seeds, m, stats, BPPARAM)
 
     # Makes pvals object printable immediatly
     pvals <- pvals[]
@@ -362,18 +281,7 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
     }
     seeds <- sample.int(10^9, length(permPerProc))
 
-    if (is.null(BPPARAM)) {
-        if (nproc != 0) {
-            if (.Platform$OS.type == "windows") {
-                # windows doesn't support multicore, using snow instead
-                BPPARAM <- SnowParam(workers = nproc)
-            } else {
-                BPPARAM <- MulticoreParam(workers = nproc)
-            }
-        } else {
-            BPPARAM <- bpparam()
-        }
-    }
+    BPPARAM <- setUpBPPARAM(nproc, BPPARAM)
 
     tmatSc <- scale(t(mat))
     labelsSc <- scale(labels)[, 1]
@@ -568,4 +476,137 @@ collapsePathways <- function(fgseaRes,
 
     return(list(mainPathways=names(which(is.na(parentPathways))),
                 parentPathways=parentPathways))
+}
+
+#' Runs preranked gene set enrichment analysis for preprocessed input data.
+#'
+#' @param pathwayScores Vector with enrichment scores for the `pathways`.
+#' @param pathwaysSizes Vector of path sizes.
+#' @param pathwaysFiltered Filtered pathways.
+#' @param leadingEdges Leading edge genes.
+#' @param permPerProc  Parallelization parameter for permutations.
+#' @param seeds Seed vector
+#' @param toKeepLength  Number of `pathways` that meet the condition for `minSize` and `maxSize`.
+#' @param stats Named vector of gene-level stats. Names should be the same as in 'pathways'
+#' @param BPPARAM Parallelization parameter used in bplapply.
+#'  Can be used to specify cluster to run. If not initialized explicitly or
+#'  by setting `nproc` default value `bpparam()` is used.
+#' @return A table with GSEA results. Each row corresponds to a tested pathway.
+#' The columns are the following:
+#' \itemize{
+#'  \item pathway -- name of the pathway as in `names(pathway)`;
+#'  \item pval -- an enrichment p-value;
+#'  \item padj -- a BH-adjusted p-value;
+#'  \item ES -- enrichment score, same as in Broad GSEA implementation;
+#'  \item NES -- enrichment score normalized to mean enrichment of random samples of the same size;
+#'  \item nMoreExtreme` -- a number of times a random gene set had a more
+#'      extreme enrichment score value;
+#'  \item size -- size of the pathway after removing genes not present in `names(stats)`.
+#'  \item leadingEdge -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
+#' }
+fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes, pathwaysFiltered,
+                            leadingEdges, permPerProc, seeds,
+                            toKeepLength, stats, BPPARAM){
+    K <- max(pathwaysSizes)
+    universe <- seq_along(stats)
+
+    counts <- bplapply(seq_along(permPerProc), function(i) {
+        nperm1 <- permPerProc[i]
+        leEs <- rep(0, toKeepLength)
+        geEs <- rep(0, toKeepLength)
+        leZero <- rep(0, toKeepLength)
+        geZero <- rep(0, toKeepLength)
+        leZeroSum <- rep(0, toKeepLength)
+        geZeroSum <- rep(0, toKeepLength)
+        if (toKeepLength == 1) {
+            for (i in seq_len(nperm1)) {
+                randSample <- sample.int(length(universe), K)
+                randEsP <- calcGseaStat(
+                    stats = stats,
+                    selectedStats = randSample,
+                    gseaParam = 1)
+                leEs <- leEs + (randEsP <= pathwayScores)
+                geEs <- geEs + (randEsP >= pathwayScores)
+                leZero <- leZero + (randEsP <= 0)
+                geZero <- geZero + (randEsP >= 0)
+                leZeroSum <- leZeroSum + pmin(randEsP, 0)
+                geZeroSum <- geZeroSum + pmax(randEsP, 0)
+            }
+        } else {
+            aux <- calcGseaStatCumulativeBatch(
+                stats = stats,
+                gseaParam = 1,
+                pathwayScores = pathwayScores,
+                pathwaysSizes = pathwaysSizes,
+                iterations = nperm1,
+                seed = seeds[i])
+            leEs = get("leEs", aux)
+            geEs = get("geEs", aux)
+            leZero = get("leZero", aux)
+            geZero = get("geZero", aux)
+            leZeroSum = get("leZeroSum", aux)
+            geZeroSum = get("geZeroSum", aux)
+        }
+        data.table(pathway=seq_len(toKeepLength),
+                   leEs=leEs, geEs=geEs,
+                   leZero=leZero, geZero=geZero,
+                   leZeroSum=leZeroSum, geZeroSum=geZeroSum
+                   )
+    }, BPPARAM=BPPARAM)
+
+    counts <- rbindlist(counts)
+
+    # Getting rid of check NOTEs
+    leEs=leZero=geEs=geZero=leZeroSum=geZeroSum=NULL
+    pathway=padj=pval=ES=NES=geZeroMean=leZeroMean=NULL
+    nMoreExtreme=nGeEs=nLeEs=size=NULL
+    leadingEdge=NULL
+    .="damn notes"
+
+
+    pvals <- counts[,
+        list(pval=min((1+sum(leEs)) / (1 + sum(leZero)),
+                 (1+sum(geEs)) / (1 + sum(geZero))),
+             leZeroMean = sum(leZeroSum) / sum(leZero),
+             geZeroMean = sum(geZeroSum) / sum(geZero),
+             nLeEs=sum(leEs),
+             nGeEs=sum(geEs)
+             )
+        ,
+        by=.(pathway)]
+
+    pvals[, padj := p.adjust(pval, method="BH")]
+    pvals[, ES := pathwayScores[pathway]]
+    pvals[, NES := ES / ifelse(ES > 0, geZeroMean, abs(leZeroMean))]
+    pvals[, leZeroMean := NULL]
+    pvals[, geZeroMean := NULL]
+
+    pvals[, nMoreExtreme :=  ifelse(ES > 0, nGeEs, nLeEs)]
+    pvals[, nLeEs := NULL]
+    pvals[, nGeEs := NULL]
+
+    pvals[, size := pathwaysSizes[pathway]]
+    pvals[, pathway := names(pathwaysFiltered)[pathway]]
+
+    pvals[, leadingEdge := .(leadingEdges)]
+    pvals
+}
+
+setUpBPPARAM <- function(nproc=0, BPPARAM=NULL){
+    if (is.null(BPPARAM)) {
+        if (nproc != 0) {
+            if (.Platform$OS.type == "windows") {
+                # windows doesn't support multicore, using snow instead
+                result <- SnowParam(workers = nproc)
+            } else {
+                result <- MulticoreParam(workers = nproc)
+            }
+        } else {
+            result <- bpparam()
+        }
+        return(result)
+    }
+    else {
+        return(BPPARAM)
+    }
 }

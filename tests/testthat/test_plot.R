@@ -22,3 +22,15 @@ test_that("plotEnrichment works", {
     ggsave(tf, plot=g)
     expect_true(TRUE) # check that didn't fail before
 })
+
+test_that("plotGseaTable ignores empty pathways", {
+    data(examplePathways)
+    data(exampleRanks)
+    fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=1000,
+                      minSize=15, maxSize=100)
+
+    expect_equal(length(intersect(examplePathways[477], names(exampleRanks))), 0)
+    p <- plotGseaTable(examplePathways[477], exampleRanks, fgseaRes, gseaParam=0.5,
+                       render = FALSE)
+    expect_true(is(p, "gtable"))
+})
