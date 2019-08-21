@@ -9,7 +9,6 @@ double calcLogCorrection(const vector<unsigned int> &probCorrector, long probCor
                          const pair<unsigned int, unsigned int> posUnifScoreCount, unsigned int sampleSize){
     double result = 0.0;
     result -= betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second);
-
     unsigned long halfSize = (sampleSize + 1) / 2;
     unsigned long remainder = sampleSize - probCorrIndx % (halfSize);
 
@@ -124,7 +123,7 @@ void EsRuler::extend(double ES, int seed, double absEps) {
         duplicateSamples();
         if (absEps != 0 && (!checkZeroTail(probCorrector, sampleSize))){
             unsigned long k = enrichmentScores.size() / ((sampleSize + 1) / 2);
-            if (k > - log2(0.5 * absEps * betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second))) {
+            if (k > - log2(0.5 * absEps * exp(betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second)))) {
                 break;
             }
         }
@@ -134,16 +133,23 @@ void EsRuler::extend(double ES, int seed, double absEps) {
 
 double EsRuler::getPvalue(double ES, double absEps, bool sign) {
     unsigned long halfSize = (sampleSize + 1) / 2;
-    auto it = lower_bound(enrichmentScores.begin(), enrichmentScores.end(), ES);
+    
+    auto it = enrichmentScores.begin();
+    if (ES >= enrichmentScores.back()){
+        it = enrichmentScores.end() - 1;
+    }
+    else{
+        it = lower_bound(enrichmentScores.begin(), enrichmentScores.end(), ES);
+    }
 
     unsigned long indx = 0;
-    (it - enrichmentScores.begin()) > 0 ? (indx = (it - enrichmentScores.begin() - 1)) : indx = 0;
+    (it - enrichmentScores.begin()) > 0 ? (indx = (it - enrichmentScores.begin())) : indx = 0;
 
     unsigned long k = (indx) / halfSize;
     unsigned long remainder = sampleSize -  (indx % halfSize);
 
     double adjLog = betaMeanLog(halfSize, sampleSize);
-    double adjLogPval = k * adjLog + betaMeanLog(remainder, sampleSize);
+    double adjLogPval = k * adjLog + betaMeanLog(remainder + 1, sampleSize);
 
     if (sign) {
         return max(0.0, min(1.0, exp(adjLogPval)));
