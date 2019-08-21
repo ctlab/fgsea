@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.11.1
+* Proper absEps handling
+
 CHANGES IN VERSION 1.9.6
 * Fix in log2err calculation
 CHANGES IN VERSION 1.9.6
