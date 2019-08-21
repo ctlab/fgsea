@@ -158,3 +158,11 @@ test_that("fgseaMultilevelCpp works with sign=TRUE", {
                                              absEps = 0.0,
                                              sign = TRUE))
 })
+
+test_that("The `absEps` parameter works correct in fgseaMultilevelCpp", {
+    data(exampleRanks)
+    ranks <- sort(exampleRanks, decreasing = TRUE)
+    pvalue <- fgsea:::fgseaMultilevelCpp(enrichmentScores = 0.95, ranks = ranks, pathwaySize = 50,
+                                         sampleSize = 501, seed = 42, absEps = 1e-5, sign = FALSE)
+    expect_true(pvalue >= 1e-10)
+})
