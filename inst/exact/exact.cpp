@@ -1,4 +1,3 @@
-#include <random>
 #include <iostream>
 #include <string>
 #include <algorithm>
@@ -48,32 +47,6 @@ int main() {
       if (k <= 500) {
         const int ITERS = 1000;
         double correction = 0.0;
-        for (int iter = 0; iter < ITERS; iter++) {
-          set<int> sample;
-          while ((int) sample.size() < k) {
-            sample.insert(rand() % n);
-          }
-          double ns = 0.0;
-          for (int i : sample) {
-            ns += rank_rounded[i];
-          }
-          double splus = 0.0, sminus = 0.0;
-          double scur = 0.0;
-          int last = -1;
-          for (int i : sample) {
-            scur -= 1.0 * (i - 1 - last) / (n - k);
-            sminus = min(sminus, scur);
-            scur += 1.0 * rank_rounded[i] / ns;
-            splus = max(splus, scur);
-            last = i;
-          }
-          scur -= 1.0 * (n - 1 - last) / (n - k);
-          if (splus > gsea && fabs(sminus) > fabs(splus)) {
-            correction += 1.0 / ITERS;
-          }
-        }
-        correction = 0.0;
-        ans -= correction;
         vector < vector < vector <double> > > dp(k + 1);
         vector < vector <int> > dp_from(k + 1);
         vector < vector <double> > easy(k + 1);

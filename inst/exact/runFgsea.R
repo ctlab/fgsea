@@ -10,7 +10,7 @@ ranks <- sort(exampleRanks, decreasing = TRUE)
 ranks <- abs(floor(ranks * 0.5 + 0.5))
 
 
-write.table(c(length(ranks), ranks), file="inst/exact/roundRanks.txt", row.names = FALSE, col.names = FALSE)
+write.table(c(length(ranks), ranks), file="roundRanks.txt", row.names = FALSE, col.names = FALSE)
 
 
 
@@ -20,7 +20,7 @@ fgseaRes <- fgsea(examplePathways, ranks, nperm=100,
 inpData <- fgseaRes[, .(size, ES)]
 
 
-filePath <- "inst/exact/inpPathways.txt"
+filePath <- "inpPathways.txt"
 
 write.table(nrow(inpData), file = filePath,
             col.names = FALSE,
@@ -46,7 +46,7 @@ multilevelPvals <- unlist(bplapply(inpData, function(x) fgsea:::fgseaMultilevelC
                                                                             sign = TRUE)))
 
 write.table(multilevelPvals,
-            file="inst/exact/multilevelResults.tsv",
+            file="multilevelResults.tsv",
             col.names = FALSE,
             row.names = FALSE,
             sep = "\t")
