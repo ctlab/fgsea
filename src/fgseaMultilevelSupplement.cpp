@@ -366,7 +366,7 @@ struct BlockedSample {
 };
 
 
-int perturbate(const vector<double> &ranks, vector<int> &sample,
+int perturbate_blocked(const vector<double> &ranks, vector<int> &sample,
                double bound, mt19937 &rng) {
     // std::cerr << "perturbate " << bound << "\n";
     double pertPrmtr = .1;
@@ -419,7 +419,7 @@ int perturbate(const vector<double> &ranks, vector<int> &sample,
 }
 
 
-int perturbate2(const vector<double> &ranks, vector<int> &sample,
+int perturbate_simple(const vector<double> &ranks, vector<int> &sample,
                double bound, mt19937 &rng) {
     double pertPrmtr = 0.1;
     int n = (int) ranks.size();
@@ -465,4 +465,13 @@ int perturbate2(const vector<double> &ranks, vector<int> &sample,
         NS += ranks[sample[id]];
     }
     return moves;
+}
+
+int perturbate(const vector<double> &ranks, vector<int> &sample,
+               double bound, mt19937 &rng) {
+    if (sample.size() >= 250) {
+        return perturbate_blocked(ranks, sample, bound, rng);
+    }
+    return perturbate_simple(ranks, sample, bound, rng);
+
 }
