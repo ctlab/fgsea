@@ -1,5 +1,6 @@
 #include "fgseaMultilevelSupplement.h"
 #include "esCalculation.h"
+#include <iostream>
 
 double betaMeanLog(unsigned long a, unsigned long b) {
     return boost::math::digamma(a) - boost::math::digamma(b + 1);
@@ -133,7 +134,7 @@ void EsRuler::extend(double ES, int seed, double absEps) {
 
 double EsRuler::getPvalue(double ES, double absEps, bool sign) {
     unsigned long halfSize = (sampleSize + 1) / 2;
-    
+
     auto it = enrichmentScores.begin();
     if (ES >= enrichmentScores.back()){
         it = enrichmentScores.end() - 1;
@@ -160,8 +161,265 @@ double EsRuler::getPvalue(double ES, double absEps, bool sign) {
     }
 }
 
+struct BlockedSample {
+    const vector<double> &ranks;
+    const int n;
+    double NS;
+    int k;
+    int size;
+    vector<int> blockEnds;
+    vector<double> blockSums;
+
+    vector< vector<int> > parts;
+    vector<int> border;
+    // all elements int parts[i] are strictly less than border[i]
+
+
+    BlockedSample(const vector<double> &ranks_, vector<int> &sample)
+            : ranks(ranks_), n(ranks.size()), k(sample.size()) {
+        int B = ceil(sqrt(k));
+
+        NS = 0;
+        for (int pos : sample) {
+            NS += ranks[pos];
+        }
+
+        for (int i = 0; i < k; ++i) {
+            int j = i / B;
+            if (j >= parts.size()) {
+                parts.push_back(vector<int>());
+            }
+            parts[j].push_back(sample[i]);
+        }
+
+        size = parts.size();
+        blockEnds = vector<int>(size);
+
+
+        for (int i = 0, total = 0; i < size; ++i) {
+            total += parts[i].size();
+            blockEnds[i] = total ;
+        }
+
+        blockSums = vector<double>(size);
+        for (int i = 0; i < size; ++i) {
+            for (int pos: parts[i]) {
+                blockSums[i] += ranks[pos];
+            }
+        }
+
+        border = vector<int>(size);
+        for (int i = 0; i < size - 1; ++i) {
+            border[i] = (parts[i].back() + parts[i+1].front())/2 + 1;
+        }
+        border[size-1] = n;
+
+    }
+
+    int removeByIndex(int id) {
+        int i = 0;
+        for (; id >= blockEnds[i]; i++) {
+        }
+
+        // std::cerr << "block " << i << "\n";
+        // std::cerr << "start " << blockStarts[i] << " end " << blockEnds[i] << "\n";
+
+        int j = id-(blockEnds[i]-parts[i].size());
+
+        // std::cerr << "index " << j << "\n";
+        //
+        // for (int p: parts[i]) {
+        //     std::cerr << p << " ";
+        // }
+        // std::cerr << "\n";
+
+        int old = parts[i][j];
+
+        NS -= ranks[old];
+
+        for (int jj = j; jj + 1 < parts[i].size(); ++jj) {
+            parts[i][jj] = parts[i][jj+1];
+        }
+
+        parts[i].pop_back();
+        blockSums[i] -= ranks[old];
+
+
+        blockEnds[i]--;
+
+        for (int ii = i + 1; ii < parts.size(); ++ii) {
+            blockEnds[ii]--;
+        }
+
+        return old;
+    }
+
+    // returns index of added alement (from 0 to k-1), -1 if such element
+    // already exists
+    int addValue(int upd) {
+        int i = 0;
+        for (; upd >= border[i]; i++) {
+        }
+
+
+
+        parts[i].push_back(upd);
+        int j = parts[i].size()-1;
+        for (; (j > 0) && (parts[i][j] < parts[i][j-1]); j--) {
+            swap(parts[i][j], parts[i][j-1]);
+        }
+
+        if ( (j > 0) && (parts[i][j] == parts[i][j-1])) {
+            for (; j < parts[i].size()-1; j++) {
+                parts[i][j] = parts[i][j+1];
+            }
+            parts[i].pop_back();
+            return -1;
+        }
+
+        NS += ranks[upd];
+        blockSums[i] += ranks[upd];
+
+        blockEnds[i]++;
+
+
+        for (int ii = i + 1; ii < parts.size(); ++ii) {
+            blockEnds[ii]++;
+        }
+
+        return blockEnds[i]-parts[i].size()+j;
+
+    }
+
+    bool compareStat(double bound) {
+        // p must be sorted
+
+        double cur = 0.0;
+        double q1 = 1.0 / (n - k);
+        double q2 = 1.0 / NS;
+        int last = -1;
+
+        bool check_further = false;
+
+        for (int i = 0; i < size; ++i) {
+            if (parts[i].empty()) {
+                continue;
+            }
+
+            cur += q2 * blockSums[i];
+
+            if (cur >= bound) {
+                check_further = true;
+            }
+
+            cur -= q1 * (parts[i].back() - last - parts[i].size());
+            if (cur >= bound) {
+                return true;
+            }
+            last = parts[i].back();
+        }
+
+        if (!check_further) {
+            return false;
+        }
+
+        cur = 0;
+        last = -1;
+        for (int i = 0; i < size; ++i) {
+            if (parts[i].empty()) {
+                continue;
+            }
+
+            if (cur + q2 * blockSums[i] < bound) {
+                cur += q2 * blockSums[i];
+                cur -= q1 * (parts[i].back() - last - parts[i].size());
+                last = parts[i].back();
+                continue;
+            }
+
+
+            for (int pos : parts[i]) {
+                cur += q2 * ranks[pos] - q1 * (pos - last - 1);
+
+                if (cur >= bound) {
+                    return true;
+                }
+                last = pos;
+            }
+
+        }
+
+        // cur = 0;
+        // last = -1;
+        // for (int i = 0; i < size; ++i) {
+        //     for (int pos : parts[i]) {
+        //         cur += q2 * ranks[pos] - q1 * (pos - last - 1);
+        //         if (cur >= bound) {
+        //             return true;
+        //         }
+        //         last = pos;
+        //     }
+        //
+        // }
+        return false;
+    }
+};
+
 
 int perturbate(const vector<double> &ranks, vector<int> &sample,
+               double bound, mt19937 &rng) {
+    // std::cerr << "perturbate " << bound << "\n";
+    double pertPrmtr = .1;
+    int n = (int) ranks.size();
+    int k = (int) sample.size();
+    uniform_int_distribution<> uid_n(0, n - 1);
+    uniform_int_distribution<> uid_k(0, k - 1);
+
+
+    BlockedSample blockedSample(ranks, sample);
+
+
+    int iters = max(1, (int) (k * pertPrmtr));
+    int moves = 0;
+    for (int i = 0; i < iters; i++) {
+        // std::cerr << i << "\n";
+        int id = uid_k(rng);
+
+        // std::cerr << "remove "<< "\n";
+        int old = blockedSample.removeByIndex(id);
+        // std::cerr << "removed "<< old << "\n";
+
+        int upd = uid_n(rng);
+        // std::cerr << "add "<< "\n";
+        int idx = blockedSample.addValue(upd);
+        // std::cerr << "added "<< "\n";
+
+        if (idx < 0) {
+            blockedSample.addValue(old);
+            continue;
+        }
+
+        if (!blockedSample.compareStat(bound)) {
+            // revert changes
+            blockedSample.removeByIndex(idx);
+            blockedSample.addValue(old);
+        } else {
+            moves++;
+        }
+    }
+
+
+    for (int i=0; i < blockedSample.parts.size(); i++) {
+        for (int j = 0; j < blockedSample.parts[i].size(); j++) {
+            sample[blockedSample.blockEnds[i]-blockedSample.parts[i].size()+j] = blockedSample.parts[i][j];
+        }
+    }
+
+    return moves;
+}
+
+
+int perturbate2(const vector<double> &ranks, vector<int> &sample,
                double bound, mt19937 &rng) {
     double pertPrmtr = 0.1;
     int n = (int) ranks.size();

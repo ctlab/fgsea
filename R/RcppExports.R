@@ -25,3 +25,11 @@ fgseaMultilevelCpp <- function(enrichmentScores, ranks, pathwaySize, sampleSize,
     .Call('_fgsea_fgseaMultilevelCpp', PACKAGE = 'fgsea', enrichmentScores, ranks, pathwaySize, sampleSize, seed, absEps, sign)
 }
 
+start_profiler <- function(str) {
+    .Call('_fgsea_start_profiler', PACKAGE = 'fgsea', str)
+}
+
+stop_profiler <- function() {
+    .Call('_fgsea_stop_profiler', PACKAGE = 'fgsea')
+}
+
