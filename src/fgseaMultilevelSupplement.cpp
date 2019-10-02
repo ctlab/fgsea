@@ -13,7 +13,7 @@ double calcLogCorrection(const vector<unsigned int> &probCorrector, long probCor
     unsigned long remainder = sampleSize - probCorrIndx % (halfSize);
 
     if (probCorrector[probCorrIndx] != 0){
-        result += betaMeanLog(probCorrector[probCorrIndx], remainder);
+        result += betaMeanLog(probCorrector[probCorrIndx] + 1, remainder);
     }
     else{
         unsigned long nmrtr = 0;
@@ -29,7 +29,7 @@ double calcLogCorrection(const vector<unsigned int> &probCorrector, long probCor
                 break;
             }
         }
-        result += betaMeanLog(nmrtr, dnmntr);
+        result += betaMeanLog(nmrtr + 1, dnmntr);
     }
 
     return result;
@@ -133,7 +133,7 @@ void EsRuler::extend(double ES, int seed, double absEps) {
 
 double EsRuler::getPvalue(double ES, double absEps, bool sign) {
     unsigned long halfSize = (sampleSize + 1) / 2;
-    
+
     auto it = enrichmentScores.begin();
     if (ES >= enrichmentScores.back()){
         it = enrichmentScores.end() - 1;
