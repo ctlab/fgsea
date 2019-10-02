@@ -24,7 +24,7 @@ int main() {
 
   ofstream out_f;
   out_f.open("exactResults.tsv");
-  out_f << "size\tES\tp_exact" << endl;
+  out_f << "size\tES\tp_exact\ttotal_removed" << endl;
   for (int test_id = 0; test_id < test_count; test_id++) {
     int k;
     double gsea;
@@ -32,7 +32,7 @@ int main() {
     cout << "Current request: " << test_id + 1 << "/" << test_count;
     cout << ". (Pathway Size: " << k << ", ES: " << gsea << ")" << endl;
     double ans = 0.0;
-    double eps = 0.0;
+    double eps = 1e-40;
     double total_removed = 0.0;
     if (memo.find(make_pair(k, gsea)) != memo.end()) {
       ans = memo[make_pair(k, gsea)].first;
@@ -45,8 +45,6 @@ int main() {
         flag = 1;
       }
       if (k <= 500) {
-        const int ITERS = 1000;
-        double correction = 0.0;
         vector < vector < vector <double> > > dp(k + 1);
         vector < vector <int> > dp_from(k + 1);
         vector < vector <double> > easy(k + 1);
@@ -134,7 +132,7 @@ int main() {
       }
       memo[make_pair(k, gsea)] = make_pair(ans, total_removed);
     }
-    out_f << k << "\t" << gsea << "\t" << ans << endl;
+    out_f << k << "\t" << gsea << "\t" << ans << "\t" << total_removed << endl;
   }
   fclose(stdin);
   return 0;
