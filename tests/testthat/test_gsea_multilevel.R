@@ -163,11 +163,11 @@ test_that("fgseaMultilevel throws a warning when P-value of some pathway is over
     set.seed(42)
 
     ranks <- sort(exampleRanks, decreasing = TRUE)
-    central_pos <- which.max(-abs(ranks))
-    ranks <- c(-(abs(ranks[1:central_pos]) ^ 0.25), ranks[(central_pos + 1):12000])
+    firstNegative <- which(ranks < 0)[1]
+    ranks <- c(abs(ranks[1:(firstNegative - 1)]) ^ 0.1, ranks[firstNegative:length(ranks)])
 
-    pathway <- examplePathways["5992372_GLI3_is_processed_to_GLI3R_by_the_proteasome"]
-    expect_warning(fgseaMultilevel(pathway, ranks, minSize = 15, maxSize = 500))
+    pathway <- examplePathways["5991792_Regulation_of_Apoptosis"]
+    expect_warning(fgseaMultilevel(pathway, ranks, sampleSize = 51, minSize = 15, maxSize = 500))
 
 })
 
@@ -179,8 +179,8 @@ test_that("fgseaMultilevel throws a warning when there are unbalanced gene-level
     set.seed(42)
 
     ranks <- sort(exampleRanks, decreasing = TRUE)
-    central_pos <- which.max(-abs(ranks))
-    ranks <- c(-(abs(ranks[1:central_pos]) ^ 0.25), ranks[(central_pos + 1):12000])
+    firstNegative <- which(ranks < 0)[1]
+    ranks <- c(abs(ranks[1:(firstNegative - 1)]) ^ 0.1, ranks[firstNegative:length(ranks)])
 
     pathway <- examplePathways["5990976_Assembly_of_the_pre-replicative_complex"]
     expect_warning(fgseaMultilevel(pathway, ranks, minSize = 15, maxSize = 500))

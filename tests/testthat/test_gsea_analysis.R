@@ -157,8 +157,9 @@ test_that("fgsea throws a warning when there are unbalanced gene-level statistic
     set.seed(42)
 
     ranks <- sort(exampleRanks, decreasing = TRUE)
-    central_pos <- which.max(-abs(ranks))
-    ranks <- c(-(abs(ranks[1:central_pos]) ^ 0.25), ranks[(central_pos + 1):12000])
+    firstNegative <- which(ranks < 0)[1]
+    ranks <- c(abs(ranks[1:(firstNegative - 1)]) ^ 0.1, ranks[firstNegative:length(ranks)])
 
-    expect_warning(fgsea(examplePathways, ranks, nperm=1000, minSize = 15, maxSize = 500))
+    pathway <- examplePathways["5990976_Assembly_of_the_pre-replicative_complex"]
+    expect_warning(fgsea(pathway, ranks, nperm = 1000, minSize = 15, maxSize = 500))
 })
