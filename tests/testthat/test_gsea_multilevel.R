@@ -126,19 +126,7 @@ test_that("The absEps parameter works correctly with 5991504_Extension_of_Telome
 })
 
 
-test_that("fgseaMultilevel works correctly with zeros in the tail of the conditional probability vector", {
-    data(exampleRanks)
-    ranks <- sort(exampleRanks, decreasing = TRUE)
-
-    expect_silent(
-        fgsea:::fgseaMultilevelCpp(enrichmentScores = 0.001, ranks = ranks,
-                               pathwaySize = 100, sampleSize = 3,
-                               seed = 333, absEps = 0.0, sign = FALSE)
-    )
-})
-
-
-test_that("fgseaMultilevel throws  a warning when sampleSize is less than 3", {
+test_that("fgseaMultilevel throws a warning when sampleSize is less than 3", {
     data(exampleRanks)
     data(examplePathways)
     expect_silent(fgseaMultilevel(examplePathways, exampleRanks,
@@ -164,5 +152,37 @@ test_that("The `absEps` parameter works correct in fgseaMultilevelCpp", {
     ranks <- sort(exampleRanks, decreasing = TRUE)
     pvalue <- fgsea:::fgseaMultilevelCpp(enrichmentScores = 0.95, ranks = ranks, pathwaySize = 50,
                                          sampleSize = 501, seed = 42, absEps = 1e-5, sign = FALSE)
+    pvalue <- pvalue$cppMPval
     expect_true(pvalue >= 1e-10)
 })
+
+
+test_that("fgseaMultilevel throws a warning when P-value of some pathway is overestimated", {
+    data(exampleRanks)
+    data(examplePathways)
+    set.seed(42)
+
+    ranks <- sort(exampleRanks, decreasing = TRUE)
+    central_pos <- which.max(-abs(ranks))
+    ranks <- c(-(abs(ranks[1:central_pos]) ^ 0.25), ranks[(central_pos + 1):12000])
+
+    pathway <- examplePathways["5992372_GLI3_is_processed_to_GLI3R_by_the_proteasome"]
+    expect_warning(fgseaMultilevel(pathway, ranks, minSize = 15, maxSize = 500))
+
+})
+
+
+
+test_that("fgseaMultilevel throws a warning when there are unbalanced gene-level statistic values", {
+    data(exampleRanks)
+    data(examplePathways)
+    set.seed(42)
+
+    ranks <- sort(exampleRanks, decreasing = TRUE)
+    central_pos <- which.max(-abs(ranks))
+    ranks <- c(-(abs(ranks[1:central_pos]) ^ 0.25), ranks[(central_pos + 1):12000])
+
+    pathway <- examplePathways["5990976_Assembly_of_the_pre-replicative_complex"]
+    expect_warning(fgseaMultilevel(pathway, ranks, minSize = 15, maxSize = 500))
+})
+

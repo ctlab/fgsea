@@ -5,34 +5,23 @@ double betaMeanLog(unsigned long a, unsigned long b) {
     return boost::math::digamma(a) - boost::math::digamma(b + 1);
 }
 
-double calcLogCorrection(const vector<unsigned int> &probCorrector, long probCorrIndx,
+pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector, long probCorrIndx,
                          const pair<unsigned int, unsigned int> posUnifScoreCount, unsigned int sampleSize){
     double result = 0.0;
     result -= betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second);
+
     unsigned long halfSize = (sampleSize + 1) / 2;
     unsigned long remainder = sampleSize - probCorrIndx % (halfSize);
 
-    if (probCorrector[probCorrIndx] != 0){
-        result += betaMeanLog(probCorrector[probCorrIndx] + 1, remainder);
+    double condProb = betaMeanLog(probCorrector[probCorrIndx] + 1, remainder);
+    result += condProb;
+
+    if (exp(condProb) >= 0.5){
+        return make_pair(result, true);
     }
     else{
-        unsigned long nmrtr = 0;
-        unsigned long dnmntr = remainder;
-
-        unsigned long begIndx = (probCorrIndx / halfSize) * halfSize + halfSize;
-        for (unsigned long i = begIndx; i < probCorrector.size(); i += halfSize)
-        {
-            dnmntr += sampleSize;
-            if (probCorrector[i] != 0)
-            {
-                nmrtr = probCorrector[i];
-                break;
-            }
-        }
-        result += betaMeanLog(nmrtr + 1, dnmntr);
+        return make_pair(result, false);
     }
-
-    return result;
 }
 
 void fillRandomSample(set<int> &randomSample, mt19937 &gen,
@@ -114,14 +103,14 @@ void EsRuler::extend(double ES, int seed, double absEps) {
     posUnifScoreCount = make_pair(posCount, totalCount);
 
     duplicateSamples();
-    while (ES > enrichmentScores.back() || checkZeroTail(probCorrector, sampleSize)){
+    while (ES > enrichmentScores.back()){
         for (int moves = 0; moves < sampleSize * pathwaySize;) {
             for (int sample_id = 0; sample_id < sampleSize; sample_id++) {
                 moves += perturbate(ranks, currentSamples[sample_id], enrichmentScores.back(), gen);
             }
         }
         duplicateSamples();
-        if (absEps != 0 && (!checkZeroTail(probCorrector, sampleSize))){
+        if (absEps != 0){
             unsigned long k = enrichmentScores.size() / ((sampleSize + 1) / 2);
             if (k > - log2(0.5 * absEps * exp(betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second)))) {
                 break;
@@ -131,7 +120,7 @@ void EsRuler::extend(double ES, int seed, double absEps) {
 }
 
 
-double EsRuler::getPvalue(double ES, double absEps, bool sign) {
+pair<double, bool> EsRuler::getPvalue(double ES, double absEps, bool sign) {
     unsigned long halfSize = (sampleSize + 1) / 2;
 
     auto it = enrichmentScores.begin();
@@ -152,11 +141,11 @@ double EsRuler::getPvalue(double ES, double absEps, bool sign) {
     double adjLogPval = k * adjLog + betaMeanLog(remainder + 1, sampleSize);
 
     if (sign) {
-        return max(0.0, min(1.0, exp(adjLogPval)));
+        return make_pair(max(0.0, min(1.0, exp(adjLogPval))), true);
     } else {
-        double adjLogCorrection = calcLogCorrection(probCorrector, indx, posUnifScoreCount, sampleSize);
-        double resLog = adjLogPval + adjLogCorrection;
-        return max(0.0, min(1.0, exp(resLog)));
+        pair<double, bool> correction = calcLogCorrection(probCorrector, indx, posUnifScoreCount, sampleSize);
+        double resLog = adjLogPval + correction.first;
+        return make_pair(max(0.0, min(1.0, exp(resLog))), correction.second);
     }
 }
 

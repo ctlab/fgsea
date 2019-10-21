@@ -35,7 +35,7 @@ public:
 
     void extend(double ES, int seed, double absEps);
 
-    double getPvalue(double ES, double absEps, bool sign);
+    pair<double, bool> getPvalue(double ES, double absEps, bool sign);
 };
 
 int perturbate(const vector<double> &ranks, vector<int> &sample,
@@ -43,7 +43,7 @@ int perturbate(const vector<double> &ranks, vector<int> &sample,
 
 double betaMeanLog(unsigned long a, unsigned long b);
 
-double calcLogCorrection(const vector<unsigned int> &probCorrector, long probCorrIndx,
+pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector, long probCorrIndx,
                          const pair<unsigned int, unsigned int> posUnifScoreCount, unsigned int sampleSize);
 
 

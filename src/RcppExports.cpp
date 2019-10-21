@@ -48,7 +48,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // fgseaMultilevelCpp
-NumericVector fgseaMultilevelCpp(const NumericVector& enrichmentScores, const NumericVector& ranks, int pathwaySize, int sampleSize, int seed, double absEps, bool sign);
+DataFrame fgseaMultilevelCpp(const NumericVector& enrichmentScores, const NumericVector& ranks, int pathwaySize, int sampleSize, int seed, double absEps, bool sign);
 RcppExport SEXP _fgsea_fgseaMultilevelCpp(SEXP enrichmentScoresSEXP, SEXP ranksSEXP, SEXP pathwaySizeSEXP, SEXP sampleSizeSEXP, SEXP seedSEXP, SEXP absEpsSEXP, SEXP signSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

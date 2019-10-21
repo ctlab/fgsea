@@ -56,7 +56,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
     # Warning message for duplicate gene names
     if (any(duplicated(names(stats)))) {
-        warning("There are duplicate gene names, fgsea may produce unexpected results")
+        warning("There are duplicate gene names, fgsea may produce unexpected results.")
     }
 
     # Warning message for to small value for sampleSize
@@ -103,7 +103,6 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
     leadingEdges <- mapply("[", list(names(stats)), gseaStatRes[, "leadingEdge"], SIMPLIFY = FALSE)
     pathwayScores <- unlist(gseaStatRes[, "res"])
 
-    universe <- seq_along(stats)
 
     seeds <- sample.int(10^9, 1)
     BPPARAM <- setUpBPPARAM(nproc=nproc, BPPARAM=BPPARAM)
@@ -112,20 +111,46 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
                                       pathwaysFiltered=pathwaysFiltered, leadingEdges=leadingEdges,
                                       permPerProc=nPermSimple, seeds=seeds, toKeepLength=m,
                                       stats=stats, BPPARAM=SerialParam())
-    simpleError <- 1/log(2)*sqrt(trigamma(simpleFgseaRes$nMoreExtreme) - trigamma(nPermSimple))
+
+    simpleFgseaRes[, leZeroMean := NULL]
+    simpleFgseaRes[, geZeroMean := NULL]
+    simpleFgseaRes[, nLeEs := NULL]
+    simpleFgseaRes[, nGeEs := NULL]
+    simpleFgseaRes[, nLeZero := NULL]
+    simpleFgseaRes[, nGeZero := NULL]
+
+    unbalanced <- simpleFgseaRes[is.na(pval)]
+    unbalanced[, padj := as.numeric(NA)]
+    unbalanced[, log2err := as.numeric(NA)]
+    if (nrow(unbalanced) > 0){
+        warning("There were ",
+                paste(nrow(unbalanced)),
+                " pathways for which P-values were not calculated properly due to ",
+                "unbalanced (positive and negative) gene-level statistic values.")
+    }
+
+    simpleFgseaRes <- simpleFgseaRes[!is.na(pval)]
+
+
+    simpleError <- 1/log(2)*sqrt(trigamma(simpleFgseaRes$nMoreExtreme + 1) - trigamma(nPermSimple + 1))
     multError <- sapply((simpleFgseaRes$nMoreExtreme + 1) / nPermSimple, multilevelError, sampleSize)
 
 
     if (all(multError > simpleError)){
-        simpleFgseaRes[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme) - trigamma((nPermSimple)))]
+        simpleFgseaRes[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme + 1) - trigamma((nPermSimple + 1)))]
+        simpleFgseaRes <- rbindlist(list(simpleFgseaRes, unbalanced), use.names = TRUE)
+
         setorder(simpleFgseaRes, pathway)
-        simpleFgseaRes <- simpleFgseaRes[, .(pathway, pval, padj, log2err, ES, NES, size, leadingEdge)]
+        simpleFgseaRes[, "nMoreExtreme" := NULL]
+        setcolorder(simpleFgseaRes, c("pathway", "pval", "padj", "log2err",
+                                      "ES", "NES", "size", "leadingEdge"))
+
         simpleFgseaRes <- simpleFgseaRes[]
         return(simpleFgseaRes)
     }
 
     dtSimpleFgsea <- simpleFgseaRes[simpleError < multError]
-    dtSimpleFgsea[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme) - trigamma(nPermSimple))]
+    dtSimpleFgsea[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme + 1) - trigamma(nPermSimple + 1))]
     dtMultilevel <- simpleFgseaRes[multError < simpleError]
 
     multilevelPathwaysList <- split(dtMultilevel, by="size")
@@ -134,19 +159,33 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
     multilevelPathwaysList <- multilevelPathwaysList[indxs]
 
     seed=sample.int(1e9, size=1)
-    pvals <- multilevelImpl(multilevelPathwaysList, stats, sampleSize,
-                            seed, absEps, BPPARAM=BPPARAM)
+    cpp.res <- multilevelImpl(multilevelPathwaysList, stats, sampleSize,
+                              seed, absEps, BPPARAM=BPPARAM)
+    cpp.res <- rbindlist(cpp.res)
+
 
     result <- rbindlist(multilevelPathwaysList)
-    result[, pval := unlist(pvals)]
-    result[, log2err := sqrt(floor(-log2(pval) + 1) * (trigamma((sampleSize+1)/2) - trigamma(sampleSize+1)))/log(2)]
-    result <- rbindlist(list(result, dtSimpleFgsea), use.names = TRUE)
+    result[, pval := cpp.res$cppMPval]
+    result[, isCpGeHalf := cpp.res$cppIsCpGeHalf]
+    result[, log2err := multilevelError(pval, sampleSize = sampleSize)]
+    result[isCpGeHalf == FALSE, log2err:= NA]
+    if (!all(result$isCpGeHalf)){
+        warning("For some of the pathways the P-values were likely overestimated. ",
+                "For such pathways log2err is set to NA.")
+    }
+    result[, isCpGeHalf:=NULL]
+
+    result <- rbindlist(list(result, dtSimpleFgsea, unbalanced), use.names = TRUE)
+    result[, nMoreExtreme := NULL]
 
     result[pval < absEps, c("pval", "log2err") := list(absEps, NA)]
     result[, padj := p.adjust(pval, method = "BH")]
 
-    result <- result[, .(pathway, pval, padj, log2err, ES, NES, size, leadingEdge)]
+    setcolorder(result, c("pathway", "pval", "padj", "log2err",
+                          "ES", "NES", "size", "leadingEdge"))
+
     setorder(result, pathway)
+
     result <- result[]
     result
 }
@@ -178,9 +217,9 @@ multilevelImpl <- function(multilevelPathwaysList, stats, sampleSize,
                            seed, absEps, sign=FALSE, BPPARAM=NULL){
     #To avoid warnings during the check
     size=ES=NULL
-    pvals <- bplapply(multilevelPathwaysList,
+    res <- bplapply(multilevelPathwaysList,
                       function(x) fgseaMultilevelCpp(x[, ES], stats, unique(x[, size]),
                                                      sampleSize, seed, absEps, sign),
                       BPPARAM=BPPARAM)
-    return(pvals)
+    return(res)
 }

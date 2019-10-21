@@ -78,8 +78,3 @@ bool compareStat(const vector<double> &ranks, const vector<int> &p, double NS, d
     }
     return false;
 }
-
-bool checkZeroTail(const vector<unsigned int> &probCorrector, unsigned int sampleSize){
-    unsigned int halfSize = (sampleSize + 1) / 2;
-    return probCorrector[probCorrector.size() - halfSize] == 0;
-}

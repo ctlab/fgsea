@@ -16,7 +16,4 @@ double calcPositiveES(const vector<double> &ranks, const vector<int> &p);
 
 bool compareStat(const vector<double> &ranks, const vector<int> &p, double NS, double bound);
 
-bool checkZeroTail(const vector<unsigned int> &probCorrector, unsigned int sampleSize);
-
-
 #endif //FGSEAMULTILEVELCPP_ESCALCULATION_H
