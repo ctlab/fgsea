@@ -1,9 +1,5 @@
 #include "fgseaMultilevel.h"
 #include "fgseaMultilevelSupplement.h"
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <cmath>
 using namespace std;
 
 DataFrame fgseaMultilevelCpp(const NumericVector& enrichmentScores,
@@ -40,19 +36,17 @@ DataFrame fgseaMultilevelCpp(const NumericVector& enrichmentScores,
         double currentES = esVector[i];
         if (currentES >= 0.0){
             resPair = esRulerPos.getPvalue(abs(currentES), absEps, sign);
-            pvalRes.emplace_back(resPair.first);
-            isCpGeHalf.emplace_back(resPair.second);
+            pvalRes.push_back(resPair.first);
+            isCpGeHalf.push_back(resPair.second);
         }
         else{
             resPair = esRulerNeg.getPvalue(abs(currentES), absEps, sign);
-            pvalRes.emplace_back(resPair.first);
-            isCpGeHalf.emplace_back(resPair.second);
+            pvalRes.push_back(resPair.first);
+            isCpGeHalf.push_back(resPair.second);
         }
     }
 
     // return vector with pvalues and vector with conditional probability result
     return DataFrame::create(Named("cppMPval") = pvalRes,
                              Named("cppIsCpGeHalf") = isCpGeHalf);
-
-    // return wrap(result);
 }

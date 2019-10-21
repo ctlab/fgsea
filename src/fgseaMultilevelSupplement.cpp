@@ -64,11 +64,11 @@ void EsRuler::duplicateSamples() {
     }
     sort(stats.begin(), stats.end());
     for (int sampleId = 0; 2 * sampleId < sampleSize; sampleId++) {
-        enrichmentScores.emplace_back(stats[sampleId].first);
+        enrichmentScores.push_back(stats[sampleId].first);
         if (find(posEsIndxs.begin(), posEsIndxs.end(), stats[sampleId].second) != posEsIndxs.end()) {
             totalPosEsCount--;
         }
-        probCorrector.emplace_back(totalPosEsCount);
+        probCorrector.push_back(totalPosEsCount);
     }
 
     vector<vector<int> > new_sets;
