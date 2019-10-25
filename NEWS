@@ -1,3 +1,7 @@
+CHANGES IN VERSION 1.11.2
+* Simpler handling of conditional probabilities
+* Added the exact algorithm to inst folder
+
 CHANGES IN VERSION 1.11.1
 * Proper absEps handling
 
