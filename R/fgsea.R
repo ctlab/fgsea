@@ -206,7 +206,22 @@ fgsea <- function(pathways, stats, nperm,
 
     pvals <- fgseaSimpleImpl(pathwayScores, pathwaysSizes, pathwaysFiltered,
                              leadingEdges, permPerProc, seeds, m, stats, BPPARAM)
+    if (nrow(pvals[is.na(pval)]) > 0){
+        warning("There were ",
+                paste(nrow(pvals[is.na(pval)])),
+                " pathways for which P-values were not calculated properly due to ",
+                "unbalanced gene-level statistic values")
+    }
 
+    pvals[, nLeZero := NULL]
+    pvals[, nGeZero := NULL]
+    pvals[, leZeroMean := NULL]
+    pvals[, geZeroMean := NULL]
+    pvals[, nLeEs := NULL]
+    pvals[, nGeEs := NULL]
+
+    setcolorder(pvals, c("pathway", "pval", "padj", "ES", "NES",
+                         "nMoreExtreme", "size", "leadingEdge"))
     # Makes pvals object printable immediatly
     pvals <- pvals[]
 
@@ -564,31 +579,34 @@ fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes, pathwaysFiltered,
     .="damn notes"
 
 
-    pvals <- counts[,
-        list(pval=min((1+sum(leEs)) / (1 + sum(leZero)),
-                 (1+sum(geEs)) / (1 + sum(geZero))),
-             leZeroMean = sum(leZeroSum) / sum(leZero),
-             geZeroMean = sum(geZeroSum) / sum(geZero),
-             nLeEs=sum(leEs),
-             nGeEs=sum(geEs)
-             )
-        ,
-        by=.(pathway)]
 
-    pvals[, padj := p.adjust(pval, method="BH")]
+    pvals <- counts[, list(leZeroMean = sum(leZeroSum) / sum(leZero),
+                           geZeroMean = sum(geZeroSum) / sum(geZero),
+                           nLeZero = sum(leZero),
+                           nGeZero = sum(geZero),
+                           nLeEs = sum(leEs),
+                           nGeEs = sum(geEs)),
+                    by = .(pathway)]
+
     pvals[, ES := pathwayScores[pathway]]
-    pvals[, NES := ES / ifelse(ES > 0, geZeroMean, abs(leZeroMean))]
-    pvals[, leZeroMean := NULL]
-    pvals[, geZeroMean := NULL]
+
+    pvals[, NES := as.numeric(NA)]
+    pvals[(ES > 0 & geZeroMean != 0) | (ES <= 0 & leZeroMean != 0),
+          NES := ES / ifelse(ES > 0, geZeroMean, abs(leZeroMean))]
+
+    pvals[, pval := as.numeric(NA)]
+    pvals[!is.na(NES), pval := pmin((1+nLeEs) / (1 + nLeZero),
+                        (1+nGeEs) / (1 + nGeZero))]
+
+
+    pvals[, padj := as.numeric(NA)]
+    pvals[!is.na(pval), padj := p.adjust(pval, method = "BH")]
 
     pvals[, nMoreExtreme :=  ifelse(ES > 0, nGeEs, nLeEs)]
-    pvals[, nLeEs := NULL]
-    pvals[, nGeEs := NULL]
-
     pvals[, size := pathwaysSizes[pathway]]
     pvals[, pathway := names(pathwaysFiltered)[pathway]]
-
     pvals[, leadingEdge := .(leadingEdges)]
+
     pvals
 }
 

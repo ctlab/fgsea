@@ -149,3 +149,17 @@ test_that("collapsePathways work", {
     collapsedPathways$mainPathways
     expect_identical("p1", collapsedPathways$mainPathways)
 })
+
+
+test_that("fgsea throws a warning when there are unbalanced gene-level statistic values", {
+    data(exampleRanks)
+    data(examplePathways)
+    set.seed(42)
+
+    ranks <- sort(exampleRanks, decreasing = TRUE)
+    firstNegative <- which(ranks < 0)[1]
+    ranks <- c(abs(ranks[1:(firstNegative - 1)]) ^ 0.1, ranks[firstNegative:length(ranks)])
+
+    pathway <- examplePathways["5990976_Assembly_of_the_pre-replicative_complex"]
+    expect_warning(fgsea(pathway, ranks, nperm = 1000, minSize = 15, maxSize = 500))
+})

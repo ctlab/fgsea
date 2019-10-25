@@ -1,15 +1,10 @@
 #include "fgseaMultilevel.h"
 #include "fgseaMultilevelSupplement.h"
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <cmath>
 using namespace std;
 
-NumericVector fgseaMultilevelCpp(const NumericVector& enrichmentScores,
-                                 const NumericVector& ranks, int pathwaySize,
-                                 int sampleSize, int seed,
-                                 double absEps, bool sign)
+DataFrame fgseaMultilevelCpp(const NumericVector& enrichmentScores,
+                             const NumericVector& ranks, int pathwaySize,
+                             int sampleSize, int seed,double absEps, bool sign)
 {
     vector<double> posRanks = as<std::vector<double> >(ranks);
     for (int i = 0; i < posRanks.size(); i++) {
@@ -32,19 +27,26 @@ NumericVector fgseaMultilevelCpp(const NumericVector& enrichmentScores,
         esRulerNeg.extend(abs(minES), seed, absEps);
     }
 
-    vector<double> result;
+    vector<double> pvalRes;
+    vector<bool> isCpGeHalf;
+
     int nrow = esVector.size();
     for (int i = 0; i < nrow; i++){
-        double pvalue;
+        pair<double, bool> resPair;
         double currentES = esVector[i];
         if (currentES >= 0.0){
-            pvalue = esRulerPos.getPvalue(abs(currentES), absEps, sign);
-            result.emplace_back(pvalue);
+            resPair = esRulerPos.getPvalue(abs(currentES), absEps, sign);
+            pvalRes.push_back(resPair.first);
+            isCpGeHalf.push_back(resPair.second);
         }
         else{
-            pvalue = esRulerNeg.getPvalue(abs(currentES), absEps, sign);
-            result.emplace_back(pvalue);
+            resPair = esRulerNeg.getPvalue(abs(currentES), absEps, sign);
+            pvalRes.push_back(resPair.first);
+            isCpGeHalf.push_back(resPair.second);
         }
     }
-    return wrap(result);
+
+    // return vector with pvalues and vector with conditional probability result
+    return DataFrame::create(Named("cppMPval") = pvalRes,
+                             Named("cppIsCpGeHalf") = isCpGeHalf);
 }
