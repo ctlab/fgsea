@@ -133,10 +133,10 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
 
     simpleError <- 1/log(2)*sqrt(trigamma(simpleFgseaRes$nMoreExtreme + 1) - trigamma(nPermSimple + 1))
-    multError <- sapply((simpleFgseaRes$nMoreExtreme + 1) / nPermSimple, multilevelError, sampleSize)
+    multError <- sapply((simpleFgseaRes$nMoreExtreme + 1) / (nPermSimple + 1), multilevelError, sampleSize)
 
 
-    if (all(multError > simpleError)){
+    if (all(multError >= simpleError)){
         simpleFgseaRes[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme + 1) - trigamma((nPermSimple + 1)))]
         simpleFgseaRes <- rbindlist(list(simpleFgseaRes, unbalanced), use.names = TRUE)
 
@@ -149,7 +149,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
         return(simpleFgseaRes)
     }
 
-    dtSimpleFgsea <- simpleFgseaRes[simpleError < multError]
+    dtSimpleFgsea <- simpleFgseaRes[multError >= simpleError]
     dtSimpleFgsea[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme + 1) - trigamma(nPermSimple + 1))]
     dtMultilevel <- simpleFgseaRes[multError < simpleError]
 
