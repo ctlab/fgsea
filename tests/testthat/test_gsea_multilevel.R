@@ -192,11 +192,11 @@ test_that("fgseaSimpleImpl works correctly in fgseaMultilevel", {
     data(examplePathways)
 
 
-    df <- read.csv("../../inst/for_tests/GDS289.tsv", sep='\t')
+    df <- read.csv(system.file("extdata", "GDS289.tsv", package="fgsea"), sep='\t')
     ranks <- df$t
     names(ranks) <- df$Symbol
 
-    gsymbols <- scan("../../inst/for_tests/pathway.txt", character())
+    gsymbols <- readLines(system.file("extdata", "pathway.txt", package="fgsea"))
     pathway <- list("REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION" = gsymbols)
 
     set.seed(15)
