@@ -69,6 +69,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
     #To avoid warnings during the check
     log2err=nMoreExtreme=pathway=pval=padj=NULL
+    nLeZero=nGeZero=leZeroMean=geZeroMean=nLeEs=nGeEs=isCpGeHalf=NULL
     ES=NES=size=leadingEdge=NULL
     .="damn notes"
 

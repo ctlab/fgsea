@@ -164,6 +164,9 @@ fgsea <- function(pathways, stats, nperm,
     if (nperm - sum(permPerProc) > 0) {
         permPerProc <- c(permPerProc, nperm - sum(permPerProc))
     }
+
+    pval=nLeZero=nGeZero=leZeroMean=geZeroMean=nLeEs=nGeEs=NULL
+
     seeds <- sample.int(10^9, length(permPerProc))
 
     BPPARAM <- setUpBPPARAM(nproc=nproc, BPPARAM=BPPARAM)
@@ -574,7 +577,7 @@ fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes, pathwaysFiltered,
     # Getting rid of check NOTEs
     leEs=leZero=geEs=geZero=leZeroSum=geZeroSum=NULL
     pathway=padj=pval=ES=NES=geZeroMean=leZeroMean=NULL
-    nMoreExtreme=nGeEs=nLeEs=size=NULL
+    nMoreExtreme=nGeEs=nLeEs=nLeZero=nGeZero=size=NULL
     leadingEdge=NULL
     .="damn notes"
 
