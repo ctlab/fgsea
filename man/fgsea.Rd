@@ -4,8 +4,16 @@
 \alias{fgsea}
 \title{Runs preranked gene set enrichment analysis.}
 \usage{
-fgsea(pathways, stats, nperm, minSize = 1, maxSize = Inf, nproc = 0,
-  gseaParam = 1, BPPARAM = NULL)
+fgsea(
+  pathways,
+  stats,
+  nperm,
+  minSize = 1,
+  maxSize = Inf,
+  nproc = 0,
+  gseaParam = 1,
+  BPPARAM = NULL
+)
 }
 \arguments{
 \item{pathways}{List of gene sets to check.}

@@ -4,8 +4,17 @@
 \alias{fgseaMultilevel}
 \title{Runs preranked gene set enrichment analysis.}
 \usage{
-fgseaMultilevel(pathways, stats, sampleSize = 101, minSize = 1,
-  maxSize = Inf, absEps = 0, nproc = 0, BPPARAM = NULL)
+fgseaMultilevel(
+  pathways,
+  stats,
+  sampleSize = 101,
+  minSize = 1,
+  maxSize = Inf,
+  absEps = 0,
+  nproc = 0,
+  gseaParam = 1,
+  BPPARAM = NULL
+)
 }
 \arguments{
 \item{pathways}{List of gene sets to check.}
@@ -21,6 +30,9 @@ fgseaMultilevel(pathways, stats, sampleSize = 101, minSize = 1,
 \item{absEps}{This parameter sets the boundary for calculating the p value.}
 
 \item{nproc}{If not equal to zero sets BPPARAM to use nproc workers (default = 0).}
+
+\item{gseaParam}{GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
+before calculation of GSEA enrichment scores.}
 
 \item{BPPARAM}{Parallelization parameter used in bplapply.
 Can be used to specify cluster to run. If not initialized explicitly or

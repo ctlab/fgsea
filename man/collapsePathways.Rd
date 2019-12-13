@@ -4,8 +4,14 @@
 \alias{collapsePathways}
 \title{Collapse list of enriched pathways to independent ones.}
 \usage{
-collapsePathways(fgseaRes, pathways, stats, pval.threshold = 0.05,
-  nperm = 10/pval.threshold, gseaParam = 1)
+collapsePathways(
+  fgseaRes,
+  pathways,
+  stats,
+  pval.threshold = 0.05,
+  nperm = 10/pval.threshold,
+  gseaParam = 1
+)
 }
 \arguments{
 \item{fgseaRes}{Table with results of running fgsea(), should be filtered
