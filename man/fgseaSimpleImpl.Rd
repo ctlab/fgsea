@@ -19,7 +19,7 @@ fgseaSimpleImpl(
 \arguments{
 \item{pathwayScores}{Vector with enrichment scores for the `pathways`.}
 
-\item{pathwaysSizes}{Vector of path sizes.}
+\item{pathwaysSizes}{Vector of pathways sizes.}
 
 \item{pathwaysFiltered}{Filtered pathways.}
 

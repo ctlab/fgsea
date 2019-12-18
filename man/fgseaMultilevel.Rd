@@ -10,7 +10,7 @@ fgseaMultilevel(
   sampleSize = 101,
   minSize = 1,
   maxSize = Inf,
-  absEps = 0,
+  absEps = 1e-10,
   nproc = 0,
   gseaParam = 1,
   BPPARAM = NULL

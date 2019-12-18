@@ -6,7 +6,7 @@ test_that("fgseaMultilevel works", {
 	set.seed(42)
 	sampleSize <- 50
 	fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks, sampleSize=sampleSize,
-										  maxSize=500)
+	                                      maxSize=500)
 	expect_equal(fgseaMultilevelRes[23, ES], 0.5788464)
 
 	expect_true("70385" %in% fgseaMultilevelRes[grep("5991851", pathway), leadingEdge][[1]])
@@ -92,7 +92,7 @@ test_that("fgseaMultilevel gives valid P-value for 5990980_Cell_Cycle", {
     example.pathway <- examplePathways["5990980_Cell_Cycle"]
 
     set.seed(42)
-    fgseaMRes <- fgseaMultilevel(example.pathway, ranks)
+    fgseaMRes <- fgseaMultilevel(example.pathway, ranks, absEps = 0.0)
     pval <- fgseaMRes$pval
     expect_true(1e-29 <= pval && pval <= 1e-25)
 })
@@ -200,7 +200,7 @@ test_that("fgseaSimpleImpl works correctly in fgseaMultilevel", {
     pathway <- list("REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION" = gsymbols)
 
     set.seed(15)
-    pval1 <- fgsea(pathway, ranks, nperm=1e3)$pval
+    pval1 <- fgseaSimple(pathway, ranks, nperm=1e3)$pval
 
 
     set.seed(15)

@@ -34,32 +34,10 @@
 #' data(exampleRanks)
 #' fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks, maxSize=500)
 fgseaMultilevel <- function(pathways, stats, sampleSize=101,
-                            minSize=1, maxSize=Inf, absEps=0,
+                            minSize=1, maxSize=Inf, absEps=1e-10,
                             nproc=0, gseaParam=1, BPPARAM=NULL)
 {
-    # Error if pathways is not a list
-    if (!is.list(pathways)) {
-        stop("pathways should be a list with each element containing names of the stats argument")
-    }
-
-    # Error if stats is not named
-    if (is.null(names(stats))) {
-        stop("stats should be named")
-    }
-
-    # Warning message for ties in stats
-    ties <- sum(duplicated(stats[stats != 0]))
-    if (ties != 0) {
-        warning("There are ties in the preranked stats (",
-                paste(round(ties * 100 / length(stats), digits = 2)),
-                "% of the list).\n",
-                "The order of those tied genes will be arbitrary, which may produce unexpected results.")
-    }
-
-    # Warning message for duplicate gene names
-    if (any(duplicated(names(stats)))) {
-        warning("There are duplicate gene names, fgsea may produce unexpected results.")
-    }
+    checkPathwaysAndStats(pathways, stats)
 
     # Warning message for to small value for sampleSize
     if (sampleSize < 3){
@@ -192,7 +170,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
     setorder(result, pathway)
 
-    result <- result[]
+    # result <- result[]
     result
 }
 
