@@ -159,18 +159,25 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
     }
     result[, isCpGeHalf:=NULL]
 
+
     result <- rbindlist(list(result, dtSimpleFgsea, unbalanced), use.names = TRUE)
     result[, nMoreExtreme := NULL]
 
     result[pval < absEps, c("pval", "log2err") := list(absEps, NA)]
     result[, padj := p.adjust(pval, method = "BH")]
 
+    if (nrow(result[pval==absEps & is.na(log2err)])){
+        warning("For some pathways, in reality P-values are less than ",
+                paste(absEps),
+                ". You can set the `absEps` argument to zero for better estimation.")
+    }
+
     setcolorder(result, c("pathway", "pval", "padj", "log2err",
                           "ES", "NES", "size", "leadingEdge"))
 
     setorder(result, pathway)
 
-    # result <- result[]
+    result <- result[]
     result
 }
 

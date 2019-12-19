@@ -2,7 +2,7 @@
 % Please edit documentation in R/fgsea.R
 \name{fgsea}
 \alias{fgsea}
-\title{Runs preranked gene set enrichment analysis.}
+\title{Wrapper to run methods for preranked gene set enrichment analysis.}
 \usage{
 fgsea(...)
 }
@@ -13,7 +13,10 @@ fgsea(...)
 A table with GSEA results. Each row corresponds to a tested pathway.
 }
 \description{
-Runs preranked gene set enrichment analysis.
+This function provide an interface to two existing functions:
+\link[fgsea]{fgseaSimple}, \link[fgsea]{fgseaMultilevel}.
+By default, the \link[fgsea]{fgseaMultilevel} function is used for analysis.
+For compatibility with the previous implementation you can pass the `nperm` argument to the function.
 }
 \examples{
 data(examplePathways)

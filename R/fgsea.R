@@ -1,5 +1,9 @@
-#' Runs preranked gene set enrichment analysis.
+#' Wrapper to run methods for preranked gene set enrichment analysis.
 #'
+#' This function provide an interface to two existing functions:
+#' \link[fgsea]{fgseaSimple}, \link[fgsea]{fgseaMultilevel}.
+#' By default, the \link[fgsea]{fgseaMultilevel} function is used for analysis.
+#' For compatibility with the previous implementation you can pass the `nperm` argument to the function.
 #' @param ... optional arguments for functions \link[fgsea]{fgseaSimple}, \link[fgsea]{fgseaMultilevel}
 #' @return A table with GSEA results. Each row corresponds to a tested pathway.
 #' @export
@@ -11,16 +15,6 @@
 #' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks)
 fgsea <- function(...){
     arguments <- list(...)
-    if ("nperm" %in% names(arguments) & "sampleSize" %in% names(arguments)){
-        stop("The nperm and sampleSize are arguments for different functions. ",
-             "You must use one of them. The nperm is an argument to the fgseaSimple function, ",
-             "sampleSize is an argument to the fgseaMultilevel function.")
-    }
-    if ("nperm" %in% names(arguments) & "absEps" %in% names(arguments)){
-        stop("The absEps is an argument to the fgseaMultilevel function. It cannot be used ",
-             "in the fgseaSimple function.")
-    }
-
     if ("nperm" %in% names(arguments)){
         warning("You are trying to run fgseaSimple. ",
                 "It is recommended to use fgseaMultilevel. ",
@@ -31,7 +25,6 @@ fgsea <- function(...){
     else{
         res <- fgseaMultilevel(...)
     }
-    res <- res[]
     res
 }
 
@@ -269,7 +262,7 @@ fgseaSimple <- function(pathways, stats, nperm,
     setcolorder(pvals, c("pathway", "pval", "padj", "ES", "NES",
                          "nMoreExtreme", "size", "leadingEdge"))
     # Makes pvals object printable immediatly
-    # pvals <- pvals[]
+    pvals <- pvals[]
 
     pvals
 }

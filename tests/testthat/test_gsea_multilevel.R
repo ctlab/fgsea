@@ -5,8 +5,9 @@ test_that("fgseaMultilevel works", {
 	data(exampleRanks)
 	set.seed(42)
 	sampleSize <- 50
-	fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks, sampleSize=sampleSize,
-	                                      maxSize=500)
+	fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks,
+	                                      sampleSize=sampleSize,
+	                                      absEps=0.0, maxSize=500)
 	expect_equal(fgseaMultilevelRes[23, ES], 0.5788464)
 
 	expect_true("70385" %in% fgseaMultilevelRes[grep("5991851", pathway), leadingEdge][[1]])
@@ -16,7 +17,9 @@ test_that("fgseaMultilevel works", {
     expect_true("69386" %in% fgseaMultilevelRes[grep("5992314", pathway), leadingEdge][[1]])
 
     # specifying number of threads
-    fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks, sampleSize=100, maxSize=100, nproc=2)
+    fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks,
+                                          sampleSize=100, maxSize=100,
+                                          absEps=0.0, nproc=2)
 	})
 
 
@@ -27,7 +30,8 @@ test_that("fgseaMultilevel is reproducable independent of bpparam settings", {
     sampleSize <- 50
 
     set.seed(42)
-    fr <- fgseaMultilevel(examplePathways[1:2], exampleRanks, sampleSize=sampleSize, maxSize=500, nproc=1)
+    fr <- fgseaMultilevel(examplePathways[1:2], exampleRanks,
+                          sampleSize=sampleSize, maxSize=500, nproc=1)
 
 
     set.seed(42)
@@ -104,7 +108,7 @@ test_that("The absEps parameter works correctly with 5990980_Cell_Cycle", {
     example.pathway <- examplePathways["5990980_Cell_Cycle"]
 
     set.seed(42)
-    fgseaMRes <- fgseaMultilevel(example.pathway, ranks, absEps = 1e-10)
+    expect_warning(fgseaMRes <- fgseaMultilevel(example.pathway, ranks, absEps = 1e-10))
 
     pval <- fgseaMRes$pval
     expect_true(pval == 1e-10)
@@ -117,9 +121,9 @@ test_that("The absEps parameter works correctly with 5991504_Extension_of_Telome
     example.pathway <- examplePathways["5991504_Extension_of_Telomeres"]
 
     set.seed(42)
-    pvals <- replicate(fgseaMultilevel(example.pathway,
+    expect_warning(pvals <- replicate(fgseaMultilevel(example.pathway,
                                        exampleRanks, absEps = 1e-5)$pval,
-                       n = 20)
+                       n = 20))
 
     expect_true(all(pvals >= 1e-5))
 
@@ -207,4 +211,10 @@ test_that("fgseaSimpleImpl works correctly in fgseaMultilevel", {
     pval2 <- fgseaMultilevel(pathway, ranks, sampleSize = 101)$pval
 
     expect_equal(pval1, pval2)
+})
+
+test_that("fgsea throws a warning when reaching absEps", {
+    data(examplePathways)
+    data(exampleRanks)
+    expect_warning(fgseaRes <- fgsea(examplePathways, exampleRanks, maxSize=500))
 })
