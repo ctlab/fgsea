@@ -1,7 +1,7 @@
 ---
 title: "Using fgsea package"
 author: "Alexey Sergushichev"
-date: "2016-06-22"
+date: "2019-12-23"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Using fgsea package}
@@ -9,23 +9,28 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-`fgsea` is an R-package for fast preranked gene set enrichment analysis (GSEA). The performance is achieved by using an algorithm for cumulative
-GSEA-statistic calculation. This allows to reuse samples between different gene set sizes. See the [preprint](http://biorxiv.org/content/early/2016/06/20/060012) for algorithmic details. 
+`fgsea` is an R-package for fast preranked gene set enrichment analysis (GSEA). This package allows you to estimate arbitrarily low P-values for individual gene sets. P-value estimation is based on an adaptive multi-level split Monte-Carlo scheme. See the [preprint](https://www.biorxiv.org/content/10.1101/060012v2) for algorithmic details. 
 
-## Loading necessary libraryries
+## Loading necessary libraries
 
-```{r echo=FALSE, message=FALSE}
+```{r message=FALSE}
 library(fgsea)
 library(data.table)
 library(ggplot2)
 ```
 
+```{r echo=FALSE}
+library(BiocParallel)
+register(SerialParam())
+```
+
 ## Quick run
 
-Loading example pathways and gene-level statistics:
+Loading example pathways and gene-level statistics and setting seed:
 ```{r}
 data(examplePathways)
 data(exampleRanks)
+set.seed(42)
 ```
 
 Running fgsea:
@@ -33,9 +38,11 @@ Running fgsea:
 fgseaRes <- fgsea(pathways = examplePathways, 
                   stats = exampleRanks,
                   minSize=15,
-                  maxSize=500,
-                  nperm=10000)
+                  maxSize=500)
 ```
+
+As you can see from the warning, `fgsea` has a default lower bound `eps=1e-10` for estimating P-values. If you need to estimate P-value more accurate, you can set the `eps` argument to zero in the `fgsea` function.
+
 
 The resulting table contains enrichment scores and p-values:
 ```{r}
@@ -56,17 +63,15 @@ plotEnrichment(examplePathways[["5991130_Programmed_Cell_Death"]],
 
 Or make a table plot for a bunch of selected pathways:
 ```{r, fig.width=7, fig.height=8, fig.retina=2}
-topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
-topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
-topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
-plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes, 
+topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=20), pathway]
+plotGseaTable(examplePathways[topPathwaysUp], exampleRanks, fgseaRes, 
               gseaParam = 0.5)
 ```
 
 From the plot above one can see that there are very similar pathways in the table (for example `5991502_Mitotic_Metaphase_and_Anaphase` and `5991600_Mitotic_Anaphase`). To select only
 independent pathways one can use `collapsePathways` function:
 
-```{r, fig.width=7, fig.height=8, fig.retina=2}
+```{r, fig.width=7, fig.height=8, fig.retina=2, warning=FALSE}
 collapsedPathways <- collapsePathways(fgseaRes[order(pval)][padj < 0.01], 
                                       examplePathways, exampleRanks)
 mainPathways <- fgseaRes[pathway %in% collapsedPathways$mainPathways][
@@ -78,7 +83,6 @@ plotGseaTable(examplePathways[mainPathways], exampleRanks, fgseaRes,
 To save the results `data:table::fwrite` function can be used:
 
 ```{r message=FALSE}
-library(data.table)
 fwrite(fgseaRes, file="fgseaRes.txt", sep="\t", sep2=c("", " ", ""))
 ```
 
@@ -88,21 +92,19 @@ function and a corresponding database (here `org.Mm.eg.db` for mouse):
 ```{r message=FALSE}
 library(org.Mm.eg.db)
 fgseaResMain <- fgseaRes[match(mainPathways, pathway)]
-fgseaResMain[, leadingEdge := lapply(leadingEdge, mapIds, x=org.Mm.eg.db, keytype="ENTREZID", column="SYMBOL")]
+fgseaResMain[, leadingEdge := lapply(leadingEdge, mapIds, 
+                                     x=org.Mm.eg.db, 
+                                     keytype="ENTREZID", 
+                                     column="SYMBOL")]
 fwrite(fgseaResMain, file="fgseaResMain.txt", sep="\t", sep2=c("", " ", ""))
 ```
 
 ## Performance considerations
 
-Please, be aware that `fgsea` function takes about *O(nk^{3/2})* time,
-where *n* is number of permutations and *k* is a maximal size of the
-pathways. That means that setting `maxSize` parameter with a value of ~500 
-is strongly recommended.
-
 Also, `fgsea` is parallelized using `BiocParallel` package. 
 By default the first registered backend returned by `bpparam()` is 
 used. To tweak the parallelization one can either specify `BPPARAM`
-parameter used for `bclapply` of set `nproc` parameter, which is 
+parameter used for `bplapply` of set `nproc` parameter, which is 
 a shorthand for setting `BPPARAM=MulticoreParam(workers = nproc)`.
 
 ## Using Reactome pathways
@@ -111,9 +113,9 @@ For convenience there is `reactomePathways` function that obtains pathways
 from Reactome for given set of genes. Package `reactome.db` is required
 to be installed.
 
-```{r message=FALSE}
+```{r message=FALSE, warning=FALSE}
 pathways <- reactomePathways(names(exampleRanks))
-fgseaRes <- fgsea(pathways, exampleRanks, nperm=1000, maxSize=500)
+fgseaRes <- fgsea(pathways, exampleRanks, maxSize=500)
 head(fgseaRes)
 ```
 
@@ -144,7 +146,7 @@ str(head(pathways))
 
 And runnig fgsea:
 
-```{r}
-fgseaRes <- fgsea(pathways, ranks, minSize=15, maxSize=500, nperm=1000)
+```{r warning=FALSE}
+fgseaRes <- fgsea(pathways, ranks, minSize=15, maxSize=500)
 head(fgseaRes)
 ```
