@@ -9,7 +9,7 @@ multilevelImpl(
   stats,
   sampleSize,
   seed,
-  absEps,
+  eps,
   sign = FALSE,
   BPPARAM = NULL
 )
@@ -23,7 +23,7 @@ multilevelImpl(
 
 \item{seed}{`seed` parameter from `fgseaMultilevel`}
 
-\item{absEps}{This parameter sets the boundary for calculating the p value.}
+\item{eps}{This parameter sets the boundary for calculating the p value.}
 
 \item{sign}{This option will be used in future implementations.}
 

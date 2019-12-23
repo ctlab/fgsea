@@ -33,9 +33,9 @@ public:
 
     ~EsRuler();
 
-    void extend(double ES, int seed, double absEps);
+    void extend(double ES, int seed, double eps);
 
-    pair<double, bool> getPvalue(double ES, double absEps, bool sign);
+    pair<double, bool> getPvalue(double ES, double eps, bool sign);
 };
 
 int perturbate(const vector<double> &ranks, vector<int> &sample,

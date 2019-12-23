@@ -7,7 +7,7 @@
 #' @param sampleSize The size of a random set of genes which in turn has size = pathwaySize
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
-#' @param absEps This parameter sets the boundary for calculating the p value.
+#' @param eps This parameter sets the boundary for calculating the p value.
 #' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
 #' @param gseaParam GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
 #'                  before calculation of GSEA enrichment scores.
@@ -34,7 +34,7 @@
 #' data(exampleRanks)
 #' fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks, maxSize=500)
 fgseaMultilevel <- function(pathways, stats, sampleSize=101,
-                            minSize=1, maxSize=Inf, absEps=1e-10,
+                            minSize=1, maxSize=Inf, eps=1e-10,
                             nproc=0, gseaParam=1, BPPARAM=NULL)
 {
     checkPathwaysAndStats(pathways, stats)
@@ -53,7 +53,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
     nPermSimple <- 1000 # number of samples for initial fgseaSimple run: fast and good enough
     minSize <- max(minSize, 1)
-    absEps <- max(0, min(1, absEps))
+    eps <- max(0, min(1, eps))
 
     stats <- sort(stats, decreasing = TRUE)
     stats <- abs(stats) ^ gseaParam
@@ -144,7 +144,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
     seed=sample.int(1e9, size=1)
     cpp.res <- multilevelImpl(multilevelPathwaysList, stats, sampleSize,
-                              seed, absEps, BPPARAM=BPPARAM)
+                              seed, eps, BPPARAM=BPPARAM)
     cpp.res <- rbindlist(cpp.res)
 
 
@@ -163,13 +163,13 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
     result <- rbindlist(list(result, dtSimpleFgsea, unbalanced), use.names = TRUE)
     result[, nMoreExtreme := NULL]
 
-    result[pval < absEps, c("pval", "log2err") := list(absEps, NA)]
+    result[pval < eps, c("pval", "log2err") := list(eps, NA)]
     result[, padj := p.adjust(pval, method = "BH")]
 
-    if (nrow(result[pval==absEps & is.na(log2err)])){
+    if (nrow(result[pval==eps & is.na(log2err)])){
         warning("For some pathways, in reality P-values are less than ",
-                paste(absEps),
-                ". You can set the `absEps` argument to zero for better estimation.")
+                paste(eps),
+                ". You can set the `eps` argument to zero for better estimation.")
     }
 
     setcolorder(result, c("pathway", "pval", "padj", "log2err",
@@ -198,19 +198,19 @@ multilevelError <- function(pval, sampleSize){
 #' @param stats Named vector of gene-level stats. Names should be the same as in 'pathways'
 #' @param sampleSize The size of a random set of genes which in turn has size = pathwaySize
 #' @param seed `seed` parameter from `fgseaMultilevel`
-#' @param absEps This parameter sets the boundary for calculating the p value.
+#' @param eps This parameter sets the boundary for calculating the p value.
 #' @param sign This option will be used in future implementations.
 #' @param BPPARAM Parallelization parameter used in bplapply.
 #'  Can be used to specify cluster to run. If not initialized explicitly or
 #'  by setting `nproc` default value `bpparam()` is used.
 #' @return List of P-values.
 multilevelImpl <- function(multilevelPathwaysList, stats, sampleSize,
-                           seed, absEps, sign=FALSE, BPPARAM=NULL){
+                           seed, eps, sign=FALSE, BPPARAM=NULL){
     #To avoid warnings during the check
     size=ES=NULL
     res <- bplapply(multilevelPathwaysList,
                       function(x) fgseaMultilevelCpp(x[, ES], stats, unique(x[, size]),
-                                                     sampleSize, seed, absEps, sign),
+                                                     sampleSize, seed, eps, sign),
                       BPPARAM=BPPARAM)
     return(res)
 }

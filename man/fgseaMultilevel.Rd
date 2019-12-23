@@ -10,7 +10,7 @@ fgseaMultilevel(
   sampleSize = 101,
   minSize = 1,
   maxSize = Inf,
-  absEps = 1e-10,
+  eps = 1e-10,
   nproc = 0,
   gseaParam = 1,
   BPPARAM = NULL
@@ -27,7 +27,7 @@ fgseaMultilevel(
 
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
 
-\item{absEps}{This parameter sets the boundary for calculating the p value.}
+\item{eps}{This parameter sets the boundary for calculating the p value.}
 
 \item{nproc}{If not equal to zero sets BPPARAM to use nproc workers (default = 0).}
 
