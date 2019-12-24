@@ -36,23 +36,27 @@ set.seed(42)
 Running fgsea:
 ```{r}
 fgseaRes <- fgsea(pathways = examplePathways, 
-                  stats = exampleRanks,
-                  minSize=15,
-                  maxSize=500)
+                  stats    = exampleRanks,
+                  minSize  = 15,
+                  maxSize  = 500)
 ```
-
-As you can see from the warning, `fgsea` has a default lower bound `eps=1e-10` for estimating P-values. If you need to estimate P-value more accurate, you can set the `eps` argument to zero in the `fgsea` function.
-
 
 The resulting table contains enrichment scores and p-values:
 ```{r}
 head(fgseaRes[order(pval), ])
 ```
 
-It takes about ten seconds to get results with significant hits after FDR correction:
+As you can see from the warning, `fgsea` has a default lower bound `eps=1e-10` for estimating P-values. If you need to estimate P-value more accurate, you can set the `eps` argument to zero in the `fgsea` function.
 ```{r}
-sum(fgseaRes[, padj < 0.01])
+fgseaRes <- fgsea(pathways = examplePathways, 
+                  stats    = exampleRanks,
+                  eps      = 0.0,
+                  minSize  = 15,
+                  maxSize  = 500)
+
+head(fgseaRes[order(pval), ])
 ```
+
 
 One can make an enrichment plot for a pathway:
 ```{r, fig.width=7, fig.height=4}
@@ -63,9 +67,11 @@ plotEnrichment(examplePathways[["5991130_Programmed_Cell_Death"]],
 
 Or make a table plot for a bunch of selected pathways:
 ```{r, fig.width=7, fig.height=8, fig.retina=2}
-topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=20), pathway]
-plotGseaTable(examplePathways[topPathwaysUp], exampleRanks, fgseaRes, 
-              gseaParam = 0.5)
+topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
+topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
+topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes, 
+              gseaParam=0.5)
 ```
 
 From the plot above one can see that there are very similar pathways in the table (for example `5991502_Mitotic_Metaphase_and_Anaphase` and `5991600_Mitotic_Anaphase`). To select only

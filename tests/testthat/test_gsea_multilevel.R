@@ -218,3 +218,11 @@ test_that("fgsea throws a warning when reaching eps", {
     data(exampleRanks)
     expect_warning(fgseaRes <- fgsea(examplePathways, exampleRanks, maxSize=500))
 })
+
+
+test_that("fgsea throws a warning when passing argument `nperm`",{
+    data(examplePathways)
+    data(exampleRanks)
+    expect_warning(fgsea(examplePathways, exampleRanks, minSize=15,
+                         maxSize=500, nperm=1000))
+})

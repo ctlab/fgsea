@@ -14,6 +14,7 @@
 #' @param BPPARAM Parallelization parameter used in bplapply.
 #'  Can be used to specify cluster to run. If not initialized explicitly or
 #'  by setting `nproc` default value `bpparam()` is used.
+#' @param absEps deprecated, use `eps` parameter instead
 #'@export
 #' @import fastmatch
 #' @import data.table
@@ -33,11 +34,26 @@
 #' data(examplePathways)
 #' data(exampleRanks)
 #' fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks, maxSize=500)
-fgseaMultilevel <- function(pathways, stats, sampleSize=101,
-                            minSize=1, maxSize=Inf, eps=1e-10,
-                            nproc=0, gseaParam=1, BPPARAM=NULL)
+fgseaMultilevel <- function(pathways,
+                            stats,
+                            sampleSize = 101,
+                            minSize    = 1,
+                            maxSize    = Inf,
+                            eps        = 1e-10,
+                            nproc      = 0,
+                            gseaParam  = 1,
+                            BPPARAM    = NULL,
+                            absEps     = NULL)
 {
     checkPathwaysAndStats(pathways, stats)
+
+    # Warning message for deprecated absEps parameter
+    if (!is.null(absEps)){
+        warning("You are using deprecated argument `absEps`. ",
+                "Use `eps` argument instead. ",
+                "`absEps` was assigned to `eps`.")
+        eps <-  absEps
+    }
 
     # Warning message for to small value for sampleSize
     if (sampleSize < 3){
