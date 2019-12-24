@@ -4,8 +4,13 @@
 \alias{calcGseaStat}
 \title{Calculates GSEA statistics for a given query gene set}
 \usage{
-calcGseaStat(stats, selectedStats, gseaParam = 1,
-  returnAllExtremes = FALSE, returnLeadingEdge = FALSE)
+calcGseaStat(
+  stats,
+  selectedStats,
+  gseaParam = 1,
+  returnAllExtremes = FALSE,
+  returnLeadingEdge = FALSE
+)
 }
 \arguments{
 \item{stats}{Named numeric vector with gene-level statistics

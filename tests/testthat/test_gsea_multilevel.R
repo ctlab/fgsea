@@ -186,3 +186,25 @@ test_that("fgseaMultilevel throws a warning when there are unbalanced gene-level
     expect_warning(fgseaMultilevel(pathway, ranks, minSize = 15, maxSize = 500))
 })
 
+
+test_that("fgseaSimpleImpl works correctly in fgseaMultilevel", {
+    data(exampleRanks)
+    data(examplePathways)
+
+
+    df <- read.csv(system.file("extdata", "GDS289.tsv", package="fgsea"), sep='\t')
+    ranks <- df$t
+    names(ranks) <- df$Symbol
+
+    gsymbols <- readLines(system.file("extdata", "pathway.txt", package="fgsea"))
+    pathway <- list("REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION" = gsymbols)
+
+    set.seed(15)
+    pval1 <- fgsea(pathway, ranks, nperm=1e3)$pval
+
+
+    set.seed(15)
+    pval2 <- fgseaMultilevel(pathway, ranks, sampleSize = 101)$pval
+
+    expect_equal(pval1, pval2)
+})

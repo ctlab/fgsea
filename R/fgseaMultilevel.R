@@ -9,6 +9,8 @@
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
 #' @param absEps This parameter sets the boundary for calculating the p value.
 #' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
+#' @param gseaParam GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
+#'                  before calculation of GSEA enrichment scores.
 #' @param BPPARAM Parallelization parameter used in bplapply.
 #'  Can be used to specify cluster to run. If not initialized explicitly or
 #'  by setting `nproc` default value `bpparam()` is used.
@@ -33,7 +35,7 @@
 #' fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks, maxSize=500)
 fgseaMultilevel <- function(pathways, stats, sampleSize=101,
                             minSize=1, maxSize=Inf, absEps=0,
-                            nproc=0, BPPARAM=NULL)
+                            nproc=0, gseaParam=1, BPPARAM=NULL)
 {
     # Error if pathways is not a list
     if (!is.list(pathways)) {
@@ -67,13 +69,17 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
     #To avoid warnings during the check
     log2err=nMoreExtreme=pathway=pval=padj=NULL
+    nLeZero=nGeZero=leZeroMean=geZeroMean=nLeEs=nGeEs=isCpGeHalf=NULL
     ES=NES=size=leadingEdge=NULL
     .="damn notes"
 
     nPermSimple <- 1000 # number of samples for initial fgseaSimple run: fast and good enough
     minSize <- max(minSize, 1)
     absEps <- max(0, min(1, absEps))
+
     stats <- sort(stats, decreasing = TRUE)
+    stats <- abs(stats) ^ gseaParam
+
     if (sampleSize %% 2 == 0){
         sampleSize <-  sampleSize + 1
     }
@@ -133,10 +139,10 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
 
 
     simpleError <- 1/log(2)*sqrt(trigamma(simpleFgseaRes$nMoreExtreme + 1) - trigamma(nPermSimple + 1))
-    multError <- sapply((simpleFgseaRes$nMoreExtreme + 1) / nPermSimple, multilevelError, sampleSize)
+    multError <- sapply((simpleFgseaRes$nMoreExtreme + 1) / (nPermSimple + 1), multilevelError, sampleSize)
 
 
-    if (all(multError > simpleError)){
+    if (all(multError >= simpleError)){
         simpleFgseaRes[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme + 1) - trigamma((nPermSimple + 1)))]
         simpleFgseaRes <- rbindlist(list(simpleFgseaRes, unbalanced), use.names = TRUE)
 
@@ -149,7 +155,7 @@ fgseaMultilevel <- function(pathways, stats, sampleSize=101,
         return(simpleFgseaRes)
     }
 
-    dtSimpleFgsea <- simpleFgseaRes[simpleError < multError]
+    dtSimpleFgsea <- simpleFgseaRes[multError >= simpleError]
     dtSimpleFgsea[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme + 1) - trigamma(nPermSimple + 1))]
     dtMultilevel <- simpleFgseaRes[multError < simpleError]
 

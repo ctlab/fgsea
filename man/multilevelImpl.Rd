@@ -4,8 +4,15 @@
 \alias{multilevelImpl}
 \title{Calculates P-values for preprocessed data.}
 \usage{
-multilevelImpl(multilevelPathwaysList, stats, sampleSize, seed, absEps,
-  sign = FALSE, BPPARAM = NULL)
+multilevelImpl(
+  multilevelPathwaysList,
+  stats,
+  sampleSize,
+  seed,
+  absEps,
+  sign = FALSE,
+  BPPARAM = NULL
+)
 }
 \arguments{
 \item{multilevelPathwaysList}{List of pathways for which P-values will be calculated.}

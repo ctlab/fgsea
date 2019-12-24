@@ -4,8 +4,17 @@
 \alias{fgseaSimpleImpl}
 \title{Runs preranked gene set enrichment analysis for preprocessed input data.}
 \usage{
-fgseaSimpleImpl(pathwayScores, pathwaysSizes, pathwaysFiltered,
-  leadingEdges, permPerProc, seeds, toKeepLength, stats, BPPARAM)
+fgseaSimpleImpl(
+  pathwayScores,
+  pathwaysSizes,
+  pathwaysFiltered,
+  leadingEdges,
+  permPerProc,
+  seeds,
+  toKeepLength,
+  stats,
+  BPPARAM
+)
 }
 \arguments{
 \item{pathwayScores}{Vector with enrichment scores for the `pathways`.}

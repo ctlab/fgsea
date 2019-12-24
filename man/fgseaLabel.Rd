@@ -4,8 +4,17 @@
 \alias{fgseaLabel}
 \title{Runs label-permuring gene set enrichment analysis.}
 \usage{
-fgseaLabel(pathways, mat, labels, nperm, minSize = 1, maxSize = Inf,
-  nproc = 0, gseaParam = 1, BPPARAM = NULL)
+fgseaLabel(
+  pathways,
+  mat,
+  labels,
+  nperm,
+  minSize = 1,
+  maxSize = Inf,
+  nproc = 0,
+  gseaParam = 1,
+  BPPARAM = NULL
+)
 }
 \arguments{
 \item{pathways}{List of gene sets to check.}
