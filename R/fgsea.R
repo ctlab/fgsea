@@ -29,7 +29,7 @@ fgsea <- function(...){
 }
 
 
-checkPathwaysAndStats <- function(pathways, stats){
+preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam){
     # Error if pathways is not a list
     if (!is.list(pathways)) {
         stop("pathways should be a list with each element containing names of the stats argument")
@@ -53,6 +53,24 @@ checkPathwaysAndStats <- function(pathways, stats){
     if (any(duplicated(names(stats)))) {
         warning("There are duplicate gene names, fgsea may produce unexpected results.")
     }
+
+    stats <- sort(stats, decreasing=TRUE)
+    stats <- abs(stats) ^ gseaParam
+
+
+    minSize <- max(minSize, 1)
+
+    pathwaysFiltered <- lapply(pathways, function(p) { unique(na.omit(fmatch(p, names(stats)))) })
+    pathwaysSizes <- sapply(pathwaysFiltered, length)
+
+    toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
+
+    pathwaysFiltered <- pathwaysFiltered[toKeep]
+    pathwaysSizes <- pathwaysSizes[toKeep]
+
+    list(filtered=pathwaysFiltered,
+         sizes=pathwaysSizes,
+         stats=stats)
 }
 
 
@@ -193,29 +211,11 @@ fgseaSimple <- function(pathways, stats, nperm,
                   nproc=0,
                   gseaParam=1,
                   BPPARAM=NULL) {
-    checkPathwaysAndStats(pathways, stats)
-
-    granularity <- 1000
-    permPerProc <- rep(granularity, floor(nperm / granularity))
-    if (nperm - sum(permPerProc) > 0) {
-        permPerProc <- c(permPerProc, nperm - sum(permPerProc))
-    }
-
-    pval=nLeZero=nGeZero=leZeroMean=geZeroMean=nLeEs=nGeEs=NULL
-
-    seeds <- sample.int(10^9, length(permPerProc))
-
-    BPPARAM <- setUpBPPARAM(nproc=nproc, BPPARAM=BPPARAM)
-
-    minSize <- max(minSize, 1)
-    stats <- sort(stats, decreasing=TRUE)
-
-    stats <- abs(stats) ^ gseaParam
-    pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, names(stats)))) })
-    pathwaysSizes <- sapply(pathwaysFiltered, length)
-
-    toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
-    m <- length(toKeep)
+    pp <- preparePathwaysAndStats(pathways, stats, minSize, maxSize, gseaParam)
+    pathwaysFiltered <- pp$filtered
+    pathwaysSizes <- pp$sizes
+    stats <- pp$stats
+    m <- length(pathwaysFiltered)
 
     if (m == 0) {
         return(data.table(pathway=character(),
@@ -228,8 +228,18 @@ fgseaSimple <- function(pathways, stats, nperm,
                           leadingEdge=list()))
     }
 
-    pathwaysFiltered <- pathwaysFiltered[toKeep]
-    pathwaysSizes <- pathwaysSizes[toKeep]
+
+    granularity <- 1000
+    permPerProc <- rep(granularity, floor(nperm / granularity))
+    if (nperm - sum(permPerProc) > 0) {
+        permPerProc <- c(permPerProc, nperm - sum(permPerProc))
+    }
+
+    pval=nLeZero=nGeZero=leZeroMean=geZeroMean=nLeEs=nGeEs=NULL
+
+    seeds <- sample.int(10^9, length(permPerProc))
+
+    BPPARAM <- setUpBPPARAM(nproc=nproc, BPPARAM=BPPARAM)
 
     gseaStatRes <- do.call(rbind,
                 lapply(pathwaysFiltered, calcGseaStat,
@@ -342,7 +352,7 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
 
     minSize <- max(minSize, 1)
 
-    pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, rownames(mat)))) })
+    pathwaysFiltered <- lapply(pathways, function(p) { unique(na.omit(fmatch(p, rownames(mat)))) })
     pathwaysSizes <- sapply(pathwaysFiltered, length)
 
     toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)

@@ -163,3 +163,19 @@ test_that("fgseaSimple throws a warning when there are unbalanced gene-level sta
     pathway <- examplePathways["5990976_Assembly_of_the_pre-replicative_complex"]
     expect_warning(fgseaSimple(pathway, ranks, nperm = 1000, minSize = 15, maxSize = 500))
 })
+
+test_that("fgseaSimple and fgseaMultilevel properly handle duplicated in gene sets", {
+    data(exampleRanks)
+    data(examplePathways)
+
+
+    pathways <- list(p1=examplePathways$`5991851_Mitotic_Prometaphase`,
+                     p2=rep(examplePathways$`5991851_Mitotic_Prometaphase`, 2))
+
+    set.seed(42)
+    fr1 <- fgseaSimple(pathways, exampleRanks, nperm=1000)
+    expect_equal(fr1$size[1], fr1$size[2])
+
+    fr2 <- suppressWarnings(fgseaMultilevel(pathways, exampleRanks, eps = 1e-4))
+    expect_equal(fr2$size[1], fr2$size[2])
+})

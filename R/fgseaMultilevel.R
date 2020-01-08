@@ -45,7 +45,24 @@ fgseaMultilevel <- function(pathways,
                             BPPARAM    = NULL,
                             absEps     = NULL)
 {
-    checkPathwaysAndStats(pathways, stats)
+    pp <- preparePathwaysAndStats(pathways, stats, minSize, maxSize, gseaParam)
+    pathwaysFiltered <- pp$filtered
+    pathwaysSizes <- pp$sizes
+    stats <- pp$stats
+    m <- length(pathwaysFiltered)
+
+    if (m == 0) {
+        return(data.table(pathway=character(),
+                          pval=numeric(),
+                          padj=numeric(),
+                          log2err=numeric(),
+                          ES=numeric(),
+                          NES=numeric(),
+                          size=integer(),
+                          leadingEdge=list()))
+    }
+
+
 
     # Warning message for deprecated absEps parameter
     if (!is.null(absEps)){
@@ -71,29 +88,11 @@ fgseaMultilevel <- function(pathways,
     minSize <- max(minSize, 1)
     eps <- max(0, min(1, eps))
 
-    stats <- sort(stats, decreasing = TRUE)
-    stats <- abs(stats) ^ gseaParam
 
     if (sampleSize %% 2 == 0){
         sampleSize <-  sampleSize + 1
     }
-    pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, names(stats)))) })
-    pathwaysSizes <- sapply(pathwaysFiltered, length)
 
-    toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
-    m <- length(toKeep)
-    if (m == 0) {
-        return(data.table(pathway=character(),
-                          pval=numeric(),
-                          padj=numeric(),
-                          log2err=numeric(),
-                          ES=numeric(),
-                          NES=numeric(),
-                          size=integer(),
-                          leadingEdge=list()))
-    }
-    pathwaysFiltered <- pathwaysFiltered[toKeep]
-    pathwaysSizes <- pathwaysSizes[toKeep]
 
     gseaStatRes <- do.call(rbind,
                            lapply(pathwaysFiltered, calcGseaStat,
