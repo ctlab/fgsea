@@ -4,7 +4,7 @@ using namespace std;
 
 DataFrame fgseaMultilevelCpp(const NumericVector& enrichmentScores,
                              const NumericVector& ranks, int pathwaySize,
-                             int sampleSize, int seed,double absEps, bool sign)
+                             int sampleSize, int seed,double eps, bool sign)
 {
     vector<double> posRanks = as<std::vector<double> >(ranks);
     for (int i = 0; i < posRanks.size(); i++) {
@@ -21,10 +21,10 @@ DataFrame fgseaMultilevelCpp(const NumericVector& enrichmentScores,
     double maxES = *max_element(begin(esVector), end(esVector));
     double minES = *min_element(begin(esVector), end(esVector));
     if (maxES >= 0){
-        esRulerPos.extend(abs(maxES), seed, absEps);
+        esRulerPos.extend(abs(maxES), seed, eps);
     }
     if (minES < 0){
-        esRulerNeg.extend(abs(minES), seed, absEps);
+        esRulerNeg.extend(abs(minES), seed, eps);
     }
 
     vector<double> pvalRes;
@@ -35,12 +35,12 @@ DataFrame fgseaMultilevelCpp(const NumericVector& enrichmentScores,
         pair<double, bool> resPair;
         double currentES = esVector[i];
         if (currentES >= 0.0){
-            resPair = esRulerPos.getPvalue(abs(currentES), absEps, sign);
+            resPair = esRulerPos.getPvalue(abs(currentES), eps, sign);
             pvalRes.push_back(resPair.first);
             isCpGeHalf.push_back(resPair.second);
         }
         else{
-            resPair = esRulerNeg.getPvalue(abs(currentES), absEps, sign);
+            resPair = esRulerNeg.getPvalue(abs(currentES), eps, sign);
             pvalRes.push_back(resPair.first);
             isCpGeHalf.push_back(resPair.second);
         }

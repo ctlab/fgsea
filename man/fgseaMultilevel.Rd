@@ -10,10 +10,11 @@ fgseaMultilevel(
   sampleSize = 101,
   minSize = 1,
   maxSize = Inf,
-  absEps = 0,
+  eps = 1e-10,
   nproc = 0,
   gseaParam = 1,
-  BPPARAM = NULL
+  BPPARAM = NULL,
+  absEps = NULL
 )
 }
 \arguments{
@@ -27,7 +28,7 @@ fgseaMultilevel(
 
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
 
-\item{absEps}{This parameter sets the boundary for calculating the p value.}
+\item{eps}{This parameter sets the boundary for calculating the p value.}
 
 \item{nproc}{If not equal to zero sets BPPARAM to use nproc workers (default = 0).}
 
@@ -37,6 +38,8 @@ before calculation of GSEA enrichment scores.}
 \item{BPPARAM}{Parallelization parameter used in bplapply.
 Can be used to specify cluster to run. If not initialized explicitly or
 by setting `nproc` default value `bpparam()` is used.}
+
+\item{absEps}{deprecated, use `eps` parameter instead}
 }
 \value{
 A table with GSEA results. Each row corresponds to a tested pathway. The columns are the following

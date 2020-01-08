@@ -3,8 +3,8 @@ context("Plots")
 test_that("plotGseaTable works", {
     data(examplePathways)
     data(exampleRanks)
-    fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=1000,
-                      minSize=15, maxSize=100)
+    fgseaRes <- fgsea(examplePathways, exampleRanks,
+                      minSize=15, maxSize=100, eps=0.0)
     tf <- tempfile("plot", fileext = ".png")
     topPathways <- fgseaRes[head(order(pval), n=15)][order(NES), pathway]
     png(filename = tf, width=2000, height=1600, res = 300)
@@ -26,8 +26,8 @@ test_that("plotEnrichment works", {
 test_that("plotGseaTable ignores empty pathways", {
     data(examplePathways)
     data(exampleRanks)
-    fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=1000,
-                      minSize=15, maxSize=100)
+    fgseaRes <- fgsea(examplePathways, exampleRanks,
+                      minSize=15, maxSize=100, eps=0.0)
 
     expect_equal(length(intersect(examplePathways[477], names(exampleRanks))), 0)
     p <- plotGseaTable(examplePathways[477], exampleRanks, fgseaRes, gseaParam=0.5,

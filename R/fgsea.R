@@ -1,3 +1,62 @@
+#' Wrapper to run methods for preranked gene set enrichment analysis.
+#'
+#' This function provide an interface to two existing functions:
+#' \link[fgsea]{fgseaSimple}, \link[fgsea]{fgseaMultilevel}.
+#' By default, the \link[fgsea]{fgseaMultilevel} function is used for analysis.
+#' For compatibility with the previous implementation you can pass the `nperm` argument to the function.
+#' @param ... optional arguments for functions \link[fgsea]{fgseaSimple}, \link[fgsea]{fgseaMultilevel}
+#' @return A table with GSEA results. Each row corresponds to a tested pathway.
+#' @export
+#' @examples
+#' data(examplePathways)
+#' data(exampleRanks)
+#' fgseaRes <- fgsea(examplePathways, exampleRanks, maxSize=500)
+#' # Testing only one pathway is implemented in a more efficient manner
+#' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks)
+fgsea <- function(...){
+    arguments <- list(...)
+    if ("nperm" %in% names(arguments)){
+        warning("You are trying to run fgseaSimple. ",
+                "It is recommended to use fgseaMultilevel. ",
+                "To run fgseaMultilevel, you need to remove ",
+                "the nperm argument in the fgsea function call.")
+        res <- fgseaSimple(...)
+    }
+    else{
+        res <- fgseaMultilevel(...)
+    }
+    res
+}
+
+
+checkPathwaysAndStats <- function(pathways, stats){
+    # Error if pathways is not a list
+    if (!is.list(pathways)) {
+        stop("pathways should be a list with each element containing names of the stats argument")
+    }
+
+    # Error if stats is not named
+    if (is.null(names(stats))) {
+        stop("stats should be named")
+    }
+
+    # Warning message for ties in stats
+    ties <- sum(duplicated(stats[stats != 0]))
+    if (ties != 0) {
+        warning("There are ties in the preranked stats (",
+                paste(round(ties * 100 / length(stats), digits = 2)),
+                "% of the list).\n",
+                "The order of those tied genes will be arbitrary, which may produce unexpected results.")
+    }
+
+    # Warning message for duplicate gene names
+    if (any(duplicated(names(stats)))) {
+        warning("There are duplicate gene names, fgsea may produce unexpected results.")
+    }
+}
+
+
+
 #' Calculates GSEA statistics for a given query gene set
 #'
 #' Takes \emph{O(k log k)} time, where \emph{k} is a size of `selectedSize`.
@@ -126,38 +185,15 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @examples
 #' data(examplePathways)
 #' data(exampleRanks)
-#' fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
+#' fgseaRes <- fgseaSimple(examplePathways, exampleRanks, nperm=10000, maxSize=500)
 #' # Testing only one pathway is implemented in a more efficient manner
-#' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=10000)
-fgsea <- function(pathways, stats, nperm,
+#' fgseaRes1 <- fgseaSimple(examplePathways[1], exampleRanks, nperm=10000)
+fgseaSimple <- function(pathways, stats, nperm,
                   minSize=1, maxSize=Inf,
                   nproc=0,
                   gseaParam=1,
                   BPPARAM=NULL) {
-
-    # Error if pathways is not a list
-    if (!is.list(pathways)) {
-        stop("pathways should be a list with each element containing names of the stats argument")
-    }
-
-    # Error if stats is not named
-    if (is.null(names(stats))) {
-        stop("stats should be named")
-    }
-
-    # Warning message for ties in stats
-    ties <- sum(duplicated(stats[stats != 0]))
-    if (ties != 0) {
-        warning("There are ties in the preranked stats (",
-                paste(round(ties * 100 / length(stats), digits = 2)),
-                "% of the list).\n",
-                "The order of those tied genes will be arbitrary, which may produce unexpected results.")
-    }
-
-    # Warning message for duplicate gene names
-    if (any(duplicated(names(stats)))) {
-        warning("There are duplicate gene names, fgsea may produce unexpected results")
-    }
+    checkPathwaysAndStats(pathways, stats)
 
     granularity <- 1000
     permPerProc <- rep(granularity, floor(nperm / granularity))
@@ -478,13 +514,13 @@ collapsePathways <- function(fgseaRes,
         minPval <- setNames(rep(1, length(pathwaysToCheck)), pathwaysToCheck)
 
         u1 <- setdiff(universe, pathways[[p]])
-        fgseaRes1 <- fgsea(pathways = pathways[pathwaysToCheck], stats=stats[u1],
+        fgseaRes1 <- fgseaSimple(pathways = pathways[pathwaysToCheck], stats=stats[u1],
                            nperm=nperm, maxSize=length(u1)-1, nproc=1,
                            gseaParam=gseaParam)
         minPval[fgseaRes1$pathway] <- pmin(minPval[fgseaRes1$pathway], fgseaRes1$pval)
 
         u2 <- pathways[[p]]
-        fgseaRes2 <- fgsea(pathways = pathways[pathwaysToCheck], stats=stats[u2],
+        fgseaRes2 <- fgseaSimple(pathways = pathways[pathwaysToCheck], stats=stats[u2],
                            nperm=nperm, maxSize=length(u2)-1, nproc=1,
                            gseaParam=gseaParam)
         minPval[fgseaRes2$pathway] <- pmin(minPval[fgseaRes2$pathway], fgseaRes2$pval)
@@ -499,7 +535,7 @@ collapsePathways <- function(fgseaRes,
 #' Runs preranked gene set enrichment analysis for preprocessed input data.
 #'
 #' @param pathwayScores Vector with enrichment scores for the `pathways`.
-#' @param pathwaysSizes Vector of path sizes.
+#' @param pathwaysSizes Vector of pathways sizes.
 #' @param pathwaysFiltered Filtered pathways.
 #' @param leadingEdges Leading edge genes.
 #' @param permPerProc  Parallelization parameter for permutations.
@@ -631,3 +667,7 @@ setUpBPPARAM <- function(nproc=0, BPPARAM=NULL){
         return(BPPARAM)
     }
 }
+
+
+
+
