@@ -1,7 +1,5 @@
 ---
 title: "Using fgsea package"
-author: "Alexey Sergushichev"
-date: "2019-12-23"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Using fgsea package}
@@ -9,7 +7,9 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-`fgsea` is an R-package for fast preranked gene set enrichment analysis (GSEA). This package allows you to estimate arbitrarily low P-values for individual gene sets. P-value estimation is based on an adaptive multi-level split Monte-Carlo scheme. See the [preprint](https://www.biorxiv.org/content/10.1101/060012v2) for algorithmic details. 
+`fgsea` is an R-package for fast preranked gene set enrichment analysis (GSEA). 
+This package allows to quickly and accurately calculate arbitrarily low GSEA P-values for a collection of gene sets.
+P-value estimation is based on an adaptive multi-level split Monte-Carlo scheme. See the [preprint](https://www.biorxiv.org/content/10.1101/060012v2) for algorithmic details. 
 
 ## Loading necessary libraries
 
@@ -26,7 +26,7 @@ register(SerialParam())
 
 ## Quick run
 
-Loading example pathways and gene-level statistics and setting seed:
+Loading example pathways and gene-level statistics and setting random seed:
 ```{r}
 data(examplePathways)
 data(exampleRanks)
@@ -46,7 +46,7 @@ The resulting table contains enrichment scores and p-values:
 head(fgseaRes[order(pval), ])
 ```
 
-As you can see from the warning, `fgsea` has a default lower bound `eps=1e-10` for estimating P-values. If you need to estimate P-value more accurate, you can set the `eps` argument to zero in the `fgsea` function.
+As you can see from the warning, `fgsea` has a default lower bound `eps=1e-10` for estimating P-values. If you need to estimate P-value more accurately, you can set the `eps` argument to zero in the `fgsea` function.
 ```{r}
 fgseaRes <- fgsea(pathways = examplePathways, 
                   stats    = exampleRanks,
@@ -86,7 +86,7 @@ plotGseaTable(examplePathways[mainPathways], exampleRanks, fgseaRes,
               gseaParam = 0.5)
 ```
 
-To save the results `data:table::fwrite` function can be used:
+To save the results in a text format `data:table::fwrite` function can be used:
 
 ```{r message=FALSE}
 fwrite(fgseaRes, file="fgseaRes.txt", sep="\t", sep2=c("", " ", ""))
