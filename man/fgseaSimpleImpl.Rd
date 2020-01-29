@@ -13,7 +13,8 @@ fgseaSimpleImpl(
   seeds,
   toKeepLength,
   stats,
-  BPPARAM
+  BPPARAM,
+  scoreType
 )
 }
 \arguments{
@@ -33,7 +34,9 @@ fgseaSimpleImpl(
 
 \item{stats}{Named vector of gene-level stats. Names should be the same as in 'pathways'}
 
-\item{BPPARAM}{Parallelization parameter used in bplapply.
+\item{BPPARAM}{Parallelization parameter used in bplapply.}
+
+\item{scoreType}{This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")
 Can be used to specify cluster to run. If not initialized explicitly or
 by setting `nproc` default value `bpparam()` is used.}
 }

@@ -98,3 +98,31 @@ test_that("fgsea results are reproducible with set.seed", {
     }
 })
 
+
+test_that(paste0("calcGseaStat and calcGseaStatCumulative calculate the same values for different",
+                 " scoreType parameters"), {
+    set.seed(42)
+    data(exampleRanks)
+    stats <- sort(exampleRanks, decreasing = TRUE)
+    randomGeneSet <- sample(1:length(exampleRanks), size = 15)
+
+    subSets <- lapply(1:length(randomGeneSet), function(x) randomGeneSet[1:x])
+
+    scoresStd1 <- unlist(lapply(subSets, function(x) calcGseaStat(x, stats=stats,
+                                                                  gseaParam=1,
+                                                                  scoreType="std")))
+    scoresStd2 <- fgsea:::calcGseaStatCumulative(stats, randomGeneSet, gseaParam=1, scoreType = "std")
+    expect_equal(scoresStd1, scoresStd2)
+
+    scoresPos1 <- unlist(lapply(subSets, function(x) calcGseaStat(x, stats=stats,
+                                                                  gseaParam=1,
+                                                                  scoreType="pos")))
+    scoresPos2 <- fgsea:::calcGseaStatCumulative(stats, randomGeneSet, gseaParam=1, scoreType = "pos")
+    expect_equal(scoresPos1, scoresPos2)
+
+    scoresNeg1 <- unlist(lapply(subSets, function(x) calcGseaStat(x, stats=stats,
+                                                                  gseaParam=1,
+                                                                  scoreType="neg")))
+    scoresNeg2 <- fgsea:::calcGseaStatCumulative(stats, randomGeneSet, gseaParam=1, scoreType = "neg")
+    expect_equal(scoresNeg1, scoresNeg2)
+})

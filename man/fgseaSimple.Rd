@@ -10,6 +10,7 @@ fgseaSimple(
   nperm,
   minSize = 1,
   maxSize = Inf,
+  scoreType = c("std", "pos", "neg"),
   nproc = 0,
   gseaParam = 1,
   BPPARAM = NULL
@@ -25,6 +26,8 @@ fgseaSimple(
 \item{minSize}{Minimal size of a gene set to test. All pathways below the threshold are excluded.}
 
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
+
+\item{scoreType}{This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")}
 
 \item{nproc}{If not equal to zero sets BPPARAM to use nproc workers (default = 0).}
 

@@ -8,6 +8,7 @@
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
 #' @param eps This parameter sets the boundary for calculating the p value.
+#' @param scoreType This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")
 #' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
 #' @param gseaParam GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
 #'                  before calculation of GSEA enrichment scores.
@@ -40,12 +41,14 @@ fgseaMultilevel <- function(pathways,
                             minSize    = 1,
                             maxSize    = Inf,
                             eps        = 1e-10,
+                            scoreType  = c("std", "pos", "neg"),
                             nproc      = 0,
                             gseaParam  = 1,
                             BPPARAM    = NULL,
                             absEps     = NULL)
 {
-    pp <- preparePathwaysAndStats(pathways, stats, minSize, maxSize, gseaParam)
+    scoreType <- match.arg(scoreType)
+    pp <- preparePathwaysAndStats(pathways, stats, minSize, maxSize, gseaParam, scoreType)
     pathwaysFiltered <- pp$filtered
     pathwaysSizes <- pp$sizes
     stats <- pp$stats
@@ -95,9 +98,11 @@ fgseaMultilevel <- function(pathways,
 
 
     gseaStatRes <- do.call(rbind,
-                           lapply(pathwaysFiltered, calcGseaStat,
-                                  stats=stats,
-                                  returnLeadingEdge=TRUE))
+                           lapply(pathwaysFiltered,
+                                  calcGseaStat,
+                                  stats             = stats,
+                                  returnLeadingEdge = TRUE,
+                                  scoreType         = scoreType))
 
     leadingEdges <- mapply("[", list(names(stats)), gseaStatRes[, "leadingEdge"], SIMPLIFY = FALSE)
     pathwayScores <- unlist(gseaStatRes[, "res"])
@@ -109,7 +114,7 @@ fgseaMultilevel <- function(pathways,
     simpleFgseaRes <- fgseaSimpleImpl(pathwayScores=pathwayScores, pathwaysSizes=pathwaysSizes,
                                       pathwaysFiltered=pathwaysFiltered, leadingEdges=leadingEdges,
                                       permPerProc=nPermSimple, seeds=seeds, toKeepLength=m,
-                                      stats=stats, BPPARAM=SerialParam())
+                                      stats=stats, BPPARAM=SerialParam(), scoreType=scoreType)
 
     simpleFgseaRes[, leZeroMean := NULL]
     simpleFgseaRes[, geZeroMean := NULL]
@@ -158,8 +163,11 @@ fgseaMultilevel <- function(pathways,
     multilevelPathwaysList <- multilevelPathwaysList[indxs]
 
     seed=sample.int(1e9, size=1)
-    cpp.res <- multilevelImpl(multilevelPathwaysList, stats, sampleSize,
-                              seed, eps, BPPARAM=BPPARAM)
+
+    sign <- if (scoreType %in% c("pos", "neg")) TRUE else FALSE
+    cpp.res <- multilevelImpl(multilevelPathwaysList, stats,
+                              sampleSize, seed, eps, sign=sign,
+                              BPPARAM=BPPARAM)
     cpp.res <- rbindlist(cpp.res)
 
 
@@ -219,8 +227,13 @@ multilevelError <- function(pval, sampleSize){
 #'  Can be used to specify cluster to run. If not initialized explicitly or
 #'  by setting `nproc` default value `bpparam()` is used.
 #' @return List of P-values.
-multilevelImpl <- function(multilevelPathwaysList, stats, sampleSize,
-                           seed, eps, sign=FALSE, BPPARAM=NULL){
+multilevelImpl <- function(multilevelPathwaysList,
+                           stats,
+                           sampleSize,
+                           seed,
+                           eps,
+                           sign=FALSE,
+                           BPPARAM=NULL){
     #To avoid warnings during the check
     size=ES=NULL
     res <- bplapply(multilevelPathwaysList,

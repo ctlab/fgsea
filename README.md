@@ -7,7 +7,7 @@
 An R-package for fast preranked gene set enrichment analysis (GSEA). The package 
 implements a special algorithm to calculate the empirical enrichment score null distributions simultaneously
 for all the gene set sizes, which allows up to **several hundred times faster** execution time compared to original
-Broad implementation. See [the preprint](http://biorxiv.org/content/early/2016/06/20/060012) for algorithmic details.
+Broad implementation. See [the preprint](https://www.biorxiv.org/content/10.1101/060012v2) for algorithmic details.
 
 Full vignette can be found here: http://bioconductor.org/packages/devel/bioc/vignettes/fgsea/inst/doc/fgsea-tutorial.html
 
@@ -38,26 +38,48 @@ data(exampleRanks)
 Running fgsea (should take about 10 seconds):
 ```{r}
 fgseaRes <- fgsea(pathways = examplePathways, 
-                  stats = exampleRanks,
-                  minSize=15,
-                  maxSize=500,
-                  nperm=10000)
+                  stats    = exampleRanks,
+                  minSize  = 15,
+                  maxSize  = 500)
 ```
 
 The head of resulting table sorted by p-value:
 ```
-                                    pathway         pval        padj        ES      NES nMoreExtreme size
- 1:                      5990980_Cell_Cycle 0.0001221001 0.002356366 0.5388497 2.682641            0  369
- 2:             5990979_Cell_Cycle,_Mitotic 0.0001252976 0.002356366 0.5594755 2.738270            0  317
- 3:        5991210_Signaling_by_Rho_GTPases 0.0001310444 0.002356366 0.4238512 2.009963            0  231
- 4:                         5991454_M_Phase 0.0001372872 0.002356366 0.5576247 2.548794            0  173
- 5:     5991023_Metabolism_of_carbohydrates 0.0001378930 0.002356366 0.4944766 2.240678            0  160
- 6:            5991209_RHO_GTPase_Effectors 0.0001386001 0.002356366 0.5248796 2.369573            0  157
- 7:  5991502_Mitotic_Metaphase_and_Anaphase 0.0001450326 0.002356366 0.6052907 2.633267            0  123
- 8:                5991600_Mitotic_Anaphase 0.0001452222 0.002356366 0.6015521 2.613626            0  122
- 9: 5991599_Separation_of_Sister_Chromatids 0.0001460707 0.002356366 0.6164600 2.661433            0  116
-10:           5991130_Programmed_Cell_Death 0.0001465201 0.002356366 0.4537506 1.941445            0  108
+pathway                                 pval   padj   log2err  ES      NES     size
+5990979_Cell_Cycle,_Mitotic             1e-10  4e-09  NA       0.5595  2.7437  317
+5990980_Cell_Cycle                      1e-10  4e-09  NA       0.5388  2.6876  369
+5990981_DNA_Replication                 1e-10  4e-09  NA       0.6440  2.6390  82
+5990987_Synthesis_of_DNA                1e-10  4e-09  NA       0.6479  2.6290  78
+5990988_S_Phase                         1e-10  4e-09  NA       0.6013  2.5069  98
+5990990_G1_S_Transition                 1e-10  4e-09  NA       0.6233  2.5625  84
+5990991_Mitotic_G1-G1_S_phases          1e-10  4e-09  NA       0.6285  2.6256  101
+5991209_RHO_GTPase_Effectors            1e-10  4e-09  NA       0.5249  2.3712  157
+5991454_M_Phase                         1e-10  4e-09  NA       0.5576  2.5491  173
+5991502_Mitotic_Metaphase_and_Anaphase  1e-10  4e-09  NA       0.6053  2.6331  123
 ```
+
+As you can see `fgsea` has a default lower bound `eps=1e-10` for estimating P-values. If you need to estimate P-value more accurately, you can set the `eps` argument to zero in the `fgsea` function.
+
+```{r}
+fgseaRes <- fgsea(pathways = examplePathways, 
+                  stats    = exampleRanks,
+                  eps      = 0.0,
+                  minSize  = 15,
+                  maxSize  = 500)
+
+head(fgseaRes[order(pval), ])
+```
+
+```
+pathway                                          pval      padj      log2err  ES      NES     size
+5990979_Cell_Cycle,_Mitotic                      4.44e-26  1.70e-23  1.3267   0.5595  2.7414  317
+5990980_Cell_Cycle                               5.80e-26  1.70e-23  1.3189   0.5388  2.6747  369
+5991851_Mitotic_Prometaphase                     8.50e-19  1.66e-16  1.1239   0.7253  2.9674  82
+5992217_Resolution_of_Sister_Chromatid_Cohesion  1.50e-17  2.19e-15  1.0769   0.7348  2.9482  74
+5991454_M_Phase                                  1.10e-14  1.29e-12  0.9865   0.5576  2.5436  173
+5991599_Separation_of_Sister_Chromatids          3.01e-14  2.94e-12  0.9653   0.6165  2.6630  116
+```
+
 
 One can make an enrichment plot for a pathway:
 ```{r}
@@ -70,11 +92,11 @@ plotEnrichment(examplePathways[["5991130_Programmed_Cell_Death"]],
 
 Or make a table plot for a bunch of selected pathways:
 ```{r}
-topPathwaysUp <- fgseaRes[ES > 0, ][head(order(pval), n=10), pathway]
-topPathwaysDown <- fgseaRes[ES < 0, ][head(order(pval), n=10), pathway]
+topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
+topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
 topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
 plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes, 
-              gseaParam = 0.5)
+              gseaParam=0.5)
 ```
 
-<img src="https://www.dropbox.com/s/uthtzn8wgo176f6/enrichmentTable.png?raw=1" width="600">
+<img src="https://ctlab.itmo.ru/files/software/fgsea/readme_enrichmentPlot.png">

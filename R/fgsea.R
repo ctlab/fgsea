@@ -29,7 +29,7 @@ fgsea <- function(...){
 }
 
 
-preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam){
+preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam, scoreType){
     # Error if pathways is not a list
     if (!is.list(pathways)) {
         stop("pathways should be a list with each element containing names of the stats argument")
@@ -52,6 +52,11 @@ preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam
     # Warning message for duplicate gene names
     if (any(duplicated(names(stats)))) {
         warning("There are duplicate gene names, fgsea may produce unexpected results.")
+    }
+
+    if (all(stats > 0) & scoreType == "std"){
+        warning("All values in the stats vector are greater than zero and scoreType is \"std\", ",
+                "maybe you should switch to scoreType = \"pos\".")
     }
 
     stats <- sort(stats, decreasing=TRUE)
@@ -84,6 +89,7 @@ preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam
 #' @param gseaParam GSEA weight parameter (0 is unweighted, suggested value is 1).
 #' @param returnAllExtremes If TRUE return not only the most extreme point, but all of them. Can be used for enrichment plot
 #' @param returnLeadingEdge If TRUE return also leading edge genes.
+#' @param scoreType This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")
 #' @return Value of GSEA statistic if both returnAllExtremes and returnLeadingEdge are FALSE.
 #' Otherwise returns list with the folowing elements:
 #' \itemize{
@@ -98,10 +104,13 @@ preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam
 #' data(examplePathways)
 #' ranks <- sort(exampleRanks, decreasing=TRUE)
 #' es <- calcGseaStat(ranks, na.omit(match(examplePathways[[1]], names(ranks))))
-calcGseaStat <- function(stats, selectedStats, gseaParam=1,
-                         returnAllExtremes=FALSE,
-                         returnLeadingEdge=FALSE) {
-
+calcGseaStat <- function(stats,
+                         selectedStats,
+                         gseaParam=1,
+                         returnAllExtremes = FALSE,
+                         returnLeadingEdge = FALSE,
+                         scoreType         = c("std", "pos", "neg")) {
+    scoreType <- match.arg(scoreType)
     S <- selectedStats
     r <- stats
     p <- gseaParam
@@ -134,13 +143,10 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
     maxP <- max(tops)
     minP <- min(bottoms)
 
-    if(maxP > -minP) {
-        geneSetStatistic <- maxP
-    } else if (maxP < -minP) {
-        geneSetStatistic <- minP
-    } else {
-        geneSetStatistic <- 0
-    }
+    switch(scoreType,
+           std = geneSetStatistic <- ifelse(maxP == -minP, 0, ifelse(maxP > -minP, maxP, minP)),
+           pos = geneSetStatistic <- maxP,
+           neg = geneSetStatistic <- minP)
 
     if (!returnAllExtremes && !returnLeadingEdge) {
         return(geneSetStatistic)
@@ -175,6 +181,7 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @param nperm Number of permutations to do. Minimial possible nominal p-value is about 1/nperm
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
+#' @param scoreType This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")
 #' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
 #' @param gseaParam GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
 #'                  before calculation of GSEA enrichment scores.
@@ -206,15 +213,22 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' fgseaRes <- fgseaSimple(examplePathways, exampleRanks, nperm=10000, maxSize=500)
 #' # Testing only one pathway is implemented in a more efficient manner
 #' fgseaRes1 <- fgseaSimple(examplePathways[1], exampleRanks, nperm=10000)
-fgseaSimple <- function(pathways, stats, nperm,
-                  minSize=1, maxSize=Inf,
-                  nproc=0,
-                  gseaParam=1,
-                  BPPARAM=NULL) {
-    pp <- preparePathwaysAndStats(pathways, stats, minSize, maxSize, gseaParam)
+fgseaSimple <- function(pathways,
+                        stats,
+                        nperm,
+                        minSize   = 1,
+                        maxSize   = Inf,
+                        scoreType = c("std", "pos", "neg"),
+                        nproc     = 0,
+                        gseaParam = 1,
+                        BPPARAM   = NULL) {
+    scoreType <- match.arg(scoreType)
+    pp <- preparePathwaysAndStats(pathways, stats, minSize, maxSize, gseaParam, scoreType)
     pathwaysFiltered <- pp$filtered
     pathwaysSizes <- pp$sizes
     stats <- pp$stats
+
+
     m <- length(pathwaysFiltered)
 
     if (m == 0) {
@@ -244,7 +258,8 @@ fgseaSimple <- function(pathways, stats, nperm,
     gseaStatRes <- do.call(rbind,
                 lapply(pathwaysFiltered, calcGseaStat,
                        stats=stats,
-                       returnLeadingEdge=TRUE))
+                       returnLeadingEdge=TRUE,
+                       scoreType=scoreType))
 
 
     leadingEdges <- mapply("[", list(names(stats)), gseaStatRes[, "leadingEdge"], SIMPLIFY = FALSE)
@@ -253,8 +268,10 @@ fgseaSimple <- function(pathways, stats, nperm,
 
 
 
-    pvals <- fgseaSimpleImpl(pathwayScores, pathwaysSizes, pathwaysFiltered,
-                             leadingEdges, permPerProc, seeds, m, stats, BPPARAM)
+    pvals <- fgseaSimpleImpl(pathwayScores, pathwaysSizes,
+                             pathwaysFiltered, leadingEdges,
+                             permPerProc, seeds, m, stats,
+                             BPPARAM, scoreType)
     if (nrow(pvals[is.na(pval)]) > 0){
         warning("There were ",
                 paste(nrow(pvals[is.na(pval)])),
@@ -553,6 +570,7 @@ collapsePathways <- function(fgseaRes,
 #' @param toKeepLength  Number of `pathways` that meet the condition for `minSize` and `maxSize`.
 #' @param stats Named vector of gene-level stats. Names should be the same as in 'pathways'
 #' @param BPPARAM Parallelization parameter used in bplapply.
+#' @param scoreType This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")
 #'  Can be used to specify cluster to run. If not initialized explicitly or
 #'  by setting `nproc` default value `bpparam()` is used.
 #' @return A table with GSEA results. Each row corresponds to a tested pathway.
@@ -568,9 +586,10 @@ collapsePathways <- function(fgseaRes,
 #'  \item size -- size of the pathway after removing genes not present in `names(stats)`.
 #'  \item leadingEdge -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
 #' }
-fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes, pathwaysFiltered,
-                            leadingEdges, permPerProc, seeds,
-                            toKeepLength, stats, BPPARAM){
+fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes,
+                            pathwaysFiltered, leadingEdges,
+                            permPerProc, seeds,toKeepLength,
+                            stats, BPPARAM, scoreType){
     K <- max(pathwaysSizes)
     universe <- seq_along(stats)
 
@@ -588,7 +607,8 @@ fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes, pathwaysFiltered,
                 randEsP <- calcGseaStat(
                     stats = stats,
                     selectedStats = randSample,
-                    gseaParam = 1)
+                    gseaParam = 1,
+                    scoreType = scoreType)
                 leEs <- leEs + (randEsP <= pathwayScores)
                 geEs <- geEs + (randEsP >= pathwayScores)
                 leZero <- leZero + (randEsP <= 0)
@@ -603,7 +623,8 @@ fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes, pathwaysFiltered,
                 pathwayScores = pathwayScores,
                 pathwaysSizes = pathwaysSizes,
                 iterations = nperm1,
-                seed = seeds[i])
+                seed = seeds[i],
+                scoreType = scoreType)
             leEs = get("leEs", aux)
             geEs = get("geEs", aux)
             leZero = get("leZero", aux)

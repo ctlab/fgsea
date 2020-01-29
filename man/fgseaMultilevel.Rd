@@ -11,6 +11,7 @@ fgseaMultilevel(
   minSize = 1,
   maxSize = Inf,
   eps = 1e-10,
+  scoreType = c("std", "pos", "neg"),
   nproc = 0,
   gseaParam = 1,
   BPPARAM = NULL,
@@ -29,6 +30,8 @@ fgseaMultilevel(
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
 
 \item{eps}{This parameter sets the boundary for calculating the p value.}
+
+\item{scoreType}{This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")}
 
 \item{nproc}{If not equal to zero sets BPPARAM to use nproc workers (default = 0).}
 
