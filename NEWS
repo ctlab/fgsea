@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.13.3
+* experimental support for one-tailed tests
+
 CHANGES IN VERSION 1.13.2
 * fgsea() implementation changed from simple to multilevel algorithm
 * proper handling of duplicate genes in gene sets for fgseaSimple() and fgseaMultilevel()
