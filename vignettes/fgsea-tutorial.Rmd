@@ -92,14 +92,15 @@ To save the results in a text format `data:table::fwrite` function can be used:
 fwrite(fgseaRes, file="fgseaRes.txt", sep="\t", sep2=c("", " ", ""))
 ```
 
-To make leading edge more human-readable it can be converted using `mapIds` 
+To make leading edge more human-readable it can be converted using `mapIdsList` (similar to `AnnotationDbi::mapIds`) 
 function and a corresponding database (here `org.Mm.eg.db` for mouse):
 
 ```{r message=FALSE}
 library(org.Mm.eg.db)
 fgseaResMain <- fgseaRes[match(mainPathways, pathway)]
-fgseaResMain[, leadingEdge := lapply(leadingEdge, mapIds, 
+fgseaResMain[, leadingEdge := mapIdsList(
                                      x=org.Mm.eg.db, 
+                                     keys=leadingEdge,
                                      keytype="ENTREZID", 
                                      column="SYMBOL")]
 fwrite(fgseaResMain, file="fgseaResMain.txt", sep="\t", sep2=c("", " ", ""))

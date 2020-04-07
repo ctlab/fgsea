@@ -47,7 +47,6 @@ reactomePathways <- function(genes) {
 #' Returns a list of pathways from a GMT file.
 #' @param gmt.file Path to a GMT file.
 #' @return A list of vectors with gene sets.
-#' @export
 #' @examples
 #' pathways <- gmtPathways(system.file(
 #'      "extdata", "mouse.reactome.gmt", package="fgsea"))
@@ -58,4 +57,40 @@ gmtPathways <- function(gmt.file) {
     pathways <- lapply(pathwayLines, tail, -2)
     names(pathways) <- sapply(pathwayLines, head, 1)
     pathways
+}
+
+#' Write collection of pathways (list of vectors) to a gmt file
+#' @param pathways a named list of vectors with gene ids
+#' @param gmt.file name of the output file
+#' @import data.table
+#' @examples
+#' data(examplePathways)
+#' writeGmtPathways(examplePathways, tempfile("examplePathways", fileext=".gmt"))
+#' @export
+writeGmtPathways <- function(pathways, gmt.file) {
+    dt <- data.table(pathway=names(pathways), "NA", genes=unlist(lapply(pathways, paste, collapse="\t")))
+    fwrite(dt, file=gmt.file, sep="\t", col.names = FALSE, quote = FALSE)
+}
+
+#' Effeciently converts collection of pathways using AnnotationDbi::mapIds function. Parameters
+#' are the sames as for mapIds except for keys, which is assumed to be a list of vectors.
+#' @param x the AnnotationDb object. But in practice this will mean an object derived from an AnnotationDb object such as a OrgDb or ChipDb object.
+#' @param keys a list of vectors with gene ids
+#' @param column the column to search on
+#' @param keytype the keytype that matches the keys used
+#' @param ... other parameters passed to AnnotationDbi::mapIds
+#' @seealso AnnotationDbi::mapIds
+#' @examples
+#' library(org.Mm.eg.db)
+#' data(exampleRanks)
+#' fgseaRes <- fgsea(examplePathways, exampleRanks, maxSize=500, eps=1e-4)
+#' fgseaRes[, leadingEdge := mapIdsList(org.Mm.eg.db, keys=leadingEdge, column="SYMBOL", keytype="ENTREZID")]
+#' @export
+mapIdsList <- function(x, keys, column, keytype, ...) {
+    keysFlat <- unlist(keys)
+    keysUnique <- unique(keysFlat)
+    ansUnique <- AnnotationDbi::mapIds(x=x, keys=keysUnique, column=column, keytype=keytype, ...)
+    ansFlat <- ansUnique[keysFlat]
+    ans <- split(ansFlat, rep(seq_along(keys), sapply(keys, length)))
+    ans
 }
