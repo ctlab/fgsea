@@ -533,6 +533,8 @@ collapsePathways <- function(fgseaRes,
         }
 
         pathwaysToCheck <- setdiff(names(which(is.na(parentPathways))), p)
+        pathwaysUp <- fgseaRes[pathway %fin% pathwaysToCheck & ES >= 0][, pathway]
+        pathwaysDown <- fgseaRes[pathway %fin% pathwaysToCheck & ES < 0][, pathway]
 
         if (length(pathwaysToCheck) == 0) {
             break
@@ -541,15 +543,27 @@ collapsePathways <- function(fgseaRes,
         minPval <- setNames(rep(1, length(pathwaysToCheck)), pathwaysToCheck)
 
         u1 <- setdiff(universe, pathways[[p]])
-        fgseaRes1 <- fgseaSimple(pathways = pathways[pathwaysToCheck], stats=stats[u1],
-                           nperm=nperm, maxSize=length(u1)-1, nproc=1,
-                           gseaParam=gseaParam)
+
+        fgseaResUp1 <- fgseaSimple(pathways = pathways[pathwaysUp], stats=stats[u1],
+                                   nperm=nperm, maxSize=length(u1)-1, nproc=1,
+                                   gseaParam=gseaParam, scoreType = "pos")
+        fgseaResDown1 <- fgseaSimple(pathways = pathways[pathwaysDown], stats=stats[u1],
+                                     nperm=nperm, maxSize=length(u1)-1, nproc=1,
+                                     gseaParam=gseaParam, scoreType = "neg")
+        fgseaRes1 <- rbindlist(list(fgseaResUp1, fgseaResDown1), use.names = TRUE)
+
         minPval[fgseaRes1$pathway] <- pmin(minPval[fgseaRes1$pathway], fgseaRes1$pval)
 
         u2 <- pathways[[p]]
-        fgseaRes2 <- fgseaSimple(pathways = pathways[pathwaysToCheck], stats=stats[u2],
-                           nperm=nperm, maxSize=length(u2)-1, nproc=1,
-                           gseaParam=gseaParam)
+
+        fgseaResUp2 <- fgseaSimple(pathways = pathways[pathwaysUp], stats=stats[u2],
+                                   nperm=nperm, maxSize=length(u2)-1, nproc=1,
+                                   gseaParam=gseaParam, scoreType = "pos")
+        fgseaResDown2 <- fgseaSimple(pathways = pathways[pathwaysDown], stats=stats[u2],
+                                     nperm=nperm, maxSize=length(u2)-1, nproc=1,
+                                     gseaParam=gseaParam, scoreType = "neg")
+        fgseaRes2 <- rbindlist(list(fgseaResUp2, fgseaResDown2), use.names = TRUE)
+
         minPval[fgseaRes2$pathway] <- pmin(minPval[fgseaRes2$pathway], fgseaRes2$pval)
 
         parentPathways[names(which(minPval > pval.threshold))] <- p
