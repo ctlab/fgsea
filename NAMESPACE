@@ -2,10 +2,12 @@
 
 export(calcGseaStat)
 export(collapsePathways)
+export(collapsePathwaysORA)
 export(fgsea)
 export(fgseaLabel)
 export(fgseaMultilevel)
 export(fgseaSimple)
+export(fora)
 export(gmtPathways)
 export(mapIdsList)
 export(multilevelError)
