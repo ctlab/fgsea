@@ -1,3 +1,7 @@
+CHANGES IN VERSION 1.13.4
+* mapIdsList for faster conversion of leadingEdges
+* experimental support of hypergeometric tests with fora() and collapsePathwaysORA()
+
 CHANGES IN VERSION 1.13.3
 * experimental support for one-tailed tests
 

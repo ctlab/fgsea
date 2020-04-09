@@ -1,7 +1,7 @@
 Package: fgsea
 Title: Fast Gene Set Enrichment Analysis
-Version: 1.13.3
-Date: 2020-01-29
+Version: 1.13.4
+Date: 2020-04-09
 Authors@R: c(person("Gennady", "Korotkevich", role = "aut"),
              person("Vladimir", "Sukhov", role = "aut"),
 			 person("Alexey", "Sergushichev", email = "alsergbox@gmail.com", role = c("aut", "cre")))
@@ -12,9 +12,9 @@ Description: The package implements an algorithm for fast gene set enrichment
 biocViews: GeneExpression, DifferentialExpression, GeneSetEnrichment, Pathways
 SystemRequirements: C++11
 Depends:
-    R (>= 3.3),
-    Rcpp
+    R (>= 3.3)
 Imports:
+    Rcpp,
     data.table,
     BiocParallel,
     stats,
