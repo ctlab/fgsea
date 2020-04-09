@@ -15,11 +15,11 @@ by p-value, for example by selecting ones with padj < 0.01.}
 
 \item{genes}{Set of query genes, same as in `fora()`}
 
+\item{universe}{A universe from whiche `genes` were selected, same as in `fora()`}
+
 \item{pval.threshold}{Two pathways are considered dependent when p-value
 of enrichment of one pathways on background of another
 is greater then `pval.threshold`.}
-
-\item{univere}{A universe from whiche `genes` were selected, same as in `fora()`}
 }
 \value{
 Named list with two elments: `mainPathways` containing IDs of pathways

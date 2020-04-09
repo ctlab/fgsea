@@ -11,11 +11,11 @@ fora(pathways, genes, universe, minSize = 1, maxSize = Inf)
 
 \item{genes}{Set of query genes}
 
+\item{universe}{A universe from whiche `genes` were selected}
+
 \item{minSize}{Minimal size of a gene set to test. All pathways below the threshold are excluded.}
 
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
-
-\item{univere}{A universe from whiche `genes` were selected}
 }
 \value{
 A table with ORA results. Each row corresponds to a tested pathway.
