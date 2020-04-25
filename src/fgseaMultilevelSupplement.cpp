@@ -93,6 +93,7 @@ void EsRuler::extend(double ES, int seed, double eps) {
         double currentES = calcES(ranks, currentSamples[sampleId]);
         while (currentES <= 0) {
             fillRandomSample(randomSample, gen, ranks.size(), pathwaySize);
+            // save randomSample in currentSamples[sampleId]?
             currentES = calcES(ranks, vector<int>(randomSample.begin(), randomSample.end()));
             totalCount++;
         }
@@ -101,6 +102,10 @@ void EsRuler::extend(double ES, int seed, double eps) {
     }
 
     posUnifScoreCount = make_pair(posCount, totalCount);
+
+    for (int sampleId = 0; sampleId < sampleSize; sampleId++) {
+      genesSamples[sampleId] = genes(ranks, currentSamples[sampleId]);
+    }
 
     duplicateSamples();
     while (ES > enrichmentScores.back()){
@@ -149,6 +154,55 @@ pair<double, bool> EsRuler::getPvalue(double ES, double eps, bool sign) {
     }
 }
 
+/*
+int perturbate(const vector<double> &ranks, vector<int> &sample,
+               double bound, mt19937 &rng) {
+    double pertPrmtr = 0.1;
+    int n = (int) ranks.size();
+    int k = (int) sample.size();
+    uniform_int_distribution<> uid_n(0, n - 1);
+    uniform_int_distribution<> uid_k(0, k - 1);
+    double NS = 0;
+    for (int pos : sample) {
+        NS += ranks[pos];
+    }
+    int iters = max(1, (int) (k * pertPrmtr));
+    int moves = 0;
+    for (int i = 0; i < iters; i++) {
+        int id = uid_k(rng);
+        int old = sample[id];
+        NS -= ranks[sample[id]];
+
+        sample[id] = uid_n(rng);
+        while (id > 0 && sample[id] < sample[id - 1]) {
+            swap(sample[id], sample[id - 1]);
+            id--;
+        }
+        while (id < k - 1 && sample[id] > sample[id + 1]) {
+            swap(sample[id], sample[id + 1]);
+            id++;
+        }
+
+        if ((id > 0 && sample[id] == sample[id - 1]) || (id < k - 1 && sample[id] == sample[id + 1]) ||
+            !compareStat(ranks, sample, NS + ranks[sample[id]], bound)) {
+            // revert changes...
+            sample[id] = old;
+            while (id > 0 && sample[id] < sample[id - 1]) {
+                swap(sample[id], sample[id - 1]);
+                id--;
+            }
+            while (id < k - 1 && sample[id] > sample[id + 1]) {
+                swap(sample[id], sample[id + 1]);
+                id++;
+            }
+        } else {
+            moves++;
+        }
+        NS += ranks[sample[id]];
+    }
+    return moves;
+}
+*/
 
 double cross(int x1, double y1, int x2, double y2) {
   return x1 * y2 - y1 * x2;
@@ -311,24 +365,21 @@ struct genes {
   }
 };
 
-int perturbate(const vector<double> &S, vector<int> &p, double bound, mt19937& rng, double pert_coeff) {
-  int n = (int) S.size();
-  int k = (int) p.size();
-  genes gns(S, p);
-  uniform_int_distribution<> uid_n(0, n - 1);
-  uniform_int_distribution<> uid_k(0, k - 1);
-  double NS = 0;
-  for (int pos : p) {
-    NS += S[pos];
-  }
-  int moves = 0;
-  int iters = max(1, (int) (k * pert_coeff));
-  for (int i = 0; i < iters; i++) {
-    int pos = uid_k(rng);
-    int new_ind = uid_n(rng);
-    moves += gns.try_replace(pos, new_ind, bound);
-  }
-
-  p = gns.get_inds();
-  return moves;
+int perturbate(const vector<double> &ranks, vector<int> &sample,
+               double bound, mt19937 &rng) {
+    double pertPrmtr = 0.1;
+    int n = (int) ranks.size();
+    int k = (int) sample.size();
+    uniform_int_distribution<> uid_n(0, n - 1);
+    uniform_int_distribution<> uid_k(0, k - 1);
+    genes gns(ranks, sample);
+    int iters = max(1, (int) (k * pertPrmtr));
+    int moves = 0;
+    for (int i = 0; i < iters; i++) {
+        int id = uid_k(rng);
+        int new_ind = uid_n(rng);
+        moves += gns.try_replace(id, new_ind, bound);
+    }
+    sample = gns.get_inds();
+    return moves;
 }

@@ -4,6 +4,8 @@
 #include <vector>
 #include <random>
 #include <set>
+#include <cmath>
+#include <algorithm>
 #include <boost/math/special_functions/digamma.hpp>
 
 using namespace std;
