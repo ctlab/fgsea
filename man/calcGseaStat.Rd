@@ -4,8 +4,14 @@
 \alias{calcGseaStat}
 \title{Calculates GSEA statistics for a given query gene set}
 \usage{
-calcGseaStat(stats, selectedStats, gseaParam = 1,
-  returnAllExtremes = FALSE, returnLeadingEdge = FALSE)
+calcGseaStat(
+  stats,
+  selectedStats,
+  gseaParam = 1,
+  returnAllExtremes = FALSE,
+  returnLeadingEdge = FALSE,
+  scoreType = c("std", "pos", "neg")
+)
 }
 \arguments{
 \item{stats}{Named numeric vector with gene-level statistics
@@ -18,6 +24,8 @@ sorted in decreasing order (order is not checked).}
 \item{returnAllExtremes}{If TRUE return not only the most extreme point, but all of them. Can be used for enrichment plot}
 
 \item{returnLeadingEdge}{If TRUE return also leading edge genes.}
+
+\item{scoreType}{This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")}
 }
 \value{
 Value of GSEA statistic if both returnAllExtremes and returnLeadingEdge are FALSE.

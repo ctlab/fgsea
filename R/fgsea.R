@@ -1,3 +1,85 @@
+#' Wrapper to run methods for preranked gene set enrichment analysis.
+#'
+#' This function provide an interface to two existing functions:
+#' \link[fgsea]{fgseaSimple}, \link[fgsea]{fgseaMultilevel}.
+#' By default, the \link[fgsea]{fgseaMultilevel} function is used for analysis.
+#' For compatibility with the previous implementation you can pass the `nperm` argument to the function.
+#' @param ... optional arguments for functions \link[fgsea]{fgseaSimple}, \link[fgsea]{fgseaMultilevel}
+#' @return A table with GSEA results. Each row corresponds to a tested pathway.
+#' @export
+#' @examples
+#' data(examplePathways)
+#' data(exampleRanks)
+#' fgseaRes <- fgsea(examplePathways, exampleRanks, maxSize=500)
+#' # Testing only one pathway is implemented in a more efficient manner
+#' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks)
+fgsea <- function(...){
+    arguments <- list(...)
+    if ("nperm" %in% names(arguments)){
+        warning("You are trying to run fgseaSimple. ",
+                "It is recommended to use fgseaMultilevel. ",
+                "To run fgseaMultilevel, you need to remove ",
+                "the nperm argument in the fgsea function call.")
+        res <- fgseaSimple(...)
+    }
+    else{
+        res <- fgseaMultilevel(...)
+    }
+    res
+}
+
+
+preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam, scoreType){
+    # Error if pathways is not a list
+    if (!is.list(pathways)) {
+        stop("pathways should be a list with each element containing names of the stats argument")
+    }
+
+    # Error if stats is not named
+    if (is.null(names(stats))) {
+        stop("stats should be named")
+    }
+
+    # Warning message for ties in stats
+    ties <- sum(duplicated(stats[stats != 0]))
+    if (ties != 0) {
+        warning("There are ties in the preranked stats (",
+                paste(round(ties * 100 / length(stats), digits = 2)),
+                "% of the list).\n",
+                "The order of those tied genes will be arbitrary, which may produce unexpected results.")
+    }
+
+    # Warning message for duplicate gene names
+    if (any(duplicated(names(stats)))) {
+        warning("There are duplicate gene names, fgsea may produce unexpected results.")
+    }
+
+    if (all(stats > 0) & scoreType == "std"){
+        warning("All values in the stats vector are greater than zero and scoreType is \"std\", ",
+                "maybe you should switch to scoreType = \"pos\".")
+    }
+
+    stats <- sort(stats, decreasing=TRUE)
+    stats <- abs(stats) ^ gseaParam
+
+
+    minSize <- max(minSize, 1)
+
+    pathwaysFiltered <- lapply(pathways, function(p) { unique(na.omit(fmatch(p, names(stats)))) })
+    pathwaysSizes <- sapply(pathwaysFiltered, length)
+
+    toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
+
+    pathwaysFiltered <- pathwaysFiltered[toKeep]
+    pathwaysSizes <- pathwaysSizes[toKeep]
+
+    list(filtered=pathwaysFiltered,
+         sizes=pathwaysSizes,
+         stats=stats)
+}
+
+
+
 #' Calculates GSEA statistics for a given query gene set
 #'
 #' Takes \emph{O(k log k)} time, where \emph{k} is a size of `selectedSize`.
@@ -7,6 +89,7 @@
 #' @param gseaParam GSEA weight parameter (0 is unweighted, suggested value is 1).
 #' @param returnAllExtremes If TRUE return not only the most extreme point, but all of them. Can be used for enrichment plot
 #' @param returnLeadingEdge If TRUE return also leading edge genes.
+#' @param scoreType This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")
 #' @return Value of GSEA statistic if both returnAllExtremes and returnLeadingEdge are FALSE.
 #' Otherwise returns list with the folowing elements:
 #' \itemize{
@@ -21,10 +104,13 @@
 #' data(examplePathways)
 #' ranks <- sort(exampleRanks, decreasing=TRUE)
 #' es <- calcGseaStat(ranks, na.omit(match(examplePathways[[1]], names(ranks))))
-calcGseaStat <- function(stats, selectedStats, gseaParam=1,
-                         returnAllExtremes=FALSE,
-                         returnLeadingEdge=FALSE) {
-
+calcGseaStat <- function(stats,
+                         selectedStats,
+                         gseaParam=1,
+                         returnAllExtremes = FALSE,
+                         returnLeadingEdge = FALSE,
+                         scoreType         = c("std", "pos", "neg")) {
+    scoreType <- match.arg(scoreType)
     S <- selectedStats
     r <- stats
     p <- gseaParam
@@ -57,13 +143,10 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
     maxP <- max(tops)
     minP <- min(bottoms)
 
-    if(maxP > -minP) {
-        geneSetStatistic <- maxP
-    } else if (maxP < -minP) {
-        geneSetStatistic <- minP
-    } else {
-        geneSetStatistic <- 0
-    }
+    switch(scoreType,
+           std = geneSetStatistic <- ifelse(maxP == -minP, 0, ifelse(maxP > -minP, maxP, minP)),
+           pos = geneSetStatistic <- maxP,
+           neg = geneSetStatistic <- minP)
 
     if (!returnAllExtremes && !returnLeadingEdge) {
         return(geneSetStatistic)
@@ -98,6 +181,7 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @param nperm Number of permutations to do. Minimial possible nominal p-value is about 1/nperm
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
+#' @param scoreType This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")
 #' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
 #' @param gseaParam GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
 #'                  before calculation of GSEA enrichment scores.
@@ -126,57 +210,26 @@ calcGseaStat <- function(stats, selectedStats, gseaParam=1,
 #' @examples
 #' data(examplePathways)
 #' data(exampleRanks)
-#' fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=10000, maxSize=500)
+#' fgseaRes <- fgseaSimple(examplePathways, exampleRanks, nperm=10000, maxSize=500)
 #' # Testing only one pathway is implemented in a more efficient manner
-#' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks, nperm=10000)
-fgsea <- function(pathways, stats, nperm,
-                  minSize=1, maxSize=Inf,
-                  nproc=0,
-                  gseaParam=1,
-                  BPPARAM=NULL) {
+#' fgseaRes1 <- fgseaSimple(examplePathways[1], exampleRanks, nperm=10000)
+fgseaSimple <- function(pathways,
+                        stats,
+                        nperm,
+                        minSize   = 1,
+                        maxSize   = Inf,
+                        scoreType = c("std", "pos", "neg"),
+                        nproc     = 0,
+                        gseaParam = 1,
+                        BPPARAM   = NULL) {
+    scoreType <- match.arg(scoreType)
+    pp <- preparePathwaysAndStats(pathways, stats, minSize, maxSize, gseaParam, scoreType)
+    pathwaysFiltered <- pp$filtered
+    pathwaysSizes <- pp$sizes
+    stats <- pp$stats
 
-    # Error if pathways is not a list
-    if (!is.list(pathways)) {
-        stop("pathways should be a list with each element containing names of the stats argument")
-    }
 
-    # Error if stats is not named
-    if (is.null(names(stats))) {
-        stop("stats should be named")
-    }
-
-    # Warning message for ties in stats
-    ties <- sum(duplicated(stats[stats != 0]))
-    if (ties != 0) {
-        warning("There are ties in the preranked stats (",
-                paste(round(ties * 100 / length(stats), digits = 2)),
-                "% of the list).\n",
-                "The order of those tied genes will be arbitrary, which may produce unexpected results.")
-    }
-
-    # Warning message for duplicate gene names
-    if (any(duplicated(names(stats)))) {
-        warning("There are duplicate gene names, fgsea may produce unexpected results")
-    }
-
-    granularity <- 1000
-    permPerProc <- rep(granularity, floor(nperm / granularity))
-    if (nperm - sum(permPerProc) > 0) {
-        permPerProc <- c(permPerProc, nperm - sum(permPerProc))
-    }
-    seeds <- sample.int(10^9, length(permPerProc))
-
-    BPPARAM <- setUpBPPARAM(nproc=nproc, BPPARAM=BPPARAM)
-
-    minSize <- max(minSize, 1)
-    stats <- sort(stats, decreasing=TRUE)
-
-    stats <- abs(stats) ^ gseaParam
-    pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, names(stats)))) })
-    pathwaysSizes <- sapply(pathwaysFiltered, length)
-
-    toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
-    m <- length(toKeep)
+    m <- length(pathwaysFiltered)
 
     if (m == 0) {
         return(data.table(pathway=character(),
@@ -189,13 +242,24 @@ fgsea <- function(pathways, stats, nperm,
                           leadingEdge=list()))
     }
 
-    pathwaysFiltered <- pathwaysFiltered[toKeep]
-    pathwaysSizes <- pathwaysSizes[toKeep]
+
+    granularity <- 1000
+    permPerProc <- rep(granularity, floor(nperm / granularity))
+    if (nperm - sum(permPerProc) > 0) {
+        permPerProc <- c(permPerProc, nperm - sum(permPerProc))
+    }
+
+    pval=nLeZero=nGeZero=leZeroMean=geZeroMean=nLeEs=nGeEs=NULL
+
+    seeds <- sample.int(10^9, length(permPerProc))
+
+    BPPARAM <- setUpBPPARAM(nproc=nproc, BPPARAM=BPPARAM)
 
     gseaStatRes <- do.call(rbind,
                 lapply(pathwaysFiltered, calcGseaStat,
                        stats=stats,
-                       returnLeadingEdge=TRUE))
+                       returnLeadingEdge=TRUE,
+                       scoreType=scoreType))
 
 
     leadingEdges <- mapply("[", list(names(stats)), gseaStatRes[, "leadingEdge"], SIMPLIFY = FALSE)
@@ -204,9 +268,26 @@ fgsea <- function(pathways, stats, nperm,
 
 
 
-    pvals <- fgseaSimpleImpl(pathwayScores, pathwaysSizes, pathwaysFiltered,
-                             leadingEdges, permPerProc, seeds, m, stats, BPPARAM)
+    pvals <- fgseaSimpleImpl(pathwayScores, pathwaysSizes,
+                             pathwaysFiltered, leadingEdges,
+                             permPerProc, seeds, m, stats,
+                             BPPARAM, scoreType)
+    if (nrow(pvals[is.na(pval)]) > 0){
+        warning("There were ",
+                paste(nrow(pvals[is.na(pval)])),
+                " pathways for which P-values were not calculated properly due to ",
+                "unbalanced gene-level statistic values")
+    }
 
+    pvals[, nLeZero := NULL]
+    pvals[, nGeZero := NULL]
+    pvals[, leZeroMean := NULL]
+    pvals[, geZeroMean := NULL]
+    pvals[, nLeEs := NULL]
+    pvals[, nGeEs := NULL]
+
+    setcolorder(pvals, c("pathway", "pval", "padj", "ES", "NES",
+                         "nMoreExtreme", "size", "leadingEdge"))
     # Makes pvals object printable immediatly
     pvals <- pvals[]
 
@@ -288,7 +369,7 @@ fgseaLabel <- function(pathways, mat, labels, nperm,
 
     minSize <- max(minSize, 1)
 
-    pathwaysFiltered <- lapply(pathways, function(p) { as.vector(na.omit(fmatch(p, rownames(mat)))) })
+    pathwaysFiltered <- lapply(pathways, function(p) { unique(na.omit(fmatch(p, rownames(mat)))) })
     pathwaysSizes <- sapply(pathwaysFiltered, length)
 
     toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
@@ -452,6 +533,8 @@ collapsePathways <- function(fgseaRes,
         }
 
         pathwaysToCheck <- setdiff(names(which(is.na(parentPathways))), p)
+        pathwaysUp <- fgseaRes[pathway %fin% pathwaysToCheck & ES >= 0][, pathway]
+        pathwaysDown <- fgseaRes[pathway %fin% pathwaysToCheck & ES < 0][, pathway]
 
         if (length(pathwaysToCheck) == 0) {
             break
@@ -460,15 +543,27 @@ collapsePathways <- function(fgseaRes,
         minPval <- setNames(rep(1, length(pathwaysToCheck)), pathwaysToCheck)
 
         u1 <- setdiff(universe, pathways[[p]])
-        fgseaRes1 <- fgsea(pathways = pathways[pathwaysToCheck], stats=stats[u1],
-                           nperm=nperm, maxSize=length(u1)-1, nproc=1,
-                           gseaParam=gseaParam)
+
+        fgseaResUp1 <- fgseaSimple(pathways = pathways[pathwaysUp], stats=stats[u1],
+                                   nperm=nperm, maxSize=length(u1)-1, nproc=1,
+                                   gseaParam=gseaParam, scoreType = "pos")
+        fgseaResDown1 <- fgseaSimple(pathways = pathways[pathwaysDown], stats=stats[u1],
+                                     nperm=nperm, maxSize=length(u1)-1, nproc=1,
+                                     gseaParam=gseaParam, scoreType = "neg")
+        fgseaRes1 <- rbindlist(list(fgseaResUp1, fgseaResDown1), use.names = TRUE)
+
         minPval[fgseaRes1$pathway] <- pmin(minPval[fgseaRes1$pathway], fgseaRes1$pval)
 
         u2 <- pathways[[p]]
-        fgseaRes2 <- fgsea(pathways = pathways[pathwaysToCheck], stats=stats[u2],
-                           nperm=nperm, maxSize=length(u2)-1, nproc=1,
-                           gseaParam=gseaParam)
+
+        fgseaResUp2 <- fgseaSimple(pathways = pathways[pathwaysUp], stats=stats[u2],
+                                   nperm=nperm, maxSize=length(u2)-1, nproc=1,
+                                   gseaParam=gseaParam, scoreType = "pos")
+        fgseaResDown2 <- fgseaSimple(pathways = pathways[pathwaysDown], stats=stats[u2],
+                                     nperm=nperm, maxSize=length(u2)-1, nproc=1,
+                                     gseaParam=gseaParam, scoreType = "neg")
+        fgseaRes2 <- rbindlist(list(fgseaResUp2, fgseaResDown2), use.names = TRUE)
+
         minPval[fgseaRes2$pathway] <- pmin(minPval[fgseaRes2$pathway], fgseaRes2$pval)
 
         parentPathways[names(which(minPval > pval.threshold))] <- p
@@ -481,7 +576,7 @@ collapsePathways <- function(fgseaRes,
 #' Runs preranked gene set enrichment analysis for preprocessed input data.
 #'
 #' @param pathwayScores Vector with enrichment scores for the `pathways`.
-#' @param pathwaysSizes Vector of path sizes.
+#' @param pathwaysSizes Vector of pathways sizes.
 #' @param pathwaysFiltered Filtered pathways.
 #' @param leadingEdges Leading edge genes.
 #' @param permPerProc  Parallelization parameter for permutations.
@@ -489,6 +584,7 @@ collapsePathways <- function(fgseaRes,
 #' @param toKeepLength  Number of `pathways` that meet the condition for `minSize` and `maxSize`.
 #' @param stats Named vector of gene-level stats. Names should be the same as in 'pathways'
 #' @param BPPARAM Parallelization parameter used in bplapply.
+#' @param scoreType This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")
 #'  Can be used to specify cluster to run. If not initialized explicitly or
 #'  by setting `nproc` default value `bpparam()` is used.
 #' @return A table with GSEA results. Each row corresponds to a tested pathway.
@@ -504,9 +600,10 @@ collapsePathways <- function(fgseaRes,
 #'  \item size -- size of the pathway after removing genes not present in `names(stats)`.
 #'  \item leadingEdge -- vector with indexes of leading edge genes that drive the enrichment, see \url{http://software.broadinstitute.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading}.
 #' }
-fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes, pathwaysFiltered,
-                            leadingEdges, permPerProc, seeds,
-                            toKeepLength, stats, BPPARAM){
+fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes,
+                            pathwaysFiltered, leadingEdges,
+                            permPerProc, seeds,toKeepLength,
+                            stats, BPPARAM, scoreType){
     K <- max(pathwaysSizes)
     universe <- seq_along(stats)
 
@@ -524,7 +621,8 @@ fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes, pathwaysFiltered,
                 randEsP <- calcGseaStat(
                     stats = stats,
                     selectedStats = randSample,
-                    gseaParam = 1)
+                    gseaParam = 1,
+                    scoreType = scoreType)
                 leEs <- leEs + (randEsP <= pathwayScores)
                 geEs <- geEs + (randEsP >= pathwayScores)
                 leZero <- leZero + (randEsP <= 0)
@@ -539,7 +637,8 @@ fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes, pathwaysFiltered,
                 pathwayScores = pathwayScores,
                 pathwaysSizes = pathwaysSizes,
                 iterations = nperm1,
-                seed = seeds[i])
+                seed = seeds[i],
+                scoreType = scoreType)
             leEs = get("leEs", aux)
             geEs = get("geEs", aux)
             leZero = get("leZero", aux)
@@ -559,36 +658,39 @@ fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes, pathwaysFiltered,
     # Getting rid of check NOTEs
     leEs=leZero=geEs=geZero=leZeroSum=geZeroSum=NULL
     pathway=padj=pval=ES=NES=geZeroMean=leZeroMean=NULL
-    nMoreExtreme=nGeEs=nLeEs=size=NULL
+    nMoreExtreme=nGeEs=nLeEs=nLeZero=nGeZero=size=NULL
     leadingEdge=NULL
     .="damn notes"
 
 
-    pvals <- counts[,
-        list(pval=min((1+sum(leEs)) / (1 + sum(leZero)),
-                 (1+sum(geEs)) / (1 + sum(geZero))),
-             leZeroMean = sum(leZeroSum) / sum(leZero),
-             geZeroMean = sum(geZeroSum) / sum(geZero),
-             nLeEs=sum(leEs),
-             nGeEs=sum(geEs)
-             )
-        ,
-        by=.(pathway)]
 
-    pvals[, padj := p.adjust(pval, method="BH")]
+    pvals <- counts[, list(leZeroMean = sum(leZeroSum) / sum(leZero),
+                           geZeroMean = sum(geZeroSum) / sum(geZero),
+                           nLeZero = sum(leZero),
+                           nGeZero = sum(geZero),
+                           nLeEs = sum(leEs),
+                           nGeEs = sum(geEs)),
+                    by = .(pathway)]
+
     pvals[, ES := pathwayScores[pathway]]
-    pvals[, NES := ES / ifelse(ES > 0, geZeroMean, abs(leZeroMean))]
-    pvals[, leZeroMean := NULL]
-    pvals[, geZeroMean := NULL]
+
+    pvals[, NES := as.numeric(NA)]
+    pvals[(ES > 0 & geZeroMean != 0) | (ES <= 0 & leZeroMean != 0),
+          NES := ES / ifelse(ES > 0, geZeroMean, abs(leZeroMean))]
+
+    pvals[, pval := as.numeric(NA)]
+    pvals[!is.na(NES), pval := pmin((1+nLeEs) / (1 + nLeZero),
+                        (1+nGeEs) / (1 + nGeZero))]
+
+
+    pvals[, padj := as.numeric(NA)]
+    pvals[!is.na(pval), padj := p.adjust(pval, method = "BH")]
 
     pvals[, nMoreExtreme :=  ifelse(ES > 0, nGeEs, nLeEs)]
-    pvals[, nLeEs := NULL]
-    pvals[, nGeEs := NULL]
-
     pvals[, size := pathwaysSizes[pathway]]
     pvals[, pathway := names(pathwaysFiltered)[pathway]]
-
     pvals[, leadingEdge := .(leadingEdges)]
+
     pvals
 }
 
@@ -610,3 +712,7 @@ setUpBPPARAM <- function(nproc=0, BPPARAM=NULL){
         return(BPPARAM)
     }
 }
+
+
+
+

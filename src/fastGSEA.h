@@ -12,7 +12,8 @@ List calcGseaStatCumulativeBatch(
         NumericVector const& pathwayScores,
         IntegerVector const& pathwaysSizes,
         int iterations,
-        int seed);
+        int seed,
+        std::string scoreType);
 
 //' Calculates GSEA statistic values for all the prefixes of a gene set
 //'
@@ -33,7 +34,8 @@ List calcGseaStatCumulativeBatch(
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
         IntegerVector const& selectedStats, // Indexes start from one!
-        double gseaParam
+        double gseaParam,
+        std::string scoreType = "std"
 );
 
 //' Calculates GSEA statistic valus for all gene sets in `selectedStats` list.

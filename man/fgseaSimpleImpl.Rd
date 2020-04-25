@@ -4,13 +4,23 @@
 \alias{fgseaSimpleImpl}
 \title{Runs preranked gene set enrichment analysis for preprocessed input data.}
 \usage{
-fgseaSimpleImpl(pathwayScores, pathwaysSizes, pathwaysFiltered,
-  leadingEdges, permPerProc, seeds, toKeepLength, stats, BPPARAM)
+fgseaSimpleImpl(
+  pathwayScores,
+  pathwaysSizes,
+  pathwaysFiltered,
+  leadingEdges,
+  permPerProc,
+  seeds,
+  toKeepLength,
+  stats,
+  BPPARAM,
+  scoreType
+)
 }
 \arguments{
 \item{pathwayScores}{Vector with enrichment scores for the `pathways`.}
 
-\item{pathwaysSizes}{Vector of path sizes.}
+\item{pathwaysSizes}{Vector of pathways sizes.}
 
 \item{pathwaysFiltered}{Filtered pathways.}
 
@@ -24,7 +34,9 @@ fgseaSimpleImpl(pathwayScores, pathwaysSizes, pathwaysFiltered,
 
 \item{stats}{Named vector of gene-level stats. Names should be the same as in 'pathways'}
 
-\item{BPPARAM}{Parallelization parameter used in bplapply.
+\item{BPPARAM}{Parallelization parameter used in bplapply.}
+
+\item{scoreType}{This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")
 Can be used to specify cluster to run. If not initialized explicitly or
 by setting `nproc` default value `bpparam()` is used.}
 }

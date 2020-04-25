@@ -1,76 +1,152 @@
 #include "fgseaMultilevelSupplement.h"
+#include "esCalculation.h"
 
-#include <random>
-#include <vector>
-#include <cmath>
-#include <algorithm>
-#include <set>
-using namespace std;
+double betaMeanLog(unsigned long a, unsigned long b) {
+    return boost::math::digamma(a) - boost::math::digamma(b + 1);
+}
 
+pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector, long probCorrIndx,
+                         const pair<unsigned int, unsigned int> posUnifScoreCount, unsigned int sampleSize){
+    double result = 0.0;
+    result -= betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second);
 
-#include <Rcpp.h>
-using namespace Rcpp;
+    unsigned long halfSize = (sampleSize + 1) / 2;
+    unsigned long remainder = sampleSize - probCorrIndx % (halfSize);
 
+    double condProb = betaMeanLog(probCorrector[probCorrIndx] + 1, remainder);
+    result += condProb;
 
-double calcES(const vector<double>& S, const vector<int>& p, double NS) {
-  // p must be sorted
-  int n = (int) S.size();
-  int k = (int) p.size();
-  double res = 0.0;
-  double cur = 0.0;
-  double q1 = 1.0 / (n - k);
-  double q2 = 1.0 / NS;
-  int last = -1;
-  for (int pos : p) {
-    cur -= q1 * (pos - last - 1);
-    if (abs(cur) > abs(res)) {
-      res = cur;
+    if (exp(condProb) >= 0.5){
+        return make_pair(result, true);
     }
-    cur += q2 * S[pos];
-    if (abs(cur) > abs(res)) {
-      res = cur;
+    else{
+        return make_pair(result, false);
     }
-    last = pos;
-  }
-  return res;
+}
+
+void fillRandomSample(set<int> &randomSample, mt19937 &gen,
+                      const unsigned long ranksSize, const unsigned int pathwaySize) {
+    randomSample.clear();
+    uniform_int_distribution<> uid_n(0, static_cast<int>(ranksSize - 1));
+    while (static_cast<int>(randomSample.size()) < pathwaySize) {
+        randomSample.insert(uid_n(gen));
+    }
 }
 
 
-double calcES(const vector<double>& S, const vector<int>& p) {
-  // p must be sorted
-  double NS = 0.0;
-  for (int pos : p) {
-    NS += S[pos];
-  }
-  return calcES(S, p, NS);
+EsRuler::EsRuler(const vector<double> &inpRanks, unsigned int inpSampleSize, unsigned int inpPathwaySize) :
+    ranks(inpRanks), sampleSize(inpSampleSize), pathwaySize(inpPathwaySize) {
+    posUnifScoreCount = make_pair(0, 0);
+    currentSamples.resize(inpSampleSize);
+}
+
+EsRuler::~EsRuler() = default;
+
+
+void EsRuler::duplicateSamples() {
+    /*
+     * Removes samples with an enrichment score less than the median value and
+     * replaces them with samples with an enrichment score greater than the median
+     * value
+    */
+    vector<pair<double, int> > stats(sampleSize);
+    vector<int> posEsIndxs;
+    int totalPosEsCount = 0;
+
+    for (int sampleId = 0; sampleId < sampleSize; sampleId++) {
+        double sampleEsPos = calcPositiveES(ranks, currentSamples[sampleId]);
+        double sampleEs = calcES(ranks, currentSamples[sampleId]);
+        if (sampleEs > 0) {
+            totalPosEsCount++;
+            posEsIndxs.push_back(sampleId);
+        }
+        stats[sampleId] = make_pair(sampleEsPos, sampleId);
+    }
+    sort(stats.begin(), stats.end());
+    for (int sampleId = 0; 2 * sampleId < sampleSize; sampleId++) {
+        enrichmentScores.push_back(stats[sampleId].first);
+        if (find(posEsIndxs.begin(), posEsIndxs.end(), stats[sampleId].second) != posEsIndxs.end()) {
+            totalPosEsCount--;
+        }
+        probCorrector.push_back(totalPosEsCount);
+    }
+
+    vector<vector<int> > new_sets;
+    for (int sampleId = 0; 2 * sampleId < sampleSize - 2; sampleId++) {
+        for (int rep = 0; rep < 2; rep++) {
+            new_sets.push_back(currentSamples[stats[sampleSize - 1 - sampleId].second]);
+        }
+    }
+    new_sets.push_back(currentSamples[stats[sampleSize >> 1].second]);
+    swap(currentSamples, new_sets);
+}
+
+void EsRuler::extend(double ES, int seed, double eps) {
+    unsigned int posCount = 0;
+    unsigned int totalCount = 0;
+    mt19937 gen(seed);
+
+    for (int sampleId = 0; sampleId < sampleSize; sampleId++) {
+        set<int> randomSample;
+        fillRandomSample(randomSample, gen, ranks.size(), pathwaySize);
+        currentSamples[sampleId] = vector<int>(randomSample.begin(), randomSample.end());
+        double currentES = calcES(ranks, currentSamples[sampleId]);
+        while (currentES <= 0) {
+            fillRandomSample(randomSample, gen, ranks.size(), pathwaySize);
+            currentES = calcES(ranks, vector<int>(randomSample.begin(), randomSample.end()));
+            totalCount++;
+        }
+        posCount++;
+        totalCount++;
+    }
+
+    posUnifScoreCount = make_pair(posCount, totalCount);
+
+    duplicateSamples();
+    while (ES > enrichmentScores.back()){
+        for (int moves = 0; moves < sampleSize * pathwaySize;) {
+            for (int sample_id = 0; sample_id < sampleSize; sample_id++) {
+                moves += perturbate(ranks, currentSamples[sample_id], enrichmentScores.back(), gen);
+            }
+        }
+        duplicateSamples();
+        if (eps != 0){
+            unsigned long k = enrichmentScores.size() / ((sampleSize + 1) / 2);
+            if (k > - log2(0.5 * eps * exp(betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second)))) {
+                break;
+            }
+        }
+    }
 }
 
 
-double calcPositiveES(const vector<double>& S, const vector<int>&p, double NS) {
-  // p must be sorted
-  int n = (int) S.size();
-  int k = (int) p.size();
-  double res = 0.0;
-  double cur = 0.0;
-  double q1 = 1.0 / (n - k);
-  double q2 = 1.0 / NS;
-  int last = -1;
-  for (int pos : p) {
-    cur += q2 * S[pos] - q1 * (pos - last - 1);
-    res = max(res, cur);
-    last = pos;
-  }
-  return res;
-}
+pair<double, bool> EsRuler::getPvalue(double ES, double eps, bool sign) {
+    unsigned long halfSize = (sampleSize + 1) / 2;
 
+    auto it = enrichmentScores.begin();
+    if (ES >= enrichmentScores.back()){
+        it = enrichmentScores.end() - 1;
+    }
+    else{
+        it = lower_bound(enrichmentScores.begin(), enrichmentScores.end(), ES);
+    }
 
-double calcPositiveES(const vector<double>& S, const vector<int>& p) {
-  // p must be sorted
-  double NS = 0.0;
-  for (int pos : p) {
-    NS += S[pos];
-  }
-  return calcPositiveES(S, p, NS);
+    unsigned long indx = 0;
+    (it - enrichmentScores.begin()) > 0 ? (indx = (it - enrichmentScores.begin())) : indx = 0;
+
+    unsigned long k = (indx) / halfSize;
+    unsigned long remainder = sampleSize -  (indx % halfSize);
+
+    double adjLog = betaMeanLog(halfSize, sampleSize);
+    double adjLogPval = k * adjLog + betaMeanLog(remainder + 1, sampleSize);
+
+    if (sign) {
+        return make_pair(max(0.0, min(1.0, exp(adjLogPval))), true);
+    } else {
+        pair<double, bool> correction = calcLogCorrection(probCorrector, indx, posUnifScoreCount, sampleSize);
+        double resLog = adjLogPval + correction.first;
+        return make_pair(max(0.0, min(1.0, exp(resLog))), correction.second);
+    }
 }
 
 
@@ -255,119 +331,4 @@ int perturbate(const vector<double> &S, vector<int> &p, double bound, mt19937& r
 
   p = gns.get_inds();
   return moves;
-}
-
-
-void duplicateSets(EsPvalConnection &esPvalObj, int sampleSize, const vector<double> &S)
-{
-  // Duplicate sets of genes with enrichment score greater than the median value.
-  int posStatCount = 0;
-  vector<pair<double, int> > stats(sampleSize);
-  for (int sample_id = 0; sample_id < sampleSize; sample_id++)
-  {
-      double stat = calcPositiveES(S, esPvalObj.sets[sample_id]);
-      double stat_real = calcES(S, esPvalObj.sets[sample_id]);
-      if (esPvalObj.cutoffs.empty())
-      {
-          esPvalObj.random_pairs.emplace_back(stat, stat_real);
-      }
-      if (stat_real > 0)
-      {
-          posStatCount++;
-      }
-      stats[sample_id] = make_pair(stat, sample_id);
-  }
-  sort(stats.begin(), stats.end());
-  if (esPvalObj.posStatNum == 0)
-  {
-      esPvalObj.posStatNum = posStatCount;
-  }
-
-
-  for (int sample_id = 0; 2 * sample_id < sampleSize; sample_id++) {
-    esPvalObj.cutoffs.emplace_back(stats[sample_id].first);
-  }
-
-
-
-  vector< vector<int> > new_sets;
-  for (int sample_id = 0; 2 * sample_id < sampleSize - 2; sample_id++) {
-      for (int rep = 0; rep < 2; rep++) {
-          new_sets.push_back(esPvalObj.sets[stats[sampleSize - 1 - sample_id].second]);
-      }
-  }
-
-  new_sets.push_back(esPvalObj.sets[stats[sampleSize >> 1].second]);
-  swap(esPvalObj.sets, new_sets);
-  return;
-}
-
-
-void calcPvalues(EsPvalConnection &esPvalObj, vector<double> S, int pathwaySize,
-                 double ES, int sampleSize, int seed, double absEps)
-{
-    mt19937 gen(seed);
-    uniform_int_distribution<> uid_n(0, S.size() - 1);
-    for (int sample_id = 0; sample_id < sampleSize; sample_id++)
-    {
-
-        set<int> random_set;
-        while ((int) random_set.size() < pathwaySize)
-        {
-            random_set.insert(uid_n(gen));
-        }
-        esPvalObj.sets[sample_id] = vector<int>(random_set.begin(), random_set.end());
-    }
-
-    duplicateSets(esPvalObj, sampleSize, S);
-
-    while (true)
-    {
-      int k = 2 * (esPvalObj.cutoffs.size() / (sampleSize + 1));
-      if (ES < esPvalObj.cutoffs.back() || k > -log2(absEps)){
-        break;
-      }
-      for (int moves = 0; moves < sampleSize * pathwaySize; ){
-         for (int sample_id = 0; sample_id < sampleSize; sample_id++) {
-           moves += perturbate(S, esPvalObj.sets[sample_id], esPvalObj.cutoffs.back(), gen, 0.1);
-         }
-       }
-       duplicateSets(esPvalObj, sampleSize, S);
-    }
-    return;
-}
-
-
-double findEsPval(const EsPvalConnection &esPvalObj, double enrichmentScore, int sampleSize, bool sign)
-{
-    int halfSize = (sampleSize + 1) / 2;
-    double pval = 0;
-    double probStatPos = exp(boost::math::digamma(esPvalObj.posStatNum) - boost::math::digamma(sampleSize + 1));
-
-    auto it = lower_bound(esPvalObj.cutoffs.begin(), esPvalObj.cutoffs.end(), enrichmentScore);
-    int k = ((it - esPvalObj.cutoffs.begin())) / halfSize;
-    int remainder = sampleSize - (it - esPvalObj.cutoffs.begin()) % (halfSize);
-    double adjLog = boost::math::digamma(halfSize) - boost::math::digamma(sampleSize + 1);
-    double adjLogPval = k * adjLog + (boost::math::digamma(remainder) - boost::math::digamma(sampleSize + 1));
-    pval = exp(adjLogPval);
-
-    if (sign){
-      pval = max(0.0, min(1.0, pval));
-    }
-    else{
-      double correction;
-      int badSets = 0;
-      int totalSets = 0;
-      for (auto &pp : esPvalObj.random_pairs)
-      {
-          if (pp.second <= enrichmentScore)
-          {
-              badSets += (pp.first > enrichmentScore);
-          }
-          totalSets++;
-      }
-      correction = badSets*1.0 / totalSets;
-      pval = max(0.0, min(1.0, (pval - correction)/probStatPos));
-    }
-    return pval;
 }

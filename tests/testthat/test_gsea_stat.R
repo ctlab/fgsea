@@ -89,12 +89,40 @@ test_that("fgsea results are reproducible with set.seed", {
     epw <- lapply(examplePathways, function(a) { return(a[a %in% names(erm)]) })
     epw <- epw[sapply(epw, length) >= 5]
     set.seed(42)
-    res1 = fgsea(pathways = epw, stats = erm, minSize=15, maxSize=500, nperm=1000, nproc=0)
+    res1 = fgseaSimple(pathways = epw, stats = erm, minSize=15, maxSize=500, nperm=1000, nproc=0)
     set.seed(42)
-    res2 = fgsea(pathways = epw, stats = erm, minSize=15, maxSize=500, nperm=1000, nproc=0)
+    res2 = fgseaSimple(pathways = epw, stats = erm, minSize=15, maxSize=500, nperm=1000, nproc=0)
     epsilon <- 1e-5
     for (i in seq_along(length(res1))) {
       expect_lte(abs(res1[i]$pval / res2[i]$pval - 1), epsilon)
     }
 })
 
+
+test_that(paste0("calcGseaStat and calcGseaStatCumulative calculate the same values for different",
+                 " scoreType parameters"), {
+    set.seed(42)
+    data(exampleRanks)
+    stats <- sort(exampleRanks, decreasing = TRUE)
+    randomGeneSet <- sample(1:length(exampleRanks), size = 15)
+
+    subSets <- lapply(1:length(randomGeneSet), function(x) randomGeneSet[1:x])
+
+    scoresStd1 <- unlist(lapply(subSets, function(x) calcGseaStat(x, stats=stats,
+                                                                  gseaParam=1,
+                                                                  scoreType="std")))
+    scoresStd2 <- fgsea:::calcGseaStatCumulative(stats, randomGeneSet, gseaParam=1, scoreType = "std")
+    expect_equal(scoresStd1, scoresStd2)
+
+    scoresPos1 <- unlist(lapply(subSets, function(x) calcGseaStat(x, stats=stats,
+                                                                  gseaParam=1,
+                                                                  scoreType="pos")))
+    scoresPos2 <- fgsea:::calcGseaStatCumulative(stats, randomGeneSet, gseaParam=1, scoreType = "pos")
+    expect_equal(scoresPos1, scoresPos2)
+
+    scoresNeg1 <- unlist(lapply(subSets, function(x) calcGseaStat(x, stats=stats,
+                                                                  gseaParam=1,
+                                                                  scoreType="neg")))
+    scoresNeg2 <- fgsea:::calcGseaStatCumulative(stats, randomGeneSet, gseaParam=1, scoreType = "neg")
+    expect_equal(scoresNeg1, scoresNeg2)
+})

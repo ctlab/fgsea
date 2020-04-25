@@ -1,15 +1,10 @@
 #include "fgseaMultilevel.h"
 #include "fgseaMultilevelSupplement.h"
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <cmath>
 using namespace std;
 
-NumericVector fgseaMultilevelCpp(const NumericVector& enrichmentScores,
-                                 const NumericVector& ranks, int pathwaySize,
-                                 int sampleSize, int seed,
-                                 double absEps, bool sign)
+DataFrame fgseaMultilevelCpp(const NumericVector& enrichmentScores,
+                             const NumericVector& ranks, int pathwaySize,
+                             int sampleSize, int seed,double eps, bool sign)
 {
     vector<double> posRanks = as<std::vector<double> >(ranks);
     for (int i = 0; i < posRanks.size(); i++) {
@@ -20,31 +15,38 @@ NumericVector fgseaMultilevelCpp(const NumericVector& enrichmentScores,
 
     const vector<double> esVector = as<std::vector<double> >(enrichmentScores);
 
-    EsPvalConnection epcPosSide(sampleSize);
-    EsPvalConnection epcNegSide(sampleSize);
+    EsRuler esRulerPos(posRanks, sampleSize, pathwaySize);
+    EsRuler esRulerNeg(negRanks, sampleSize, pathwaySize);
 
     double maxES = *max_element(begin(esVector), end(esVector));
     double minES = *min_element(begin(esVector), end(esVector));
     if (maxES >= 0){
-        calcPvalues(epcPosSide, posRanks, pathwaySize, abs(maxES), sampleSize, seed, absEps);
+        esRulerPos.extend(abs(maxES), seed, eps);
     }
     if (minES < 0){
-        calcPvalues(epcNegSide, negRanks, pathwaySize, abs(minES), sampleSize, seed, absEps);
+        esRulerNeg.extend(abs(minES), seed, eps);
     }
 
-    vector<double> result;
+    vector<double> pvalRes;
+    vector<bool> isCpGeHalf;
+
     int nrow = esVector.size();
     for (int i = 0; i < nrow; i++){
-        double pvalue;
+        pair<double, bool> resPair;
         double currentES = esVector[i];
         if (currentES >= 0.0){
-            pvalue = findEsPval(epcPosSide, abs(currentES), sampleSize, sign);
-            result.emplace_back(pvalue);
+            resPair = esRulerPos.getPvalue(abs(currentES), eps, sign);
+            pvalRes.push_back(resPair.first);
+            isCpGeHalf.push_back(resPair.second);
         }
         else{
-            pvalue = findEsPval(epcNegSide, abs(currentES), sampleSize, sign);
-            result.emplace_back(pvalue);
+            resPair = esRulerNeg.getPvalue(abs(currentES), eps, sign);
+            pvalRes.push_back(resPair.first);
+            isCpGeHalf.push_back(resPair.second);
         }
     }
-    return wrap(result);
+
+    // return vector with pvalues and vector with conditional probability result
+    return DataFrame::create(Named("cppMPval") = pvalRes,
+                             Named("cppIsCpGeHalf") = isCpGeHalf);
 }

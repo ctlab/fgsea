@@ -4,8 +4,19 @@
 \alias{fgseaMultilevel}
 \title{Runs preranked gene set enrichment analysis.}
 \usage{
-fgseaMultilevel(pathways, stats, sampleSize = 101, minSize = 1,
-  maxSize = Inf, absEps = 0, nproc = 0, BPPARAM = NULL)
+fgseaMultilevel(
+  pathways,
+  stats,
+  sampleSize = 101,
+  minSize = 1,
+  maxSize = Inf,
+  eps = 1e-10,
+  scoreType = c("std", "pos", "neg"),
+  nproc = 0,
+  gseaParam = 1,
+  BPPARAM = NULL,
+  absEps = NULL
+)
 }
 \arguments{
 \item{pathways}{List of gene sets to check.}
@@ -18,13 +29,20 @@ fgseaMultilevel(pathways, stats, sampleSize = 101, minSize = 1,
 
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
 
-\item{absEps}{This parameter sets the boundary for calculating the p value.}
+\item{eps}{This parameter sets the boundary for calculating the p value.}
+
+\item{scoreType}{This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")}
 
 \item{nproc}{If not equal to zero sets BPPARAM to use nproc workers (default = 0).}
+
+\item{gseaParam}{GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
+before calculation of GSEA enrichment scores.}
 
 \item{BPPARAM}{Parallelization parameter used in bplapply.
 Can be used to specify cluster to run. If not initialized explicitly or
 by setting `nproc` default value `bpparam()` is used.}
+
+\item{absEps}{deprecated, use `eps` parameter instead}
 }
 \value{
 A table with GSEA results. Each row corresponds to a tested pathway. The columns are the following

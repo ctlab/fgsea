@@ -343,22 +343,37 @@ NumericVector subvector(NumericVector const &from, IntegerVector const &indices)
 NumericVector calcGseaStatCumulative(
         NumericVector const& stats,
         IntegerVector const& selectedStats, // Indexes start from one!
-        double gseaParam
+        double gseaParam,
+        std::string scoreType
 ) {
 
     vector<int> selectedOrder = order(selectedStats);
 
-    NumericVector res = gseaStats1(stats, selectedStats, selectedOrder, gseaParam);
-    NumericVector resDown = gseaStats1(stats, selectedStats, selectedOrder, gseaParam, true);
-
-    for (int i = 0; i < (int)selectedStats.size(); ++i) {
-        if (res[i] == resDown[i]) {
-            res[i] = 0;
-        } else if (res[i] < resDown[i]) {
-            res[i] = -resDown[i];
-        }
+    if (scoreType != "std" && scoreType != "pos" && scoreType != "neg"){
+        throw std::invalid_argument("scoreType must take values from (\"std\", \"pos\", \"neg\")");
     }
-    return res;
+
+    if (scoreType == "std"){
+        NumericVector res = gseaStats1(stats, selectedStats, selectedOrder, gseaParam);
+        NumericVector resDown = gseaStats1(stats, selectedStats, selectedOrder, gseaParam, true);
+        for (int i = 0; i < (int)selectedStats.size(); ++i) {
+            if (res[i] == resDown[i]) {
+                res[i] = 0;
+            } else if (res[i] < resDown[i]) {
+                res[i] = -resDown[i];
+            }
+        }
+        return res;
+    }
+    else if(scoreType == "pos"){
+        NumericVector res = gseaStats1(stats, selectedStats, selectedOrder, gseaParam);
+        return res;
+    }
+    else{
+        NumericVector res = -gseaStats1(stats, selectedStats, selectedOrder, gseaParam, true);
+        return res;
+    }
+
 }
 
 NumericVector calcRandomGseaStatCumulative(
@@ -366,11 +381,12 @@ NumericVector calcRandomGseaStatCumulative(
         int n,
         int k,
         double gseaParam,
-        std::mt19937& rng
+        std::mt19937& rng,
+        std::string scoreType
 ) {
 
     IntegerVector selectedStats = combination(n, k, rng);
-    return calcGseaStatCumulative(stats, selectedStats, gseaParam);
+    return calcGseaStatCumulative(stats, selectedStats, gseaParam, scoreType);
 }
 
 List calcGseaStatCumulativeBatch(
@@ -379,7 +395,8 @@ List calcGseaStatCumulativeBatch(
         NumericVector const& pathwayScores,
         IntegerVector const& pathwaysSizes,
         int iterations,
-        int seed) {
+        int seed,
+        std::string scoreType) {
 
     int n = stats.size();
     int k = max(pathwaysSizes);
@@ -399,7 +416,7 @@ List calcGseaStatCumulativeBatch(
     std::mt19937 rng(seed);
 
     for (int i = 0; i < iterations; ++i) {
-        NumericVector randEs = calcRandomGseaStatCumulative(stats, n, k, gseaParam, rng);
+        NumericVector randEs = calcRandomGseaStatCumulative(stats, n, k, gseaParam, rng, scoreType);
         NumericVector randEsP = subvector(randEs, pathwaysSizes);
 
         aux = randEsP <= pathwayScores;

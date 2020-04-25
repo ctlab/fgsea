@@ -4,8 +4,15 @@
 \alias{multilevelImpl}
 \title{Calculates P-values for preprocessed data.}
 \usage{
-multilevelImpl(multilevelPathwaysList, stats, sampleSize, seed, absEps,
-  sign = FALSE, BPPARAM = NULL)
+multilevelImpl(
+  multilevelPathwaysList,
+  stats,
+  sampleSize,
+  seed,
+  eps,
+  sign = FALSE,
+  BPPARAM = NULL
+)
 }
 \arguments{
 \item{multilevelPathwaysList}{List of pathways for which P-values will be calculated.}
@@ -16,7 +23,7 @@ multilevelImpl(multilevelPathwaysList, stats, sampleSize, seed, absEps,
 
 \item{seed}{`seed` parameter from `fgseaMultilevel`}
 
-\item{absEps}{This parameter sets the boundary for calculating the p value.}
+\item{eps}{This parameter sets the boundary for calculating the p value.}
 
 \item{sign}{This option will be used in future implementations.}
 
