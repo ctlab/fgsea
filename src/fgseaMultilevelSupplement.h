@@ -48,7 +48,7 @@ public:
     pair<double, bool> getPvalue(double ES, double eps, bool sign);
 };
 
-int perturbate(const vector<double> &ranks, vector<int> &sample, vector<double> &chunkSum, vector<int> &chunkSize,
+int perturbate(const vector<double> &ranks, int k, vector<vector<int>> &sampleChunks, vector<double> &chunkSum, vector<int> &chunkSize,
                double bound, mt19937 &rng);
 
 double betaMeanLog(unsigned long a, unsigned long b);

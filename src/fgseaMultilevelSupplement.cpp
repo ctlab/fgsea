@@ -111,6 +111,7 @@ void EsRuler::extend(double ES, int seed, double eps) {
     vector<int> tmp(sampleSize);
     vector<vector<double>> chunkSum(sampleSize, vector<double>(chunksNumber));
     vector<vector<int>> chunkSize(sampleSize, vector<int>(chunksNumber));
+    vector<vector<vector<int>>> currentSampleChunks(sampleSize, vector<vector<int>>(chunksNumber));
 
     duplicateSamples();
     while (ES > enrichmentScores.back()){
@@ -123,20 +124,17 @@ void EsRuler::extend(double ES, int seed, double eps) {
             chunkLastElement[i] = tmp[sampleSize / 2];
         }
 
-        // for (int num : chunkLastElement) {
-        //     cerr << num << " ";
-        // }
-        // cerr << endl;
-        
-
         for (int i = 0; i < sampleSize; ++i) {
             fill(chunkSum[i].begin(), chunkSum[i].end(), 0.0);
             fill(chunkSize[i].begin(), chunkSize[i].end(), 0);
             int cnt = 0;
+            currentSampleChunks[i][cnt].clear();
             for (int pos : currentSamples[i]) {
                 while (chunkLastElement[cnt] <= pos) {
                     ++cnt;
+                    currentSampleChunks[i][cnt].clear();
                 }
+                currentSampleChunks[i][cnt].push_back(pos);
                 chunkSum[i][cnt] += ranks[pos];
                 chunkSize[i][cnt]++;
             }
@@ -144,7 +142,16 @@ void EsRuler::extend(double ES, int seed, double eps) {
 
         for (int moves = 0; moves < sampleSize * pathwaySize;) {
             for (int sampleId = 0; sampleId < sampleSize; sampleId++) {
-                moves += perturbate(ranks, currentSamples[sampleId], chunkSum[sampleId], chunkSize[sampleId], enrichmentScores.back(), gen);
+                moves += perturbate(ranks, pathwaySize, currentSampleChunks[sampleId], chunkSum[sampleId], chunkSize[sampleId], enrichmentScores.back(), gen);
+            }
+        }
+
+        for (int i = 0; i < sampleSize; ++i) {
+            currentSamples[i].clear();
+            for (int j = 0; j < chunksNumber; ++j) {
+                for (int pos : currentSampleChunks[i][j]) {
+                    currentSamples[i].push_back(pos);
+                }
             }
         }
 
@@ -188,188 +195,108 @@ pair<double, bool> EsRuler::getPvalue(double ES, double eps, bool sign) {
     }
 }
 
+#define szof(x) ((int) (x).size())
 
-
-double cross(int x1, double y1, int x2, double y2) {
-  return x1 * y2 - y1 * x2;
-}
-
-struct genes {
-  vector<double> const& ranks;
-  int chunk_length;
-  vector<int> inds;
-  vector<int> next;
-  vector<int> first_in_chunk, size_of_chunk;
-  vector<double> sum_in_chunk;
-  int diagonal_x;
-  double diagonal_y;
-
-  genes(vector<double> const& _ranks, vector<int> const& _inds) : ranks(_ranks), chunk_length((int) (ranks.size() / sqrt(_inds.size()))), 
-    inds(_inds), next(inds.size(), -1), first_in_chunk((ranks.size() + chunk_length - 1) / chunk_length, -1), size_of_chunk(first_in_chunk.size()), sum_in_chunk(first_in_chunk.size()),
-    diagonal_x(ranks.size() - inds.size()), diagonal_y(0) {
-    int chunk = -1;
-    for (int i = 0; i < inds.size(); ++i) {
-      diagonal_y += ranks[inds[i]];
-      int cur = inds[i] / chunk_length;
-      size_of_chunk[cur]++;
-      sum_in_chunk[cur] += ranks[inds[i]];
-      if (cur > chunk) {
-        chunk = cur;
-        first_in_chunk[chunk] = i;
-      } else {
-        next[i - 1] = i;
-      }
-    }
-  }
-
-  // void remove_pos(int, int);
-  // void add_ind(int, int, int);
-  // int add_ind(int, int);
-  bool check_es_not_less(double bound) {
-    bound *= diagonal_x * diagonal_y;
-    double y = 0;
-    int x = 0;
-    int prev = 0;
-    for (int i = 0; i < first_in_chunk.size(); ++i) {
-      if (cross(diagonal_x, diagonal_y, x, y + sum_in_chunk[i]) <= bound) {
-        x += chunk_length * (i + 1) - prev - size_of_chunk[i];
-        y += sum_in_chunk[i];
-        prev = (i + 1) * chunk_length;
-        continue;
-      }
-      int pos = first_in_chunk[i];
-      while (pos != -1) {
-        x += inds[pos] - prev;
-        y += ranks[inds[pos]];
-        prev = inds[pos] + 1;
-        pos = next[pos];
-        if (cross(diagonal_x, diagonal_y, x, y) > bound) {
-          return true;
+int perturbate(const vector<double> &ranks, int k, vector<vector<int>> &sampleChunks, vector<double> &chunkSum, vector<int> &chunkSize,
+               double bound, mt19937 &rng) {
+    double pertPrmtr = 0.1;
+    int n = (int) ranks.size();
+    // int k = (int) sample.size();
+    uniform_int_distribution<> uid_n(0, n - 1);
+    uniform_int_distribution<> uid_k(0, k - 1);
+    double NS = 0;
+    for (int i = 0; i < szof(sampleChunks); ++i) {
+        for (int pos : sampleChunks[i]) {
+            NS += ranks[pos];
         }
-      }
     }
-
-    return false;
-  }
-
-  vector<int> get_inds() {
-    vector<int> ret;
-    for (int i = 0; i < first_in_chunk.size(); ++i) {
-      int pos = first_in_chunk[i];
-      while (pos != -1) {
-        ret.push_back(inds[pos]);
-        pos = next[pos];
-      }
-    }
-    return ret;
-  }
-
-  bool try_replace(int order_number, int new_ind, double bound) {
-    int pos = -1;
-    int old_prev = -1;
-    for (int i = 0; i < first_in_chunk.size(); ++i) {
-      if (order_number < size_of_chunk[i]) {
-        pos = first_in_chunk[i];
-        while (order_number) {
-          old_prev = pos;
-          pos = next[pos];
-          --order_number;
+    double q1 = 1.0 / (n - k);
+    int iters = max(1, (int) (k * pertPrmtr));
+    int moves = 0;
+    for (int i = 0; i < iters; i++) {
+        int oldInd = uid_k(rng);
+        int oldChunkInd = 0, oldIndInChunk = 0;
+        int oldVal;
+        {
+            int tmp = oldInd;
+            while (szof(sampleChunks[oldChunkInd]) <= tmp) {
+                tmp -= szof(sampleChunks[oldChunkInd]);
+                ++oldChunkInd;
+            }
+            oldIndInChunk = tmp;
+            oldVal = sampleChunks[oldChunkInd][oldIndInChunk];
         }
-        break;
-      }
-      order_number -= size_of_chunk[i];
+
+        int newVal = uid_n(rng);
+
+        int newChunkInd = upper_bound(chunkLastElement.begin(), chunkLastElement.end(), newVal) - chunkLastElement.begin();
+        int newIndInChunk = lower_bound(sampleChunks[newChunkInd].begin(), sampleChunks[newChunkInd].end(), newVal) - sampleChunks[newChunkInd].begin();
+
+        if (newIndInChunk < szof(sampleChunks[newChunkInd]) && sampleChunks[newChunkInd][newIndInChunk] == newVal) {
+            if (newVal == oldVal) {
+                ++moves;
+            }
+            continue;
+        }
+
+        sampleChunks[oldChunkInd].erase(sampleChunks[oldChunkInd].begin() + oldIndInChunk);
+        sampleChunks[newChunkInd].insert(
+            sampleChunks[newChunkInd].begin() + newIndInChunk - (oldChunkInd == newChunkInd && oldIndInChunk < newIndInChunk ? 1 : 0), 
+            newVal);
+
+        NS = NS - ranks[oldVal] + ranks[newVal];
+
+        chunkSum[oldChunkInd] -= ranks[oldVal];
+        chunkSize[oldChunkInd]--;
+
+        chunkSum[newChunkInd] += ranks[newVal];
+        chunkSize[newChunkInd]++;
+
+        double cur = 0.0;
+        double q2 = 1.0 / NS;
+        int last = -1;
+        int cnt = 0;
+        int lastChunkLastElement = 0;
+
+        bool ok = false;
+
+        for (int i = 0; i < chunksNumber; ++i) {
+            if (cur + q2 * chunkSum[i] < bound) {
+                cur = cur + q2 * chunkSum[i] - q1 * (chunkLastElement[i] - lastChunkLastElement - chunkSize[i]);
+                last = chunkLastElement[i] - 1;
+                cnt += chunkSize[i];
+            } else {
+                for (int pos : sampleChunks[i]) {
+                    cur += q2 * ranks[pos] - q1 * (pos - last - 1);
+                    if (cur > bound) {
+                        ok = true;
+                        break;
+                    }
+                    last = pos;
+                    ++cnt;
+                }
+                if (ok) {
+                    break;
+                }
+            }
+            lastChunkLastElement = chunkLastElement[i];
+        }
+
+        if (!ok) {
+            NS = NS - ranks[newVal] + ranks[oldVal];
+            
+            chunkSum[oldChunkInd] += ranks[oldVal];
+            chunkSize[oldChunkInd]++;
+
+            chunkSum[newChunkInd] -= ranks[newVal];
+            chunkSize[newChunkInd]--;
+
+            sampleChunks[newChunkInd].erase(
+                sampleChunks[newChunkInd].begin() + newIndInChunk - (oldChunkInd == newChunkInd && oldIndInChunk < newIndInChunk ? 1 : 0));
+            sampleChunks[oldChunkInd].insert(sampleChunks[oldChunkInd].begin() + oldIndInChunk, oldVal);
+        } else {
+            ++moves;
+        }
     }
-    int old_ind = inds[pos];
-    if (old_ind == new_ind) {
-      return false;
-    }
-
-    diagonal_y += -ranks[old_ind] + ranks[new_ind];
-
-    int old_chunk = old_ind / chunk_length;
-    int new_chunk = new_ind / chunk_length;
-
-    // remove_pos(old_prev, pos);
-    size_of_chunk[old_chunk]--;
-    sum_in_chunk[old_chunk] -= ranks[old_ind];
-    if (old_prev == -1) {
-      first_in_chunk[old_chunk] = next[pos];
-    } else {
-      next[old_prev] = next[pos];
-    }
-
-
-    // int new_prev = add_ind(new_ind, pos);
-    inds[pos] = new_ind;
-    size_of_chunk[new_chunk]++;
-    sum_in_chunk[new_chunk] += ranks[new_ind];
-    int new_prev = -1;
-    int tmp = first_in_chunk[new_chunk];
-    while (tmp != -1 && inds[tmp] <= new_ind) {
-      new_prev = tmp;
-      tmp = next[tmp];
-    }
-
-    if (new_prev == -1) {
-      next[pos] = first_in_chunk[new_chunk];
-      first_in_chunk[new_chunk] = pos;
-    } else {
-      next[pos] = next[new_prev];
-      next[new_prev] = pos;
-    }
-
-    if ((new_prev == -1 || inds[new_prev] < new_ind) && check_es_not_less(bound)) {
-      return true;
-    }
-
-    // remove_pos(new_prev, pos);
-    size_of_chunk[new_chunk]--;
-    sum_in_chunk[new_chunk] -= ranks[new_ind];
-    if (new_prev == -1) {
-      first_in_chunk[new_chunk] = next[pos];
-    } else {
-      next[new_prev] = next[pos];
-    }
-
-
-    // add_ind(old_ind, pos, old_prev);
-    inds[pos] = old_ind;
-    size_of_chunk[old_chunk]++;
-    sum_in_chunk[old_chunk] += ranks[old_ind];
-
-    if (old_prev == -1) {
-      next[pos] = first_in_chunk[old_chunk];
-      first_in_chunk[old_chunk] = pos;
-    } else {
-      next[pos] = next[old_prev];
-      next[old_prev] = pos;
-    }
-
-    diagonal_y += ranks[old_ind] - ranks[new_ind];
-
-    return false;
-  }
-};
-
-int perturbate(const vector<double> &S, vector<int> &p, vector<double> &chunkSum, vector<int> &chunkSize, double bound, mt19937& rng) {
-    double pert_coeff = 0.1;
-  int n = (int) S.size();
-  int k = (int) p.size();
-  genes gns(S, p);
-  uniform_int_distribution<> uid_n(0, n - 1);
-  uniform_int_distribution<> uid_k(0, k - 1);
-  double NS = 0;
-  for (int pos : p) {
-    NS += S[pos];
-  }
-  int moves = 0;
-  int iters = max(1, (int) (k * pert_coeff));
-  for (int i = 0; i < iters; i++) {
-    int pos = uid_k(rng);
-    int new_ind = uid_n(rng);
-    moves += gns.try_replace(pos, new_ind, bound);
-  }
-
-  p = gns.get_inds();
-  return moves;
+    return moves;
 }
