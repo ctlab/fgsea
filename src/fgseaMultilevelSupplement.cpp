@@ -201,7 +201,6 @@ int perturbate(const vector<double> &ranks, int k, vector<vector<int>> &sampleCh
                double bound, mt19937 &rng) {
     double pertPrmtr = 0.1;
     int n = (int) ranks.size();
-    // int k = (int) sample.size();
     uniform_int_distribution<> uid_n(0, n - 1);
     uniform_int_distribution<> uid_k(0, k - 1);
     double NS = 0;
@@ -213,6 +212,11 @@ int perturbate(const vector<double> &ranks, int k, vector<vector<int>> &sampleCh
     double q1 = 1.0 / (n - k);
     int iters = max(1, (int) (k * pertPrmtr));
     int moves = 0;
+
+    int candX = 0;
+    double candY = 0;
+    int candVal = 0;
+    bool hasCand = false;
     for (int i = 0; i < iters; i++) {
         int oldInd = uid_k(rng);
         int oldChunkInd = 0, oldIndInChunk = 0;
@@ -252,28 +256,52 @@ int perturbate(const vector<double> &ranks, int k, vector<vector<int>> &sampleCh
         chunkSum[newChunkInd] += ranks[newVal];
         chunkSize[newChunkInd]++;
 
-        double cur = 0.0;
+        if (hasCand && candVal == oldVal) {
+        	hasCand = false;
+        }
+
+        if (hasCand) {
+        	if (oldVal < candVal) {
+	        	candX++;
+	        	candY -= ranks[oldVal];
+	        }
+	        if (newVal < candVal) {
+	        	candX--;
+	        	candY += ranks[newVal];
+	        }
+        }
+
         double q2 = 1.0 / NS;
+
+        if (hasCand && q2 * candY - q1 * candX > bound) {
+        	++moves;
+        	continue;
+        }
+
+        double curx = 0, cury = 0;
         int last = -1;
-        int cnt = 0;
         int lastChunkLastElement = 0;
 
         bool ok = false;
 
         for (int i = 0; i < chunksNumber; ++i) {
-            if (cur + q2 * chunkSum[i] < bound) {
-                cur = cur + q2 * chunkSum[i] - q1 * (chunkLastElement[i] - lastChunkLastElement - chunkSize[i]);
+            if (cury - curx + q2 * chunkSum[i] < bound) {
+                cury += q2 * chunkSum[i];
+                curx += q1 * (chunkLastElement[i] - lastChunkLastElement - chunkSize[i]);
                 last = chunkLastElement[i] - 1;
-                cnt += chunkSize[i];
             } else {
                 for (int pos : sampleChunks[i]) {
-                    cur += q2 * ranks[pos] - q1 * (pos - last - 1);
-                    if (cur > bound) {
+                    cury += q2 * ranks[pos];
+                    curx += q1 * (pos - last - 1);
+                    if (cury - curx > bound) {
                         ok = true;
-                        break;
+                        hasCand = true;
+                        candX = round(curx / q1);
+                        candY = cury / q2;
+                        candVal = pos;
+						break;
                     }
                     last = pos;
-                    ++cnt;
                 }
                 if (ok) {
                     break;
@@ -283,7 +311,7 @@ int perturbate(const vector<double> &ranks, int k, vector<vector<int>> &sampleCh
         }
 
         if (!ok) {
-            NS = NS - ranks[newVal] + ranks[oldVal];
+        	NS = NS - ranks[newVal] + ranks[oldVal];
             
             chunkSum[oldChunkInd] += ranks[oldVal];
             chunkSize[oldChunkInd]++;
@@ -294,6 +322,17 @@ int perturbate(const vector<double> &ranks, int k, vector<vector<int>> &sampleCh
             sampleChunks[newChunkInd].erase(
                 sampleChunks[newChunkInd].begin() + newIndInChunk - (oldChunkInd == newChunkInd && oldIndInChunk < newIndInChunk ? 1 : 0));
             sampleChunks[oldChunkInd].insert(sampleChunks[oldChunkInd].begin() + oldIndInChunk, oldVal);
+
+            if (hasCand) {
+	        	if (oldVal < candVal) {
+		        	candX--;
+		        	candY += ranks[oldVal];
+		        }
+		        if (newVal < candVal) {
+		        	candX++;
+		        	candY -= ranks[newVal];
+		        }
+	        }
         } else {
             ++moves;
         }
