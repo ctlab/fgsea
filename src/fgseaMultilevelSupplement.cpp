@@ -1,5 +1,8 @@
 #include "fgseaMultilevelSupplement.h"
 #include "esCalculation.h"
+#include "util.h"
+
+#include <iostream>
 
 double betaMeanLog(unsigned long a, unsigned long b) {
     return boost::math::digamma(a) - boost::math::digamma(b + 1);
@@ -23,16 +26,6 @@ pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector, 
         return make_pair(result, false);
     }
 }
-
-void fillRandomSample(set<int> &randomSample, mt19937 &gen,
-                      const unsigned long ranksSize, const unsigned int pathwaySize) {
-    randomSample.clear();
-    uniform_int_distribution<> uid_n(0, static_cast<int>(ranksSize - 1));
-    while (static_cast<int>(randomSample.size()) < pathwaySize) {
-        randomSample.insert(uid_n(gen));
-    }
-}
-
 
 EsRuler::EsRuler(const vector<double> &inpRanks, unsigned int inpSampleSize, unsigned int inpPathwaySize) :
     ranks(inpRanks), sampleSize(inpSampleSize), pathwaySize(inpPathwaySize) {
@@ -87,13 +80,15 @@ void EsRuler::extend(double ES, int seed, double eps) {
     mt19937 gen(seed);
 
     for (int sampleId = 0; sampleId < sampleSize; sampleId++) {
-        set<int> randomSample;
-        fillRandomSample(randomSample, gen, ranks.size(), pathwaySize);
-        currentSamples[sampleId] = vector<int>(randomSample.begin(), randomSample.end());
+        currentSamples[sampleId] = combination(0, ranks.size() - 1, pathwaySize, gen);
+        sort(currentSamples[sampleId].begin(), currentSamples[sampleId].end());
+
         double currentES = calcES(ranks, currentSamples[sampleId]);
         while (currentES <= 0) {
-            fillRandomSample(randomSample, gen, ranks.size(), pathwaySize);
-            currentES = calcES(ranks, vector<int>(randomSample.begin(), randomSample.end()));
+            vector<int> rnds = combination(0, ranks.size() - 1, pathwaySize, gen);
+            sort(rnds.begin(), rnds.end());
+            currentES = calcES(ranks, rnds);
+            // rnds not saved to keep currentSamples uniform for ES+
             totalCount++;
         }
         posCount++;
