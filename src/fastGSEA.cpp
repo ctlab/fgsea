@@ -10,6 +10,8 @@ using namespace Rcpp;
 #include <random>
 #include <chrono>
 
+#include "util.h"
+
 using namespace std;
 
 const double eps = 1e-13;
@@ -314,24 +316,6 @@ NumericVector gseaStats1(
     return res;
 }
 
-IntegerVector combination(const int &n, const int &k, mt19937& rng) {
-    std::uniform_int_distribution<int> uni(1, n);
-    std::vector<int> v;
-    v.reserve(k);
-    std::vector<char> used(n + 1);
-    for (int i = 0; i < k; i++) {
-        for (int j = 0; j < 100; j++) { // average < 2
-            int x = uni(rng);
-            if (!used[x]) {
-                v.push_back(x);
-                used[x] = true;
-                break;
-            }
-        }
-    }
-    return wrap(v);
-}
-
 NumericVector subvector(NumericVector const &from, IntegerVector const &indices) {
     NumericVector result(indices.size());
     for (int i = 0; i < indices.size(); ++i) {
@@ -385,7 +369,8 @@ NumericVector calcRandomGseaStatCumulative(
         std::string scoreType
 ) {
 
-    IntegerVector selectedStats = combination(n, k, rng);
+    IntegerVector selectedStats = wrap(combination(1, n, k, rng));
+
     return calcGseaStatCumulative(stats, selectedStats, gseaParam, scoreType);
 }
 
