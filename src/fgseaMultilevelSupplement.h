@@ -37,6 +37,22 @@ private:
 
     void duplicateSamples();
 
+    vector<int> chunkLastElement;
+    int chunksNumber;
+
+    struct SampleChunks {
+        vector<double> chunkSum;
+        vector<int> chunkSize;
+        vector<vector<int>> chunks;
+        vector<bool> chunkHasConvexHull;
+        vector<vector<pair<int, double>>> chunkConvexHull;
+        vector<int> chunkConvexHullBestPoint;
+        SampleChunks(int);
+    };
+
+    int perturbate(const vector<double> &ranks, int k, SampleChunks &cusSampleChunks,
+               double bound, mt19937 &rng);
+
 public:
 
     EsRuler(const vector<double> &inpRanks, unsigned int inpSampleSize, unsigned int inpPathwaySize);
@@ -47,9 +63,6 @@ public:
 
     pair<double, bool> getPvalue(double ES, double eps, bool sign);
 };
-
-int perturbate(const vector<double> &ranks, int k, vector<vector<int>> &sampleChunks, vector<double> &chunkSum, vector<int> &chunkSize,
-               double bound, mt19937 &rng);
 
 double betaMeanLog(unsigned long a, unsigned long b);
 
