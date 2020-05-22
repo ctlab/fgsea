@@ -188,8 +188,6 @@ pair<double, bool> EsRuler::getPvalue(double ES, double eps, bool sign) {
 }
 
 #define szof(x) ((int) (x).size())
-#define ff first
-#define ss second
 
 int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunks &sampleChunks,
                double bound, mt19937 &rng) {
@@ -258,7 +256,10 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
         bool ok = false;
 
         for (int i = 0; i < chunksNumber; ++i) {
-            if (!szof(sampleChunks.chunks[i])) {
+            if (!szof(sampleChunks.chunks[i]) || val + q2 * sampleChunks.chunkSum[i] < bound) {
+                val += q2 * sampleChunks.chunkSum[i] - q1 * (chunkLastElement[i] - lastChunkLastElement - sampleChunks.chunkSize[i]);
+                last = chunkLastElement[i] - 1;
+                lastChunkLastElement = chunkLastElement[i];
                 continue;
             }
             auto& convexHull = sampleChunks.chunkConvexHull[i];
@@ -306,7 +307,7 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
                     val += ranks[pos] * q2 - (pos - last - 1) * q1;
                     if (val > bound) {
                         ok = true;
-						break;
+						// break;
                     }
                     last = pos;
                     while (szof(convexHull) >= 2) {
@@ -326,9 +327,6 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
                         posConvexHull = szof(convexHull) - 1;
                     }
                 }
-                if (ok) {
-                    break;
-                }
                 curX += chunkLastElement[i] - last - 1;
                 while (szof(convexHull) >= 2) {
                     int dx1 = convexHull.back().first - convexHull[szof(convexHull) - 2].first;
@@ -345,6 +343,9 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
                 sampleChunks.chunkHasConvexHull[i] = true;
                 val -= q1 * (chunkLastElement[i] - last - 1);
                 last = chunkLastElement[i] - 1;
+                if (ok) {
+                    break;
+                }
             }
             lastChunkLastElement = chunkLastElement[i];
         }
