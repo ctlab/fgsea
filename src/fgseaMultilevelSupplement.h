@@ -44,14 +44,13 @@ private:
         vector<double> chunkSum;
         vector<int> chunkSize;
         vector<vector<int>> chunks;
-        vector<bool> chunkHasConvexHull;
-        vector<vector<pair<int, double>>> chunkConvexHull;
-        vector<int> chunkConvexHullBestPoint;
         SampleChunks(int);
     };
 
     int perturbate(const vector<double> &ranks, int k, SampleChunks &cusSampleChunks,
                double bound, mt19937 &rng);
+
+    int chunkLen(int ind);
 
 public:
 

@@ -73,8 +73,7 @@ void EsRuler::duplicateSamples() {
     swap(currentSamples, new_sets);
 }
 
-EsRuler::SampleChunks::SampleChunks(int chunksNumber) : chunkSum(chunksNumber), chunkSize(chunksNumber), chunks(chunksNumber),
-    chunkHasConvexHull(chunksNumber), chunkConvexHull(chunksNumber), chunkConvexHullBestPoint(chunksNumber) {}
+EsRuler::SampleChunks::SampleChunks(int chunksNumber) : chunkSum(chunksNumber), chunkSize(chunksNumber), chunks(chunksNumber) {}
 
 void EsRuler::extend(double ES, int seed, double eps) {
     unsigned int posCount = 0;
@@ -98,7 +97,7 @@ void EsRuler::extend(double ES, int seed, double eps) {
     }
 
     posUnifScoreCount = make_pair(posCount, totalCount);
-    chunksNumber = max(1, (int) (0.5 * sqrt(pathwaySize)));
+    chunksNumber = max(1, (int) sqrt(pathwaySize));
     chunkLastElement = vector<int>(chunksNumber);
     chunkLastElement[chunksNumber - 1] = ranks.size();
     vector<int> tmp(sampleSize);
@@ -129,7 +128,6 @@ void EsRuler::extend(double ES, int seed, double eps) {
                 samplesChunks[i].chunkSum[cnt] += ranks[pos];
                 samplesChunks[i].chunkSize[cnt]++;
             }
-            fill(samplesChunks[i].chunkHasConvexHull.begin(), samplesChunks[i].chunkHasConvexHull.end(), false);
         }
 
         for (int moves = 0; moves < sampleSize * pathwaySize;) {
@@ -187,6 +185,13 @@ pair<double, bool> EsRuler::getPvalue(double ES, double eps, bool sign) {
     }
 }
 
+int EsRuler::chunkLen(int ind) {
+    if (ind == 0) {
+        return chunkLastElement[0];
+    }
+    return chunkLastElement[ind] - chunkLastElement[ind - 1];
+}
+
 #define szof(x) ((int) (x).size())
 
 int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunks &sampleChunks,
@@ -204,6 +209,15 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
     double q1 = 1.0 / (n - k);
     int iters = max(1, (int) (k * pertPrmtr));
     int moves = 0;
+
+    int chunkCand = 0;
+    int chunkCandX = 0;
+    double chunkCandY = 0;
+
+    int cand = -1;
+    bool hasCand = false;
+    int candX = 0;
+    double candY = 0;
 
     for (int i = 0; i < iters; i++) {
         int oldInd = uid_k(rng);
@@ -244,110 +258,105 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
         sampleChunks.chunkSum[newChunkInd] += ranks[newVal];
         sampleChunks.chunkSize[newChunkInd]++;
 
-        sampleChunks.chunkHasConvexHull[oldChunkInd] = false;
-        sampleChunks.chunkHasConvexHull[newChunkInd] = false;
+        if (oldChunkInd < chunkCand) {
+            chunkCandX++;
+            chunkCandY -= ranks[oldVal];
+        }
+
+        if (newChunkInd < chunkCand) {
+            chunkCandX--;
+            chunkCandY += ranks[newVal];
+        }
+
+        if (hasCand) {
+            if (oldVal == cand) {
+                hasCand = false;
+            }
+        }
+        if (hasCand) {
+            if (oldVal < cand) {
+                candX++;
+                candY -= ranks[oldVal];
+            }
+            if (newVal < cand) {
+                candX--;
+                candY += ranks[newVal];
+            }
+        }
 
         double q2 = 1.0 / NS;
 
-        double val = 0;
-        int last = -1;
-        int lastChunkLastElement = 0;
+        if (hasCand && -q1 * candX + q2 * candY > bound) {
+            ++moves;
+            continue;
+        }
 
+        int valLX = chunkCandX;
+        double valLY = chunkCandY;
+        int posL = chunkCand;
+        int valRX = valLX + chunkLen(chunkCand) - sampleChunks.chunkSize[chunkCand];
+        double valRY = valLY + sampleChunks.chunkSum[chunkCand];
+        int posR = chunkCand + 1;
         bool ok = false;
 
-        for (int i = 0; i < chunksNumber; ++i) {
-            if (!szof(sampleChunks.chunks[i]) || val + q2 * sampleChunks.chunkSum[i] < bound) {
-                val += q2 * sampleChunks.chunkSum[i] - q1 * (chunkLastElement[i] - lastChunkLastElement - sampleChunks.chunkSize[i]);
-                last = chunkLastElement[i] - 1;
-                lastChunkLastElement = chunkLastElement[i];
-                continue;
-            }
-            auto& convexHull = sampleChunks.chunkConvexHull[i];
-            int& posConvexHull = sampleChunks.chunkConvexHullBestPoint[i];
-            if (sampleChunks.chunkHasConvexHull[i]) {
-                double cval = -convexHull[posConvexHull].first * q1 + convexHull[posConvexHull].second * q2;
-                while (0 < posConvexHull && val + cval <= bound) {
-                    double nval = -convexHull[posConvexHull - 1].first * q1 + convexHull[posConvexHull - 1].second * q2;
-                    if (nval > cval) {
-                        cval = nval;
-                        --posConvexHull;
-                    } else {
-                        break;
-                    }
-                }
-                if (val + cval > bound) {
-                    ok = true;
-                    break;
-                }
-                while (posConvexHull < szof(convexHull) - 1 && val + cval <= bound) {
-                    double nval = -convexHull[posConvexHull + 1].first * q1 + convexHull[posConvexHull + 1].second * q2;
-                    if (nval > cval) {
-                        cval = nval;
-                        ++posConvexHull;
-                    } else {
-                        break;
-                    }
-                }
-                if (val + cval > bound) {
-                    ok = true;
-                    break;
-                }
-
-                val += q2 * sampleChunks.chunkSum[i] - q1 * (chunkLastElement[i] - lastChunkLastElement - sampleChunks.chunkSize[i]);
-                last = chunkLastElement[i] - 1;
+        bool fl = false;
+        while (0 <= posL || posR < chunksNumber) {
+            int curChunk;
+            int valX;
+            double valY;
+            if (posL >= 0 && (!fl || posR >= chunksNumber)) {
+                fl = false;
+                curChunk = posL;
+                valX = valLX;
+                valY = valLY;
             } else {
-                int curX = 0;
-                double curY = 0;
-                convexHull.clear();
-                convexHull.push_back({0, 0});
-                double best = -1e100;
-                for (int pos : sampleChunks.chunks[i]) {
-                    curY += ranks[pos];
-                    curX += pos - last - 1;
-                    val += ranks[pos] * q2 - (pos - last - 1) * q1;
-                    if (val > bound) {
+                fl = true;
+                curChunk = posR;
+                valX = valRX;
+                valY = valRY;
+            }
+
+            if (-q1 * valX + q2 * (valY + sampleChunks.chunkSum[curChunk]) >= bound) {
+                int last = curChunk == 0 ? -1 : chunkLastElement[curChunk - 1] - 1;
+                for (int pos : sampleChunks.chunks[curChunk]) {
+                    valX += (pos - last - 1);
+                    valY += ranks[pos];
+                    if (-q1 * valX + q2 * valY > bound) {
                         ok = true;
-						// break;
+                        cand = pos;
+                        candX = valX;
+                        candY = valY;
+                        break;
                     }
                     last = pos;
-                    while (szof(convexHull) >= 2) {
-                        int dx1 = convexHull.back().first - convexHull[szof(convexHull) - 2].first;
-                        double dy1 = convexHull.back().second - convexHull[szof(convexHull) - 2].second;
-                        int dx2 = curX - convexHull.back().first;
-                        double dy2 = curY - convexHull.back().second;
-                        if (dx1 * dy2 - dx2 * dy1 >= 0) {
-                            convexHull.pop_back();
-                        } else {
-                            break;
-                        }
-                    }
-                    convexHull.push_back({curX, curY});
-                    if (val > best) {
-                        best = val;
-                        posConvexHull = szof(convexHull) - 1;
-                    }
-                }
-                curX += chunkLastElement[i] - last - 1;
-                while (szof(convexHull) >= 2) {
-                    int dx1 = convexHull.back().first - convexHull[szof(convexHull) - 2].first;
-                    double dy1 = convexHull.back().second - convexHull[szof(convexHull) - 2].second;
-                    int dx2 = curX - convexHull.back().first;
-                    double dy2 = curY - convexHull.back().second;
-                    if (dx1 * dy2 - dx2 * dy1 >= 0) {
-                        convexHull.pop_back();
-                    } else {
-                        break;
-                    }
-                }
-                convexHull.push_back({curX, curY});
-                sampleChunks.chunkHasConvexHull[i] = true;
-                val -= q1 * (chunkLastElement[i] - last - 1);
-                last = chunkLastElement[i] - 1;
-                if (ok) {
-                    break;
                 }
             }
-            lastChunkLastElement = chunkLastElement[i];
+
+            if (ok) {
+                chunkCand = curChunk;
+                if (!fl) {
+                    chunkCandX = valLX;
+                    chunkCandY = valLY;
+                } else {
+                    chunkCandX = valRX;
+                    chunkCandY = valRY;
+                }
+                break;
+            }
+
+            if (!fl) {
+                if (posL) {
+                    valLX -= chunkLen(posL - 1) - sampleChunks.chunkSize[posL - 1];
+                    valLY -= sampleChunks.chunkSum[posL - 1];
+                }
+                --posL;
+            } else {
+                valRX += chunkLen(posR) - sampleChunks.chunkSize[posR];
+                valRY += sampleChunks.chunkSum[posR];
+                ++posR;
+            }
+
+            fl ^= 1;
         }
 
         if (!ok) {
@@ -363,8 +372,31 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
                 sampleChunks.chunks[newChunkInd].begin() + newIndInChunk - (oldChunkInd == newChunkInd && oldIndInChunk < newIndInChunk ? 1 : 0));
             sampleChunks.chunks[oldChunkInd].insert(sampleChunks.chunks[oldChunkInd].begin() + oldIndInChunk, oldVal);
 
-            sampleChunks.chunkHasConvexHull[oldChunkInd] = false;
-            sampleChunks.chunkHasConvexHull[newChunkInd] = false;
+            if (oldChunkInd < chunkCand) {
+                chunkCandX--;
+                chunkCandY += ranks[oldVal];
+            }
+
+            if (newChunkInd < chunkCand) {
+                chunkCandX++;
+                chunkCandY -= ranks[newVal];
+            }
+
+            if (hasCand) {
+                if (newVal == cand) {
+                    hasCand = false;
+                }
+            }
+            if (hasCand) {
+                if (oldVal < cand) {
+                    candX--;
+                    candY += ranks[oldVal];
+                }
+                if (newVal < cand) {
+                    candX++;
+                    candY -= ranks[newVal];
+                }
+            }
         } else {
             ++moves;
         }
