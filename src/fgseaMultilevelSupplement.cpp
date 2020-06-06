@@ -198,8 +198,10 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
                double bound, mt19937 &rng) {
     double pertPrmtr = 0.1;
     int n = (int) ranks.size();
-    uniform_int_distribution<> uid_n(0, n - 1);
-    uniform_int_distribution<> uid_k(0, k - 1);
+    // uniform_int_distribution<> uid_n(0, n - 1);
+    uid_wrapper uid_n(0, n - 1, rng);
+    // uniform_int_distribution<> uid_k(0, k - 1);
+    uid_wrapper uid_k(0, k - 1, rng);
     double NS = 0;
     for (int i = 0; i < szof(sampleChunks.chunks); ++i) {
         for (int pos : sampleChunks.chunks[i]) {
@@ -216,7 +218,7 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
     double candY = 0;
 
     for (int i = 0; i < iters; i++) {
-        int oldInd = uid_k(rng);
+        int oldInd = uid_k();
         int oldChunkInd = 0, oldIndInChunk = 0;
         int oldVal;
         {
@@ -229,7 +231,7 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
             oldVal = sampleChunks.chunks[oldChunkInd][oldIndInChunk];
         }
 
-        int newVal = uid_n(rng);
+        int newVal = uid_n();
 
         int newChunkInd = upper_bound(chunkLastElement.begin(), chunkLastElement.end(), newVal) - chunkLastElement.begin();
         int newIndInChunk = lower_bound(sampleChunks.chunks[newChunkInd].begin(), sampleChunks.chunks[newChunkInd].end(), newVal) - sampleChunks.chunks[newChunkInd].begin();
