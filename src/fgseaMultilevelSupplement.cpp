@@ -210,11 +210,7 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
     int iters = max(1, (int) (k * pertPrmtr));
     int moves = 0;
 
-    int chunkCand = 0;
-    int chunkCandX = 0;
-    double chunkCandY = 0;
-
-    int cand = -1;
+    int candVal = -1;
     bool hasCand = false;
     int candX = 0;
     double candY = 0;
@@ -258,27 +254,17 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
         sampleChunks.chunkSum[newChunkInd] += ranks[newVal];
         sampleChunks.chunkSize[newChunkInd]++;
 
-        if (oldChunkInd < chunkCand) {
-            chunkCandX++;
-            chunkCandY -= ranks[oldVal];
-        }
-
-        if (newChunkInd < chunkCand) {
-            chunkCandX--;
-            chunkCandY += ranks[newVal];
-        }
-
         if (hasCand) {
-            if (oldVal == cand) {
+            if (oldVal == candVal) {
                 hasCand = false;
             }
         }
         if (hasCand) {
-            if (oldVal < cand) {
+            if (oldVal < candVal) {
                 candX++;
                 candY -= ranks[oldVal];
             }
-            if (newVal < cand) {
+            if (newVal < candVal) {
                 candX--;
                 candY += ranks[newVal];
             }
@@ -291,72 +277,37 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
             continue;
         }
 
-        int valLX = chunkCandX;
-        double valLY = chunkCandY;
-        int posL = chunkCand;
-        int valRX = valLX + chunkLen(chunkCand) - sampleChunks.chunkSize[chunkCand];
-        double valRY = valLY + sampleChunks.chunkSum[chunkCand];
-        int posR = chunkCand + 1;
+        int curX = 0;
+        double curY = 0;
         bool ok = false;
+        int last = -1;
 
         bool fl = false;
-        while (0 <= posL || posR < chunksNumber) {
-            int curChunk;
-            int valX;
-            double valY;
-            if (posL >= 0 && (!fl || posR >= chunksNumber)) {
-                fl = false;
-                curChunk = posL;
-                valX = valLX;
-                valY = valLY;
+        for (int i = 0; i < szof(sampleChunks.chunks); ++i) {
+            if (q2 * (curY + sampleChunks.chunkSum[i]) - q1 * curX < bound) {
+                curY += sampleChunks.chunkSum[i];
+                curX += chunkLastElement[i] - last - 1 - sampleChunks.chunkSize[i];
+                last = chunkLastElement[i] - 1;
             } else {
-                fl = true;
-                curChunk = posR;
-                valX = valRX;
-                valY = valRY;
-            }
-
-            if (-q1 * valX + q2 * (valY + sampleChunks.chunkSum[curChunk]) >= bound) {
-                int last = curChunk == 0 ? -1 : chunkLastElement[curChunk - 1] - 1;
-                for (int pos : sampleChunks.chunks[curChunk]) {
-                    valX += (pos - last - 1);
-                    valY += ranks[pos];
-                    if (-q1 * valX + q2 * valY > bound) {
+                for (int pos : sampleChunks.chunks[i]) {
+                    curY += ranks[pos];
+                    curX += pos - last - 1;
+                    if (q2 * curY - q1 * curX > bound) {
                         ok = true;
-                        cand = pos;
-                        candX = valX;
-                        candY = valY;
+                        hasCand = true;
+                        candX = curX;
+                        candY = curY;
+                        candVal = pos;
                         break;
                     }
                     last = pos;
                 }
-            }
-
-            if (ok) {
-                chunkCand = curChunk;
-                if (!fl) {
-                    chunkCandX = valLX;
-                    chunkCandY = valLY;
-                } else {
-                    chunkCandX = valRX;
-                    chunkCandY = valRY;
+                if (ok) {
+                    break;
                 }
-                break;
+                curX += chunkLastElement[i] - 1 - last;
+                last = chunkLastElement[i] - 1;
             }
-
-            if (!fl) {
-                if (posL) {
-                    valLX -= chunkLen(posL - 1) - sampleChunks.chunkSize[posL - 1];
-                    valLY -= sampleChunks.chunkSum[posL - 1];
-                }
-                --posL;
-            } else {
-                valRX += chunkLen(posR) - sampleChunks.chunkSize[posR];
-                valRY += sampleChunks.chunkSum[posR];
-                ++posR;
-            }
-
-            fl ^= 1;
         }
 
         if (!ok) {
@@ -372,27 +323,17 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
                 sampleChunks.chunks[newChunkInd].begin() + newIndInChunk - (oldChunkInd == newChunkInd && oldIndInChunk < newIndInChunk ? 1 : 0));
             sampleChunks.chunks[oldChunkInd].insert(sampleChunks.chunks[oldChunkInd].begin() + oldIndInChunk, oldVal);
 
-            if (oldChunkInd < chunkCand) {
-                chunkCandX--;
-                chunkCandY += ranks[oldVal];
-            }
-
-            if (newChunkInd < chunkCand) {
-                chunkCandX++;
-                chunkCandY -= ranks[newVal];
-            }
-
             if (hasCand) {
-                if (newVal == cand) {
+                if (newVal == candVal) {
                     hasCand = false;
                 }
             }
             if (hasCand) {
-                if (oldVal < cand) {
+                if (oldVal < candVal) {
                     candX--;
                     candY += ranks[oldVal];
                 }
-                if (newVal < cand) {
+                if (newVal < candVal) {
                     candX++;
                     candY -= ranks[newVal];
                 }
