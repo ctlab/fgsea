@@ -2,8 +2,6 @@
 #include "esCalculation.h"
 #include "util.h"
 
-#include <iostream>
-
 double betaMeanLog(unsigned long a, unsigned long b) {
     return boost::math::digamma(a) - boost::math::digamma(b + 1);
 }
@@ -34,7 +32,6 @@ EsRuler::EsRuler(const vector<double> &inpRanks, unsigned int inpSampleSize, uns
 }
 
 EsRuler::~EsRuler() = default;
-
 
 void EsRuler::duplicateSamples() {
     /*
@@ -74,6 +71,8 @@ void EsRuler::duplicateSamples() {
     swap(currentSamples, new_sets);
 }
 
+EsRuler::SampleChunks::SampleChunks(int chunksNumber) : chunkSum(chunksNumber), chunks(chunksNumber) {}
+
 void EsRuler::extend(double ES, int seed, double eps) {
     unsigned int posCount = 0;
     unsigned int totalCount = 0;
@@ -96,14 +95,52 @@ void EsRuler::extend(double ES, int seed, double eps) {
     }
 
     posUnifScoreCount = make_pair(posCount, totalCount);
+    chunksNumber = max(1, (int) sqrt(pathwaySize));
+    chunkLastElement = vector<int>(chunksNumber);
+    chunkLastElement[chunksNumber - 1] = ranks.size();
+    vector<int> tmp(sampleSize);
+    vector<SampleChunks> samplesChunks(sampleSize, SampleChunks(chunksNumber));
 
     duplicateSamples();
     while (ES > enrichmentScores.back()){
-        for (int moves = 0; moves < sampleSize * pathwaySize;) {
-            for (int sample_id = 0; sample_id < sampleSize; sample_id++) {
-                moves += perturbate(ranks, currentSamples[sample_id], enrichmentScores.back(), gen);
+        for (int i = 0, pos = 0; i < chunksNumber - 1; ++i) {
+            pos += (pathwaySize + i) / chunksNumber;
+            for (int j = 0; j < sampleSize; ++j) {
+                tmp[j] = currentSamples[j][pos];
+            }
+            nth_element(tmp.begin(), tmp.begin() + sampleSize / 2, tmp.end());
+            chunkLastElement[i] = tmp[sampleSize / 2];
+        }
+
+        for (int i = 0; i < sampleSize; ++i) {
+            fill(samplesChunks[i].chunkSum.begin(), samplesChunks[i].chunkSum.end(), 0.0);
+            int cnt = 0;
+            samplesChunks[i].chunks[cnt].clear();
+            for (int pos : currentSamples[i]) {
+                while (chunkLastElement[cnt] <= pos) {
+                    ++cnt;
+                    samplesChunks[i].chunks[cnt].clear();
+                }
+                samplesChunks[i].chunks[cnt].push_back(pos);
+                samplesChunks[i].chunkSum[cnt] += ranks[pos];
             }
         }
+
+        for (int moves = 0; moves < sampleSize * pathwaySize;) {
+            for (int sampleId = 0; sampleId < sampleSize; sampleId++) {
+                moves += perturbate(ranks, pathwaySize, samplesChunks[sampleId], enrichmentScores.back(), gen);
+            }
+        }
+
+        for (int i = 0; i < sampleSize; ++i) {
+            currentSamples[i].clear();
+            for (int j = 0; j < chunksNumber; ++j) {
+                for (int pos : samplesChunks[i].chunks[j]) {
+                    currentSamples[i].push_back(pos);
+                }
+            }
+        }
+
         duplicateSamples();
         if (eps != 0){
             unsigned long k = enrichmentScores.size() / ((sampleSize + 1) / 2);
@@ -144,51 +181,156 @@ pair<double, bool> EsRuler::getPvalue(double ES, double eps, bool sign) {
     }
 }
 
+int EsRuler::chunkLen(int ind) {
+    if (ind == 0) {
+        return chunkLastElement[0];
+    }
+    return chunkLastElement[ind] - chunkLastElement[ind - 1];
+}
 
-int perturbate(const vector<double> &ranks, vector<int> &sample,
+int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunks &sampleChunks,
                double bound, mt19937 &rng) {
     double pertPrmtr = 0.1;
     int n = (int) ranks.size();
-    int k = (int) sample.size();
-    uniform_int_distribution<> uid_n(0, n - 1);
-    uniform_int_distribution<> uid_k(0, k - 1);
+    uid_wrapper uid_n(0, n - 1, rng);
+    uid_wrapper uid_k(0, k - 1, rng);
     double NS = 0;
-    for (int pos : sample) {
-        NS += ranks[pos];
+    for (int i = 0; i < (int) sampleChunks.chunks.size(); ++i) {
+        for (int pos : sampleChunks.chunks[i]) {
+            NS += ranks[pos];
+        }
     }
+    double q1 = 1.0 / (n - k);
     int iters = max(1, (int) (k * pertPrmtr));
     int moves = 0;
+
+    int candVal = -1;
+    bool hasCand = false;
+    int candX = 0;
+    double candY = 0;
+
     for (int i = 0; i < iters; i++) {
-        int id = uid_k(rng);
-        int old = sample[id];
-        NS -= ranks[sample[id]];
-
-        sample[id] = uid_n(rng);
-        while (id > 0 && sample[id] < sample[id - 1]) {
-            swap(sample[id], sample[id - 1]);
-            id--;
-        }
-        while (id < k - 1 && sample[id] > sample[id + 1]) {
-            swap(sample[id], sample[id + 1]);
-            id++;
-        }
-
-        if ((id > 0 && sample[id] == sample[id - 1]) || (id < k - 1 && sample[id] == sample[id + 1]) ||
-            !compareStat(ranks, sample, NS + ranks[sample[id]], bound)) {
-            // revert changes...
-            sample[id] = old;
-            while (id > 0 && sample[id] < sample[id - 1]) {
-                swap(sample[id], sample[id - 1]);
-                id--;
+        int oldInd = uid_k();
+        int oldChunkInd = 0, oldIndInChunk = 0;
+        int oldVal;
+        {
+            int tmp = oldInd;
+            while ((int) sampleChunks.chunks[oldChunkInd].size() <= tmp) {
+                tmp -= sampleChunks.chunks[oldChunkInd].size();
+                ++oldChunkInd;
             }
-            while (id < k - 1 && sample[id] > sample[id + 1]) {
-                swap(sample[id], sample[id + 1]);
-                id++;
+            oldIndInChunk = tmp;
+            oldVal = sampleChunks.chunks[oldChunkInd][oldIndInChunk];
+        }
+
+        int newVal = uid_n();
+
+        int newChunkInd = upper_bound(chunkLastElement.begin(), chunkLastElement.end(), newVal) - chunkLastElement.begin();
+        int newIndInChunk = lower_bound(sampleChunks.chunks[newChunkInd].begin(), sampleChunks.chunks[newChunkInd].end(), newVal) - sampleChunks.chunks[newChunkInd].begin();
+
+        if (newIndInChunk < (int) sampleChunks.chunks[newChunkInd].size() && sampleChunks.chunks[newChunkInd][newIndInChunk] == newVal) {
+            if (newVal == oldVal) {
+                ++moves;
+            }
+            continue;
+        }
+
+        sampleChunks.chunks[oldChunkInd].erase(sampleChunks.chunks[oldChunkInd].begin() + oldIndInChunk);
+        sampleChunks.chunks[newChunkInd].insert(
+            sampleChunks.chunks[newChunkInd].begin() + newIndInChunk - (oldChunkInd == newChunkInd && oldIndInChunk < newIndInChunk ? 1 : 0), 
+            newVal);
+
+        NS = NS - ranks[oldVal] + ranks[newVal];
+
+        sampleChunks.chunkSum[oldChunkInd] -= ranks[oldVal];
+
+        sampleChunks.chunkSum[newChunkInd] += ranks[newVal];
+
+        if (hasCand) {
+            if (oldVal == candVal) {
+                hasCand = false;
+            }
+        }
+        if (hasCand) {
+            if (oldVal < candVal) {
+                candX++;
+                candY -= ranks[oldVal];
+            }
+            if (newVal < candVal) {
+                candX--;
+                candY += ranks[newVal];
+            }
+        }
+
+        double q2 = 1.0 / NS;
+
+        if (hasCand && -q1 * candX + q2 * candY > bound) {
+            ++moves;
+            continue;
+        }
+
+        int curX = 0;
+        double curY = 0;
+        bool ok = false;
+        int last = -1;
+
+        bool fl = false;
+        for (int i = 0; i < (int) sampleChunks.chunks.size(); ++i) {
+            if (q2 * (curY + sampleChunks.chunkSum[i]) - q1 * curX < bound) {
+                curY += sampleChunks.chunkSum[i];
+                curX += chunkLastElement[i] - last - 1 - (int) sampleChunks.chunks[i].size();
+                last = chunkLastElement[i] - 1;
+            } else {
+                for (int pos : sampleChunks.chunks[i]) {
+                    curY += ranks[pos];
+                    curX += pos - last - 1;
+                    if (q2 * curY - q1 * curX > bound) {
+                        ok = true;
+                        hasCand = true;
+                        candX = curX;
+                        candY = curY;
+                        candVal = pos;
+                        break;
+                    }
+                    last = pos;
+                }
+                if (ok) {
+                    break;
+                }
+                curX += chunkLastElement[i] - 1 - last;
+                last = chunkLastElement[i] - 1;
+            }
+        }
+
+        if (!ok) {
+        	NS = NS - ranks[newVal] + ranks[oldVal];
+            
+            sampleChunks.chunkSum[oldChunkInd] += ranks[oldVal];
+
+            sampleChunks.chunkSum[newChunkInd] -= ranks[newVal];
+
+            sampleChunks.chunks[newChunkInd].erase(
+                sampleChunks.chunks[newChunkInd].begin() + newIndInChunk - (oldChunkInd == newChunkInd && oldIndInChunk < newIndInChunk ? 1 : 0));
+            sampleChunks.chunks[oldChunkInd].insert(sampleChunks.chunks[oldChunkInd].begin() + oldIndInChunk, oldVal);
+
+            if (hasCand) {
+                if (newVal == candVal) {
+                    hasCand = false;
+                }
+            }
+            if (hasCand) {
+                if (oldVal < candVal) {
+                    candX--;
+                    candY += ranks[oldVal];
+                }
+                if (newVal < candVal) {
+                    candX++;
+                    candY -= ranks[newVal];
+                }
             }
         } else {
-            moves++;
+            ++moves;
         }
-        NS += ranks[sample[id]];
     }
     return moves;
 }

@@ -60,7 +60,6 @@ double calcPositiveES(const vector<double> &ranks, const vector<int> &p) {
     return calcPositiveES(ranks, p, NS);
 }
 
-
 bool compareStat(const vector<double> &ranks, const vector<int> &p, double NS, double bound){
     // p must be sorted
     int n = (int) ranks.size();

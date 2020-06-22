@@ -4,10 +4,11 @@
 #include <vector>
 #include <random>
 #include <set>
+#include <cmath>
+#include <algorithm>
 #include <boost/math/special_functions/digamma.hpp>
 
 using namespace std;
-
 
 class EsRuler {
 private:
@@ -27,6 +28,20 @@ private:
 
     void duplicateSamples();
 
+    vector<int> chunkLastElement;
+    int chunksNumber;
+
+    struct SampleChunks {
+        vector<double> chunkSum;
+        vector<vector<int>> chunks;
+        SampleChunks(int);
+    };
+
+    int perturbate(const vector<double> &ranks, int k, SampleChunks &cusSampleChunks,
+               double bound, mt19937 &rng);
+
+    int chunkLen(int ind);
+
 public:
 
     EsRuler(const vector<double> &inpRanks, unsigned int inpSampleSize, unsigned int inpPathwaySize);
@@ -37,9 +52,6 @@ public:
 
     pair<double, bool> getPvalue(double ES, double eps, bool sign);
 };
-
-int perturbate(const vector<double> &ranks, vector<int> &sample,
-               double bound, mt19937 &rng);
 
 double betaMeanLog(unsigned long a, unsigned long b);
 
