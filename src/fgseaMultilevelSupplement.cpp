@@ -188,8 +188,6 @@ int EsRuler::chunkLen(int ind) {
     return chunkLastElement[ind] - chunkLastElement[ind - 1];
 }
 
-#define szof(x) ((int) (x).size())
-
 int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunks &sampleChunks,
                double bound, mt19937 &rng) {
     double pertPrmtr = 0.1;
@@ -197,7 +195,7 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
     uid_wrapper uid_n(0, n - 1, rng);
     uid_wrapper uid_k(0, k - 1, rng);
     double NS = 0;
-    for (int i = 0; i < szof(sampleChunks.chunks); ++i) {
+    for (int i = 0; i < (int) sampleChunks.chunks.size(); ++i) {
         for (int pos : sampleChunks.chunks[i]) {
             NS += ranks[pos];
         }
@@ -217,8 +215,8 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
         int oldVal;
         {
             int tmp = oldInd;
-            while (szof(sampleChunks.chunks[oldChunkInd]) <= tmp) {
-                tmp -= szof(sampleChunks.chunks[oldChunkInd]);
+            while ((int) sampleChunks.chunks[oldChunkInd].size() <= tmp) {
+                tmp -= sampleChunks.chunks[oldChunkInd].size();
                 ++oldChunkInd;
             }
             oldIndInChunk = tmp;
@@ -230,7 +228,7 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
         int newChunkInd = upper_bound(chunkLastElement.begin(), chunkLastElement.end(), newVal) - chunkLastElement.begin();
         int newIndInChunk = lower_bound(sampleChunks.chunks[newChunkInd].begin(), sampleChunks.chunks[newChunkInd].end(), newVal) - sampleChunks.chunks[newChunkInd].begin();
 
-        if (newIndInChunk < szof(sampleChunks.chunks[newChunkInd]) && sampleChunks.chunks[newChunkInd][newIndInChunk] == newVal) {
+        if (newIndInChunk < (int) sampleChunks.chunks[newChunkInd].size() && sampleChunks.chunks[newChunkInd][newIndInChunk] == newVal) {
             if (newVal == oldVal) {
                 ++moves;
             }
@@ -277,10 +275,10 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
         int last = -1;
 
         bool fl = false;
-        for (int i = 0; i < szof(sampleChunks.chunks); ++i) {
+        for (int i = 0; i < (int) sampleChunks.chunks.size(); ++i) {
             if (q2 * (curY + sampleChunks.chunkSum[i]) - q1 * curX < bound) {
                 curY += sampleChunks.chunkSum[i];
-                curX += chunkLastElement[i] - last - 1 - szof(sampleChunks.chunks[i]);
+                curX += chunkLastElement[i] - last - 1 - (int) sampleChunks.chunks[i].size();
                 last = chunkLastElement[i] - 1;
             } else {
                 for (int pos : sampleChunks.chunks[i]) {

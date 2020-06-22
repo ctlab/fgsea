@@ -8,14 +8,14 @@
 std::vector<int> combination(const int &a, const int &b, const int &k, std::mt19937& rng);
 
 struct uid_wrapper {
-	//*
+	#ifdef USE_STD_UID
+	std::mt19937& rng;
+	std::uniform_int_distribution<int> uid;
+	#else
 	int from, len;
 	std::mt19937& rng;
 	unsigned completePart;
-	/*/
-	std::mt19937& rng;
-	std::uniform_int_distribution<int> uid;
-	//*/
+	#endif
 	uid_wrapper(int, int, std::mt19937&);
 
 	int operator()();
