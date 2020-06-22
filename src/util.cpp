@@ -23,7 +23,13 @@ std::vector<int> combination(const int &a, const int &b, const int &k, std::mt19
     return v;
 }
 
-//*
+#ifdef USE_STD_UID
+uid_wrapper::uid_wrapper(int _from, int _to, std::mt19937& _rng) : rng(_rng), uid(_from, _to) {}
+
+int uid_wrapper::operator()() {
+    return uid(rng);
+}
+#else
 uid_wrapper::uid_wrapper(int _from, int _to, std::mt19937& _rng) : from(_from), len(_to - _from + 1), rng(_rng) {
     unsigned maxVal = rng.max();
     completePart = maxVal - maxVal % len;
@@ -37,12 +43,4 @@ int uid_wrapper::operator()() {
 
     return from + x % len;
 }
-
-/*/
-
-uid_wrapper::uid_wrapper(int _from, int _to, std::mt19937& _rng) : rng(_rng), uid(_from, _to) {}
-
-int uid_wrapper::operator()() {
-    return uid(rng);
-}
-//*/
+#endif

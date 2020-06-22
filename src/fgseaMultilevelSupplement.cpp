@@ -2,8 +2,6 @@
 #include "esCalculation.h"
 #include "util.h"
 
-#include <iostream>
-
 double betaMeanLog(unsigned long a, unsigned long b) {
     return boost::math::digamma(a) - boost::math::digamma(b + 1);
 }
@@ -73,7 +71,7 @@ void EsRuler::duplicateSamples() {
     swap(currentSamples, new_sets);
 }
 
-EsRuler::SampleChunks::SampleChunks(int chunksNumber) : chunkSum(chunksNumber), chunkSize(chunksNumber), chunks(chunksNumber) {}
+EsRuler::SampleChunks::SampleChunks(int chunksNumber) : chunkSum(chunksNumber), chunks(chunksNumber) {}
 
 void EsRuler::extend(double ES, int seed, double eps) {
     unsigned int posCount = 0;
@@ -116,7 +114,6 @@ void EsRuler::extend(double ES, int seed, double eps) {
 
         for (int i = 0; i < sampleSize; ++i) {
             fill(samplesChunks[i].chunkSum.begin(), samplesChunks[i].chunkSum.end(), 0.0);
-            fill(samplesChunks[i].chunkSize.begin(), samplesChunks[i].chunkSize.end(), 0);
             int cnt = 0;
             samplesChunks[i].chunks[cnt].clear();
             for (int pos : currentSamples[i]) {
@@ -126,7 +123,6 @@ void EsRuler::extend(double ES, int seed, double eps) {
                 }
                 samplesChunks[i].chunks[cnt].push_back(pos);
                 samplesChunks[i].chunkSum[cnt] += ranks[pos];
-                samplesChunks[i].chunkSize[cnt]++;
             }
         }
 
@@ -198,9 +194,7 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
                double bound, mt19937 &rng) {
     double pertPrmtr = 0.1;
     int n = (int) ranks.size();
-    // uniform_int_distribution<> uid_n(0, n - 1);
     uid_wrapper uid_n(0, n - 1, rng);
-    // uniform_int_distribution<> uid_k(0, k - 1);
     uid_wrapper uid_k(0, k - 1, rng);
     double NS = 0;
     for (int i = 0; i < szof(sampleChunks.chunks); ++i) {
@@ -251,10 +245,8 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
         NS = NS - ranks[oldVal] + ranks[newVal];
 
         sampleChunks.chunkSum[oldChunkInd] -= ranks[oldVal];
-        sampleChunks.chunkSize[oldChunkInd]--;
 
         sampleChunks.chunkSum[newChunkInd] += ranks[newVal];
-        sampleChunks.chunkSize[newChunkInd]++;
 
         if (hasCand) {
             if (oldVal == candVal) {
@@ -288,7 +280,7 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
         for (int i = 0; i < szof(sampleChunks.chunks); ++i) {
             if (q2 * (curY + sampleChunks.chunkSum[i]) - q1 * curX < bound) {
                 curY += sampleChunks.chunkSum[i];
-                curX += chunkLastElement[i] - last - 1 - sampleChunks.chunkSize[i];
+                curX += chunkLastElement[i] - last - 1 - szof(sampleChunks.chunks[i]);
                 last = chunkLastElement[i] - 1;
             } else {
                 for (int pos : sampleChunks.chunks[i]) {
@@ -316,10 +308,8 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
         	NS = NS - ranks[newVal] + ranks[oldVal];
             
             sampleChunks.chunkSum[oldChunkInd] += ranks[oldVal];
-            sampleChunks.chunkSize[oldChunkInd]++;
 
             sampleChunks.chunkSum[newChunkInd] -= ranks[newVal];
-            sampleChunks.chunkSize[newChunkInd]--;
 
             sampleChunks.chunks[newChunkInd].erase(
                 sampleChunks.chunks[newChunkInd].begin() + newIndInChunk - (oldChunkInd == newChunkInd && oldIndInChunk < newIndInChunk ? 1 : 0));

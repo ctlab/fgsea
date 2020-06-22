@@ -8,16 +8,7 @@
 #include <algorithm>
 #include <boost/math/special_functions/digamma.hpp>
 
-#include <iostream>
-
-#include <ext/pb_ds/assoc_container.hpp>
-
-using namespace __gnu_pbds;
 using namespace std;
-
-template <typename T> using ordered_set = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
-template <typename K, typename V> using ordered_map = tree<K, V, less<K>, rb_tree_tag, tree_order_statistics_node_update>;
-
 
 class EsRuler {
 private:
@@ -42,7 +33,6 @@ private:
 
     struct SampleChunks {
         vector<double> chunkSum;
-        vector<int> chunkSize;
         vector<vector<int>> chunks;
         SampleChunks(int);
     };
