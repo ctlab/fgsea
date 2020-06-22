@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.15.1
+* Faster perturbate thanks to Nikolay Budin
+
 CHANGES IN VERSION 1.13.4
 * mapIdsList for faster conversion of leadingEdges
 * experimental support of hypergeometric tests with fora() and collapsePathwaysORA()
