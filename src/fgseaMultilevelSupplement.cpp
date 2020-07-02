@@ -114,12 +114,13 @@ void EsRuler::extend(double ES, int seed, double eps) {
 
         for (int i = 0; i < sampleSize; ++i) {
             fill(samplesChunks[i].chunkSum.begin(), samplesChunks[i].chunkSum.end(), 0.0);
+            for (int j = 0; j < chunksNumber; ++j) {
+                samplesChunks[i].chunks[j].clear();
+            }
             int cnt = 0;
-            samplesChunks[i].chunks[cnt].clear();
             for (int pos : currentSamples[i]) {
                 while (chunkLastElement[cnt] <= pos) {
                     ++cnt;
-                    samplesChunks[i].chunks[cnt].clear();
                 }
                 samplesChunks[i].chunks[cnt].push_back(pos);
                 samplesChunks[i].chunkSum[cnt] += ranks[pos];
