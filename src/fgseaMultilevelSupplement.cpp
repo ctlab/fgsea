@@ -102,7 +102,7 @@ void EsRuler::extend(double ES, int seed, double eps) {
     vector<SampleChunks> samplesChunks(sampleSize, SampleChunks(chunksNumber));
 
     duplicateSamples();
-    while (ES > enrichmentScores.back()){
+    while (enrichmentScores.back() <= ES - 1e-10){
         for (int i = 0, pos = 0; i < chunksNumber - 1; ++i) {
             pos += (pathwaySize + i) / chunksNumber;
             for (int j = 0; j < sampleSize; ++j) {
