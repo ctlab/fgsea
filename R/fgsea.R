@@ -243,7 +243,7 @@ fgseaSimple <- function(pathways,
     }
 
 
-    granularity <- 1000
+    granularity <- max(1000, ceiling(nperm / 128)) # not having more than 128 threads
     permPerProc <- rep(granularity, floor(nperm / granularity))
     if (nperm - sum(permPerProc) > 0) {
         permPerProc <- c(permPerProc, nperm - sum(permPerProc))
