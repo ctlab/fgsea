@@ -179,3 +179,23 @@ test_that("fgseaSimple and fgseaMultilevel properly handle duplicated in gene se
     fr2 <- suppressWarnings(fgseaMultilevel(pathways, exampleRanks, eps = 1e-4))
     expect_equal(fr2$size[1], fr2$size[2])
 })
+
+
+test_that("fgsea works correctly if gene sets have signed ES = 0 and scoreType != std", {
+    data("exampleRanks")
+
+    stats <- exampleRanks
+    stats <- sort(stats, decreasing=TRUE)
+
+    # positive scoreType with gs: ES+(gs) = 0
+    gsInTail <- list("gsInTail" = names(stats)[(length(stats) - 14) : length(stats)])
+
+    set.seed(1)
+    expect_silent(fr <- fgseaSimple(gsInTail, stats, nperm = 1000, scoreType = "pos"))
+
+    # negative scoreType with gs: ES-(gs) = 0
+    gsInHead <- list("gsInHead" = names(stats)[1:15])
+
+    set.seed(1)
+    expect_silent(fr <- fgseaSimple(gsInHead, stats, nperm = 1000, scoreType = "neg"))
+})
