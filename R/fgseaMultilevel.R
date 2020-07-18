@@ -15,6 +15,8 @@
 #' @param BPPARAM Parallelization parameter used in bplapply.
 #'  Can be used to specify cluster to run. If not initialized explicitly or
 #'  by setting `nproc` default value `bpparam()` is used.
+#' @param nPermSimple Number of permutations in the simple fgsea implementation
+#' for preliminary estimation of P-values.
 #' @param absEps deprecated, use `eps` parameter instead
 #'@export
 #' @import fastmatch
@@ -37,15 +39,16 @@
 #' fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks, maxSize=500)
 fgseaMultilevel <- function(pathways,
                             stats,
-                            sampleSize = 101,
-                            minSize    = 1,
-                            maxSize    = Inf,
-                            eps        = 1e-10,
-                            scoreType  = c("std", "pos", "neg"),
-                            nproc      = 0,
-                            gseaParam  = 1,
-                            BPPARAM    = NULL,
-                            absEps     = NULL)
+                            sampleSize  = 101,
+                            minSize     = 1,
+                            maxSize     = Inf,
+                            eps         = 1e-10,
+                            scoreType   = c("std", "pos", "neg"),
+                            nproc       = 0,
+                            gseaParam   = 1,
+                            BPPARAM     = NULL,
+                            nPermSimple = 1000,
+                            absEps      = NULL)
 {
     scoreType <- match.arg(scoreType)
     pp <- preparePathwaysAndStats(pathways, stats, minSize, maxSize, gseaParam, scoreType)
@@ -87,7 +90,6 @@ fgseaMultilevel <- function(pathways,
     ES=NES=size=leadingEdge=NULL
     .="damn notes"
 
-    nPermSimple <- 1000 # number of samples for initial fgseaSimple run: fast and good enough
     minSize <- max(minSize, 1)
     eps <- max(0, min(1, eps))
 
@@ -116,6 +118,12 @@ fgseaMultilevel <- function(pathways,
                                       permPerProc=nPermSimple, seeds=seeds, toKeepLength=m,
                                       stats=stats, BPPARAM=SerialParam(), scoreType=scoreType)
 
+    switch(scoreType,
+           std = simpleFgseaRes[, modeFraction := ifelse(ES >= 0, nGeZero, nLeZero)],
+           pos = simpleFgseaRes[, modeFraction := nGeZero],
+           neg = simpleFgseaRes[, modeFraction := nLeZero])
+
+
     simpleFgseaRes[, leZeroMean := NULL]
     simpleFgseaRes[, geZeroMean := NULL]
     simpleFgseaRes[, nLeEs := NULL]
@@ -123,15 +131,25 @@ fgseaMultilevel <- function(pathways,
     simpleFgseaRes[, nLeZero := NULL]
     simpleFgseaRes[, nGeZero := NULL]
 
-    unbalanced <- simpleFgseaRes[is.na(pval)]
-    unbalanced[, padj := as.numeric(NA)]
-    unbalanced[, log2err := as.numeric(NA)]
-    if (nrow(unbalanced) > 0){
+    simpleFgseaRes[modeFraction < 10, pval := as.numeric(NA)]
+    simpleFgseaRes[modeFraction < 10, padj := as.numeric(NA)]
+    simpleFgseaRes[modeFraction < 10, NES := as.numeric(NA)]
+
+    if (any(simpleFgseaRes$modeFraction < 10)){
         warning("There were ",
-                paste(nrow(unbalanced)),
+                paste(sum(simpleFgseaRes$modeFraction < 10)),
                 " pathways for which P-values were not calculated properly due to ",
-                "unbalanced (positive and negative) gene-level statistic values.")
+                "unbalanced (positive and negative) gene-level statistic values. ",
+                "For such pathways pval, padj, NES, log2err are set to NA. ",
+                "You can try to increase the value of the argument nPermSimple (for example set it nPermSimple = ",
+                paste0(format(nPermSimple * 10, scientific = FALSE), ")"))
     }
+
+    # Storing NA fgseaSimple results in a separate data.table
+    naSimpleRes <- simpleFgseaRes[is.na(pval)]
+    naSimpleRes[, padj := as.numeric(NA)]
+    naSimpleRes[, log2err := as.numeric(NA)]
+    naSimpleRes[, modeFraction := NULL]
 
     simpleFgseaRes <- simpleFgseaRes[!is.na(pval)]
 
@@ -142,7 +160,8 @@ fgseaMultilevel <- function(pathways,
 
     if (all(multError >= simpleError)){
         simpleFgseaRes[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme + 1) - trigamma((nPermSimple + 1)))]
-        simpleFgseaRes <- rbindlist(list(simpleFgseaRes, unbalanced), use.names = TRUE)
+        simpleFgseaRes[, modeFraction := NULL]
+        simpleFgseaRes <- rbindlist(list(simpleFgseaRes, naSimpleRes), use.names = TRUE)
 
         setorder(simpleFgseaRes, pathway)
         simpleFgseaRes[, "nMoreExtreme" := NULL]
@@ -153,8 +172,13 @@ fgseaMultilevel <- function(pathways,
         return(simpleFgseaRes)
     }
 
+
     dtSimpleFgsea <- simpleFgseaRes[multError >= simpleError]
     dtSimpleFgsea[, log2err := 1/log(2)*sqrt(trigamma(nMoreExtreme + 1) - trigamma(nPermSimple + 1))]
+    dtSimpleFgsea[, modeFraction := NULL]
+
+
+
     dtMultilevel <- simpleFgseaRes[multError < simpleError]
 
     multilevelPathwaysList <- split(dtMultilevel, by="size")
@@ -172,18 +196,30 @@ fgseaMultilevel <- function(pathways,
 
 
     result <- rbindlist(multilevelPathwaysList)
-    result[, pval := cpp.res$cppMPval]
+
+    # Probability estimation in the denominator of the multilevel algortihm
+    # (s_r(q) >= 0 in the notation of the article):
+    result[, "denomProb" := (modeFraction + 1) / (nPermSimple + 1)]
+
+    # `cppMpval` - P-values that are computed in cpp code
+    # `isCpGeHalf` is a flag that mathces: whether the conditional probability
+    # is greater than or equal to 0.5 (see article for details)
+    result[, pval := pmin(1, cpp.res$cppMPval / denomProb)]
     result[, isCpGeHalf := cpp.res$cppIsCpGeHalf]
     result[, log2err := multilevelError(pval, sampleSize = sampleSize)]
     result[isCpGeHalf == FALSE, log2err:= NA]
+
     if (!all(result$isCpGeHalf)){
         warning("For some of the pathways the P-values were likely overestimated. ",
                 "For such pathways log2err is set to NA.")
     }
-    result[, isCpGeHalf:=NULL]
+
+    result[, isCpGeHalf := NULL]
+    result[, modeFraction := NULL]
+    result[, denomProb := NULL]
 
 
-    result <- rbindlist(list(result, dtSimpleFgsea, unbalanced), use.names = TRUE)
+    result <- rbindlist(list(result, dtSimpleFgsea, naSimpleRes), use.names = TRUE)
     result[, nMoreExtreme := NULL]
 
     result[pval < eps, c("pval", "log2err") := list(eps, NA)]

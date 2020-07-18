@@ -15,6 +15,7 @@ fgseaMultilevel(
   nproc = 0,
   gseaParam = 1,
   BPPARAM = NULL,
+  nPermSimple = 1000,
   absEps = NULL
 )
 }
@@ -41,6 +42,9 @@ before calculation of GSEA enrichment scores.}
 \item{BPPARAM}{Parallelization parameter used in bplapply.
 Can be used to specify cluster to run. If not initialized explicitly or
 by setting `nproc` default value `bpparam()` is used.}
+
+\item{nPermSimple}{Number of permutations in the simple fgsea implementation
+for preliminary estimation of P-values.}
 
 \item{absEps}{deprecated, use `eps` parameter instead}
 }

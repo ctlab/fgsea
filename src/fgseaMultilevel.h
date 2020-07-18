@@ -5,8 +5,6 @@ using namespace Rcpp;
 
 // [[Rcpp::plugins(cpp17)]]
 // [[Rcpp::export]]
-DataFrame fgseaMultilevelCpp(const NumericVector& enrichmentScores,
-                                 const NumericVector& ranks, int pathwaySize,
-                                 int sampleSize, int seed,
-                                 double eps, bool sign);
+DataFrame fgseaMultilevelCpp(const NumericVector& enrichmentScores, const NumericVector& ranks,
+                             int pathwaySize, int sampleSize, int seed, double eps, bool sign);
 
