@@ -180,6 +180,9 @@ fgseaMultilevel <- function(pathways,
 
 
     dtMultilevel <- simpleFgseaRes[multError < simpleError]
+    # Probability estimation in the denominator of the multilevel algortihm
+    # (s_r(q) >= 0 in the notation of the article):
+    dtMultilevel[, "denomProb" := (modeFraction + 1) / (nPermSimple + 1)]
 
     multilevelPathwaysList <- split(dtMultilevel, by="size")
     # In most cases, this gives a speed increase with parallel launches.
@@ -196,10 +199,6 @@ fgseaMultilevel <- function(pathways,
 
 
     result <- rbindlist(multilevelPathwaysList)
-
-    # Probability estimation in the denominator of the multilevel algortihm
-    # (s_r(q) >= 0 in the notation of the article):
-    result[, "denomProb" := (modeFraction + 1) / (nPermSimple + 1)]
 
     # `cppMpval` - P-values that are computed in cpp code
     # `isCpGeHalf` is a flag that mathces: whether the conditional probability
@@ -272,9 +271,10 @@ multilevelImpl <- function(multilevelPathwaysList,
                            BPPARAM=NULL){
     #To avoid warnings during the check
     size=ES=NULL
-    res <- bplapply(multilevelPathwaysList,
-                      function(x) fgseaMultilevelCpp(x[, ES], stats, unique(x[, size]),
-                                                     sampleSize, seed, eps, sign),
-                      BPPARAM=BPPARAM)
+    res <- bplapply(multilevelPathwaysList, function(x){
+        eps <- eps * min(x$denomProb)
+        return(fgseaMultilevelCpp(x[, ES], stats, unique(x[, size]),
+                                  sampleSize, seed, eps, sign))
+    }, BPPARAM = BPPARAM)
     return(res)
 }
