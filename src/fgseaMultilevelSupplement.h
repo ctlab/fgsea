@@ -17,10 +17,7 @@ private:
     const unsigned int sampleSize;
     const unsigned int pathwaySize;
 
-    //first for positive ES count
-    //second for total count
-    pair<unsigned int, unsigned int> posUnifScoreCount;
-    
+
     vector<double> enrichmentScores;
     vector<vector<int> > currentSamples;
 
@@ -55,8 +52,8 @@ public:
 
 double betaMeanLog(unsigned long a, unsigned long b);
 
-pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector, long probCorrIndx,
-                         const pair<unsigned int, unsigned int> posUnifScoreCount, unsigned int sampleSize);
+pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector,
+                                     long probCorrIndx, unsigned int sampleSize);
 
 
 #endif //FGSEAMULTILEVELCPP_FGSEAMULTILEVELSUPPLEMENT_H

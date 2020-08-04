@@ -6,10 +6,9 @@ double betaMeanLog(unsigned long a, unsigned long b) {
     return boost::math::digamma(a) - boost::math::digamma(b + 1);
 }
 
-pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector, long probCorrIndx,
-                         const pair<unsigned int, unsigned int> posUnifScoreCount, unsigned int sampleSize){
+pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector,
+                                     long probCorrIndx, unsigned int sampleSize){
     double result = 0.0;
-    result -= betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second);
 
     unsigned long halfSize = (sampleSize + 1) / 2;
     unsigned long remainder = sampleSize - probCorrIndx % (halfSize);
@@ -27,7 +26,6 @@ pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector, 
 
 EsRuler::EsRuler(const vector<double> &inpRanks, unsigned int inpSampleSize, unsigned int inpPathwaySize) :
     ranks(inpRanks), sampleSize(inpSampleSize), pathwaySize(inpPathwaySize) {
-    posUnifScoreCount = make_pair(0, 0);
     currentSamples.resize(inpSampleSize);
 }
 
@@ -74,8 +72,6 @@ void EsRuler::duplicateSamples() {
 EsRuler::SampleChunks::SampleChunks(int chunksNumber) : chunkSum(chunksNumber), chunks(chunksNumber) {}
 
 void EsRuler::extend(double ES, int seed, double eps) {
-    unsigned int posCount = 0;
-    unsigned int totalCount = 0;
     mt19937 gen(seed);
 
     for (int sampleId = 0; sampleId < sampleSize; sampleId++) {
@@ -83,18 +79,8 @@ void EsRuler::extend(double ES, int seed, double eps) {
         sort(currentSamples[sampleId].begin(), currentSamples[sampleId].end());
 
         double currentES = calcES(ranks, currentSamples[sampleId]);
-        while (currentES <= 0) {
-            vector<int> rnds = combination(0, ranks.size() - 1, pathwaySize, gen);
-            sort(rnds.begin(), rnds.end());
-            currentES = calcES(ranks, rnds);
-            // rnds not saved to keep currentSamples uniform for ES+
-            totalCount++;
-        }
-        posCount++;
-        totalCount++;
     }
 
-    posUnifScoreCount = make_pair(posCount, totalCount);
     chunksNumber = max(1, (int) sqrt(pathwaySize));
     chunkLastElement = vector<int>(chunksNumber);
     chunkLastElement[chunksNumber - 1] = ranks.size();
@@ -145,7 +131,7 @@ void EsRuler::extend(double ES, int seed, double eps) {
         duplicateSamples();
         if (eps != 0){
             unsigned long k = enrichmentScores.size() / ((sampleSize + 1) / 2);
-            if (k > - log2(0.5 * eps * exp(betaMeanLog(posUnifScoreCount.first, posUnifScoreCount.second)))) {
+            if (k > - log2(0.5 * eps)) {
                 break;
             }
         }
@@ -176,7 +162,7 @@ pair<double, bool> EsRuler::getPvalue(double ES, double eps, bool sign) {
     if (sign) {
         return make_pair(max(0.0, min(1.0, exp(adjLogPval))), true);
     } else {
-        pair<double, bool> correction = calcLogCorrection(probCorrector, indx, posUnifScoreCount, sampleSize);
+        pair<double, bool> correction = calcLogCorrection(probCorrector, indx, sampleSize);
         double resLog = adjLogPval + correction.first;
         return make_pair(max(0.0, min(1.0, exp(resLog))), correction.second);
     }
@@ -238,7 +224,7 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
 
         sampleChunks.chunks[oldChunkInd].erase(sampleChunks.chunks[oldChunkInd].begin() + oldIndInChunk);
         sampleChunks.chunks[newChunkInd].insert(
-            sampleChunks.chunks[newChunkInd].begin() + newIndInChunk - (oldChunkInd == newChunkInd && oldIndInChunk < newIndInChunk ? 1 : 0), 
+            sampleChunks.chunks[newChunkInd].begin() + newIndInChunk - (oldChunkInd == newChunkInd && oldIndInChunk < newIndInChunk ? 1 : 0),
             newVal);
 
         NS = NS - ranks[oldVal] + ranks[newVal];
@@ -305,7 +291,7 @@ int EsRuler::perturbate(const vector<double> &ranks, int k, EsRuler::SampleChunk
 
         if (!ok) {
         	NS = NS - ranks[newVal] + ranks[oldVal];
-            
+
             sampleChunks.chunkSum[oldChunkInd] += ranks[oldVal];
 
             sampleChunks.chunkSum[newChunkInd] -= ranks[newVal];
