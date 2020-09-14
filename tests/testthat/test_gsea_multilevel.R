@@ -134,9 +134,9 @@ test_that("fgseaMultilevel throws a warning when sampleSize is less than 3", {
     data(exampleRanks)
     data(examplePathways)
     expect_silent(fgseaMultilevel(examplePathways, exampleRanks,
-                                  sampleSize = 5))
+                                  sampleSize = 5, eps = 0.0))
     expect_warning(fgseaMultilevel(examplePathways, exampleRanks,
-                                   sampleSize = 1))
+                                   sampleSize = 1, eps = 0.0))
 })
 
 test_that("fgseaMultilevelCpp works with sign=TRUE", {

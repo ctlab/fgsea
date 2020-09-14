@@ -153,8 +153,19 @@ fgseaMultilevel <- function(pathways,
 
     simpleFgseaRes <- simpleFgseaRes[!is.na(pval)]
 
+    leftBorder <- log2(qbeta(0.025,
+                             shape1 = simpleFgseaRes$nMoreExtreme,
+                             shape2=nPermSimple - simpleFgseaRes$nMoreExtreme + 1))
 
-    simpleError <- 1/log(2)*sqrt(trigamma(simpleFgseaRes$nMoreExtreme + 1) - trigamma(nPermSimple + 1))
+    rightBorder <- log2(qbeta(1 - 0.025,
+                         shape1 = simpleFgseaRes$nMoreExtreme + 1,
+                         shape2=nPermSimple - simpleFgseaRes$nMoreExtreme))
+
+    crudeEstimator <- log2((simpleFgseaRes$nMoreExtreme + 1) / (nPermSimple + 1))
+
+    simpleError <- 0.5 * pmax(crudeEstimator - leftBorder, rightBorder - crudeEstimator)
+
+
     multError <- sapply((simpleFgseaRes$nMoreExtreme + 1) / (nPermSimple + 1), multilevelError, sampleSize)
 
 
