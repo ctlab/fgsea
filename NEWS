@@ -1,5 +1,6 @@
-CHANGES IN VERSION 1.15.1
+CHANGES IN VERSION 1.15.2
 * Faster perturbate thanks to Nikolay Budin
+* Cleaner P-value and error estimations
 
 CHANGES IN VERSION 1.13.4
 * mapIdsList for faster conversion of leadingEdges
