@@ -126,3 +126,63 @@ test_that(paste0("calcGseaStat and calcGseaStatCumulative calculate the same val
     scoresNeg2 <- fgsea:::calcGseaStatCumulative(stats, randomGeneSet, gseaParam=1, scoreType = "neg")
     expect_equal(scoresNeg1, scoresNeg2)
 })
+
+test_that("preparePathwaysAndStats stops if stats contain NA values", {
+
+  set.seed(42)
+  data(exampleRanks)
+  data(examplePathways)
+
+  expect_silent(preparePathwaysAndStats(examplePathways, exampleRanks, minSize = 1,
+                                        maxSize = 500, gseaParam = 1, scoreType = "std"))
+
+  ranks1 <- exampleRanks
+  ranks1[sample(seq_along(ranks1), 10)] <- NA
+
+  expect_error(preparePathwaysAndStats(examplePathways, ranks1, minSize = 1,
+                                       maxSize = 500, gseaParam = 1, scoreType = "std"))
+
+  ranks2 <- exampleRanks
+  ranks2[sample(seq_along(ranks2), 1)] <- NA
+
+  expect_error(preparePathwaysAndStats(examplePathways, ranks2, minSize = 1,
+                                       maxSize = 500, gseaParam = 1, scoreType = "std"))
+})
+
+
+test_that("preparePathwaysAndStats stops if stats contain infinite values", {
+
+  set.seed(42)
+  data(exampleRanks)
+  data(examplePathways)
+
+  originalRanks <- exampleRanks
+  expect_silent(preparePathwaysAndStats(examplePathways, originalRanks, minSize = 1,
+                                        maxSize = 500, gseaParam = 1, scoreType = "std"))
+
+  ranks1 <- originalRanks
+
+  indx <- sample(seq_along(ranks1), 1)
+  ranks1[indx] <- Inf
+  expect_error(preparePathwaysAndStats(examplePathways, ranks1, minSize = 1,
+                                       maxSize = 500, gseaParam = 1, scoreType = "std"))
+
+  ranks1[indx] <- -Inf
+  expect_error(preparePathwaysAndStats(examplePathways, ranks1, minSize = 1,
+                                       maxSize = 500, gseaParam = 1, scoreType = "std"))
+  ranks2 <- originalRanks
+  indxs <- sample(seq_along(ranks2), 10)
+  ranks2[indxs] <- Inf
+
+  expect_error(preparePathwaysAndStats(examplePathways, ranks2, minSize = 1,
+                                       maxSize = 500, gseaParam = 1, scoreType = "std"))
+
+  ranks2[indxs] <- -Inf
+  expect_error(preparePathwaysAndStats(examplePathways, ranks2, minSize = 1,
+                                       maxSize = 500, gseaParam = 1, scoreType = "std"))
+
+  ranks2[indxs[1:5]] <- Inf
+  ranks2[indxs[6:10]] <- -Inf
+  expect_error(preparePathwaysAndStats(examplePathways, ranks2, minSize = 1,
+                                       maxSize = 500, gseaParam = 1, scoreType = "std"))
+})

@@ -40,6 +40,11 @@ preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam
         stop("stats should be named")
     }
 
+    # Error if stats are non-finite
+    if (any(!is.finite(stats))){
+        stop("Not all stats values are finite numbers")
+    }
+
     # Warning message for ties in stats
     ties <- sum(duplicated(stats[stats != 0]))
     if (ties != 0) {
