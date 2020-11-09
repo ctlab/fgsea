@@ -39,6 +39,15 @@ fora <- function(pathways, genes, universe, minSize=1, maxSize=Inf) {
 
     toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
 
+    if (length(toKeep) == 0){
+        return(data.table(pathway=character(),
+                          pval=numeric(),
+                          padj=numeric(),
+                          overlap=integer(),
+                          size=integer(),
+                          overlapGenes=list()))
+    }
+
     pathwaysFiltered <- pathwaysFiltered[toKeep]
     pathwaysSizes <- pathwaysSizes[toKeep]
 
