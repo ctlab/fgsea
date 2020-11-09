@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.17.1
+* Fixed fora() failing to run on a single pathway
+
 CHANGES IN VERSION 1.15.2
 * Faster perturbate thanks to Nikolay Budin
 * Cleaner P-value and error estimations
