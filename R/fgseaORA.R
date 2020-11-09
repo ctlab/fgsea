@@ -48,7 +48,7 @@ fora <- function(pathways, genes, universe, minSize=1, maxSize=Inf) {
     }
     genesFiltered <- unique(na.omit(fmatch(genes, universe)))
 
-    overlaps <- sapply(pathwaysFiltered, intersect, genesFiltered)
+    overlaps <- lapply(pathwaysFiltered, intersect, genesFiltered)
 
     overlapGenes <- lapply(overlaps, function(x) universe[x])
 
