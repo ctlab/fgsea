@@ -20,6 +20,8 @@ r_packages:
 os:
   - linux
   - osx
+  
+osx_image: xcode11
 
 bioc_required: true
 bioc_packages:
