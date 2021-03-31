@@ -13,10 +13,14 @@ Full vignette can be found here: http://bioconductor.org/packages/devel/bioc/vig
 
 ## Installation
 
+The latest version of `fgsea` can be installed using `devtools` package, which can take up to a few minutes to isntall all the dependencies:
+
 ```{r}
 library(devtools)
 install_github("ctlab/fgsea")
 ```
+
+The release version can be isntalled from Bioconductor. For the instructions and more details please refer to https://bioconductor.org/packages/release/bioc/html/fgsea.html
 
 
 ## Quick run
