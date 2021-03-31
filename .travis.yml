@@ -1,9 +1,8 @@
 language: r
 r: 
-  - bioc-devel
+  #- bioc-devel # devel testing got completely broken on travis
   - bioc-release
 # warnings_are_errors: true
-sudo: false
 cache: packages
 
 r_packages:
@@ -21,6 +20,8 @@ r_packages:
 os:
   - linux
   - osx
+  
+osx_image: xcode11
 
 bioc_required: true
 bioc_packages:
@@ -33,6 +34,7 @@ bioc_packages:
 # see https://github.com/travis-ci/travis-ci/issues/6587
 before_install:
   - if [[ "$TRAVIS_R_VERSION_STRING" = 'bioc-devel' ]]; then mkdir ~/.R && echo -e 'CXX1X=g++ -std=gnu++11 -g -O2 -fPIC\nCXX11=g++ -std=gnu++11 -g -O2 -fPIC' > ~/.R/Makevars; fi
+  - if [[ ${TRAVIS_OS_NAME} = 'osx' ]]; then brew update; fi
 
 
 after_script:
