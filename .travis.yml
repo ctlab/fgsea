@@ -32,6 +32,7 @@ bioc_packages:
 # see https://github.com/travis-ci/travis-ci/issues/6587
 before_install:
   - if [[ "$TRAVIS_R_VERSION_STRING" = 'bioc-devel' ]]; then mkdir ~/.R && echo -e 'CXX1X=g++ -std=gnu++11 -g -O2 -fPIC\nCXX11=g++ -std=gnu++11 -g -O2 -fPIC' > ~/.R/Makevars; fi
+  - if [[ ${TRAVIS_OS_NAME} = 'osx' ]]; then brew update; fi
 
 
 after_script:
