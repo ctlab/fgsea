@@ -1,9 +1,8 @@
 language: r
 r: 
-  - bioc-devel
+  #- bioc-devel # devel testing got completely broken on travis
   - bioc-release
 # warnings_are_errors: true
-sudo: false
 cache: packages
 
 r_packages:
