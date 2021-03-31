@@ -12,6 +12,14 @@ install:
 
 # Adapt as necessary starting from here
 
+environment:
+    BIOC_USE_DEVEL: "FALSE"    
+    PKGTYPE: "both"
+    matrix:
+        - R_VERSION: release
+          USE_RTOOLS: true
+
+
 build_script:
   - travis-tool.sh install_bioc testthat knitr rmarkdown reactome.db AnnotationDbi parallel ggplot2 snow org.Mm.eg.db limma GEOquery
   - travis-tool.sh install_bioc_deps
