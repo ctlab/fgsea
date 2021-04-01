@@ -4,23 +4,23 @@
 
 
 # fgsea
-An R-package for fast preranked gene set enrichment analysis (GSEA). The package 
-implements a special algorithm to calculate the empirical enrichment score null distributions simultaneously
-for all the gene set sizes, which allows up to **several hundred times faster** execution time compared to original
-Broad implementation. See [the preprint](https://www.biorxiv.org/content/10.1101/060012v2) for algorithmic details.
+
+`fgsea` is an R-package for fast preranked gene set enrichment analysis (GSEA). This package allows to quickly and accurately calculate arbitrarily low GSEA P-values for a collection of gene sets. P-value estimation is based on an adaptive multi-level split Monte-Carlo scheme. 
+See [the preprint](https://www.biorxiv.org/content/10.1101/060012v3) for algorithmic details.
 
 Full vignette can be found here: http://bioconductor.org/packages/devel/bioc/vignettes/fgsea/inst/doc/fgsea-tutorial.html
 
 ## Installation
 
-The latest version of `fgsea` can be installed using `devtools` package, which can take up to a few minutes to isntall all the dependencies:
+`fgsea` is a part of R/Bioconductor and is availble on Linux, macOS and Windows platforms. For the installation instructions and more details please refer to https://bioconductor.org/packages/release/bioc/html/fgsea.html
+
+
+The latest version of `fgsea` can be installed from GitHub using `devtools` package, which can take up to a few minutes to install all the dependencies:
 
 ```{r}
 library(devtools)
 install_github("ctlab/fgsea")
 ```
-
-The release version can be isntalled from Bioconductor. For the instructions and more details please refer to https://bioconductor.org/packages/release/bioc/html/fgsea.html
 
 
 ## Quick run
