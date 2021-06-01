@@ -226,3 +226,22 @@ test_that("fgsea throws a warning when passing argument `nperm`",{
     expect_warning(fgsea(examplePathways, exampleRanks, minSize=15,
                          maxSize=500, nperm=1000))
 })
+
+test_that("fgsea works correctly with large gene set size", {
+    data("exampleRanks")
+    ranks <- sample(exampleRanks, size=2000)
+    geneset_size <- 1999
+
+    set.seed(1)
+    score <- calcGseaStat(ranks, sample.int(length(ranks), size = geneset_size))
+
+    expect_silent(fgseaMultilevelCpp(score, ranks, geneset_size, 101,
+                                     seed = sample.int(1e6, size=1),
+                                     eps = 0.0, sign = FALSE))
+    expect_silent(fgseaMultilevelCpp(score, ranks, geneset_size, 101,
+                                     seed = sample.int(1e6, size=1),
+                                     eps = 0.0, sign = FALSE))
+    expect_silent(fgseaMultilevelCpp(score, ranks, geneset_size, 101,
+                                     seed = sample.int(1e6, size=1),
+                                     eps = 0.0, sign = FALSE))
+})

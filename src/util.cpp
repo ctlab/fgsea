@@ -1,6 +1,7 @@
 #include "util.h"
 #include <vector>
 #include <random>
+#include <algorithm>
 
 // generate k numbers from [a, b] - closed interval
 // a should be non-negative, usually 0 or 1
@@ -9,17 +10,36 @@ std::vector<int> combination(const int &a, const int &b, const int &k, std::mt19
     uid_wrapper uni(a, b, rng);
     std::vector<int> v;
     v.reserve(k);
-    std::vector<char> used(b + 1);
-    for (int i = 0; i < k; i++) {
-        for (int j = 0; j < 100; j++) { // average < 2
-            int x = uni();
-            if (!used[x]) {
-                v.push_back(x);
-                used[x] = true;
-                break;
+
+    int n = b - a + 1;
+    std::vector<char> used(n);
+
+    if (k < n * 1.0 / 2){
+        for (int i = 0; i < k; i++) {
+            for (int j = 0; j < 100; j++) { // average < 2
+                int x = uni();
+                if (!used[x - a]) {
+                    v.push_back(x);
+                    used[x - a] = true;
+                    break;
+                }
             }
         }
+    } else {
+        for (int r = n - k; r < n; ++r){
+            // int x = std::uniform_int_distribution<>(0, r)(rng);
+            int x = uid_wrapper(0, r, rng)();
+            if (!used[x]){
+                v.push_back(a + x);
+                used[x] = true;
+            } else{
+                v.push_back(a + r);
+                used[r] = true;
+            }
+        }
+        std::shuffle(v.begin(), v.end(), rng);
     }
+
     return v;
 }
 
