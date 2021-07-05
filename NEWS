@@ -1,5 +1,6 @@
-CHANGES IN VERSION 1.17.1
+CHANGES IN VERSION 1.19.1
 * Fixed fora() failing to run on a single pathway
+* Fixed problems random gene set generation for large k (issue #96)
 
 CHANGES IN VERSION 1.15.2
 * Faster perturbate thanks to Nikolay Budin
