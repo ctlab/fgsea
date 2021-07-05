@@ -216,7 +216,7 @@ test_that("fgseaSimpleImpl works correctly in fgseaMultilevel", {
 test_that("fgsea throws a warning when reaching eps", {
     data(examplePathways)
     data(exampleRanks)
-    expect_warning(fgseaRes <- fgsea(examplePathways, exampleRanks, maxSize=500))
+    expect_warning(fgseaRes <- fgsea(examplePathways, exampleRanks, maxSize=500, eps=1e-10))
 })
 
 
