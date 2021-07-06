@@ -227,21 +227,18 @@ test_that("fgsea throws a warning when passing argument `nperm`",{
                          maxSize=500, nperm=1000))
 })
 
+
 test_that("fgsea works correctly with large gene set size", {
     data("exampleRanks")
-    ranks <- sample(exampleRanks, size=2000)
-    geneset_size <- 1999
 
     set.seed(1)
-    score <- calcGseaStat(ranks, sample.int(length(ranks), size = geneset_size))
+    ranks <- sample(exampleRanks, size=200)
+    genesetSize <- 199
 
-    expect_silent(fgseaMultilevelCpp(score, ranks, geneset_size, 101,
-                                     seed = sample.int(1e6, size=1),
-                                     eps = 0.0, sign = FALSE))
-    expect_silent(fgseaMultilevelCpp(score, ranks, geneset_size, 101,
-                                     seed = sample.int(1e6, size=1),
-                                     eps = 0.0, sign = FALSE))
-    expect_silent(fgseaMultilevelCpp(score, ranks, geneset_size, 101,
-                                     seed = sample.int(1e6, size=1),
-                                     eps = 0.0, sign = FALSE))
+    score <- calcGseaStat(ranks, 1:genesetSize)
+
+    # eps = 0.25 is for perfoming 4 iterations inside `extend` (cpp) function
+    expect_silent(fr <- fgsea:::fgseaMultilevelCpp(score, ranks, genesetSize, 101,
+                                                   seed = sample.int(1e6, size=1),
+                                                   eps = 0.25, sign = FALSE))
 })
