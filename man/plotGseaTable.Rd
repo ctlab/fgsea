@@ -25,7 +25,8 @@ values closer to 0 flatten plots. Default = 1, value of 0.5 is a good
 choice too.}
 
 \item{colwidths}{Vector of five elements corresponding to column width for
-grid.arrange. If column width is set to zero, the column is not drawn.}
+grid.arrange. Can be both units and simple numeric vector, in latter case
+it defines proportions, not actual sizes. If column width is set to zero, the column is not drawn.}
 
 \item{render}{If true, the plot is rendered to the current device.
 Otherwise, the grob is returned. Default is true.}

@@ -6,7 +6,8 @@
 #'      values closer to 0 flatten plots. Default = 1, value of 0.5 is a good
 #'      choice too.
 #' @param colwidths Vector of five elements corresponding to column width for
-#'      grid.arrange. If column width is set to zero, the column is not drawn.
+#'      grid.arrange. Can be both units and simple numeric vector, in latter case
+#'      it defines proportions, not actual sizes. If column width is set to zero, the column is not drawn.
 #' @param render If true, the plot is rendered to the current device.
 #'      Otherwise, the grob is returned. Default is true.
 #' @return TableGrob object returned by grid.arrange.
@@ -92,7 +93,8 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
         )
 
     grobs <- c(
-        lapply(c("Pathway", "Gene ranks", "NES", "pval", "padj"), textGrob),
+        list(textGrob("Pathway", just="right", x=unit(0.95, "npc"))),
+        lapply(c("Gene ranks", "NES", "pval", "padj"), textGrob),
         unlist(ps, recursive = FALSE),
         list(nullGrob(),
              rankPlot,
@@ -101,12 +103,12 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
              nullGrob()))
 
     # not drawing column if corresponding colwidth is set to zero
-    grobsToDraw <- rep(colwidths != 0, length(grobs)/length(colwidths))
+    grobsToDraw <- rep(as.numeric(colwidths) != 0, length(grobs)/length(colwidths))
 
 
     p <- arrangeGrob(grobs=grobs[grobsToDraw],
-                 ncol=sum(colwidths != 0),
-                 widths=colwidths[colwidths != 0])
+                 ncol=sum(as.numeric(colwidths) != 0),
+                 widths=colwidths[as.numeric(colwidths) != 0])
 
     if (render) {
         grid.draw(p)

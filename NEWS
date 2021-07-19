@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.19.4
+* plotGseaTable now accepts units vector for column widths
+
 CHANGES IN VERSION 1.19.2
 * Fixed fora() failing to run on a single pathway
 * Fixed problems random gene set generation for large k (issue #94)
