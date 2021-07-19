@@ -5,6 +5,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // calcGseaStatCumulativeBatch
 List calcGseaStatCumulativeBatch(NumericVector const& stats, double gseaParam, NumericVector const& pathwayScores, IntegerVector const& pathwaysSizes, int iterations, int seed, std::string scoreType);
 RcppExport SEXP _fgsea_calcGseaStatCumulativeBatch(SEXP statsSEXP, SEXP gseaParamSEXP, SEXP pathwayScoresSEXP, SEXP pathwaysSizesSEXP, SEXP iterationsSEXP, SEXP seedSEXP, SEXP scoreTypeSEXP) {

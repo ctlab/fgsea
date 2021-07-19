@@ -10,7 +10,7 @@ fgseaMultilevel(
   sampleSize = 101,
   minSize = 1,
   maxSize = Inf,
-  eps = 1e-10,
+  eps = 1e-50,
   scoreType = c("std", "pos", "neg"),
   nproc = 0,
   gseaParam = 1,
