@@ -1,0 +1,56 @@
+---
+title: "geseca-tutorial"
+# output: rmarkdown::html_vignette
+output:
+  md_document:
+    variant: markdown_github
+vignette: >
+  %\VignetteIndexEntry{geseca-tutorial}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+An R-package for performing GEne SEt Co-regulation Analysis (GESECA).
+
+## Quick run
+
+Loading necessary libraries
+
+```{r message=FALSE}
+library(fgsea)
+library(data.table)
+```
+
+```{r echo=FALSE}
+library(BiocParallel)
+register(SerialParam())
+```
+
+Loading example expression matrix and pathways:
+
+```{r message=FALSE}
+data(exampleExpressionMatrix)
+str(exampleExpressionMatrix)
+```
+`exampleExpressionMatrix` - numeric expression matrix of the GSE14308 dataset. Rows correspond to genes (ENTREZID is used as identifiers), columns correspond to samples. **Note:** `geseca` expects that the values of expression matrix are log-scaled and the samples are quantile normalized. To get more information about steps that were performed to process the GSE14308 expression matrix, use: `?exampleExpressionMatrix`.
+
+
+```{r message=FALSE}
+data(examplePathways)
+str(head(examplePathways, 3))
+```
+`examplePathways` - list of mouse pathways from `reactome.db` package. The list of gene sets should use the same identifiers that are used in `rownames(exampleExpressionMatrix)`. To get more information about this list, use: `?examplePathways`
+
+Running `geseca`:
+```{r}
+gesecaRes <- geseca(exampleExpressionMatrix, examplePathways, minSize = 15, maxSize = 500)
+head(gesecaRes[order(pval), ], 5)
+```
+Optionally, it is possible to scale the values of each gene-row to a unit variance by passing the `scale=TRUE` to `geseca`.

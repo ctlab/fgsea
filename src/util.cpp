@@ -64,3 +64,8 @@ int uid_wrapper::operator()() {
     return from + x % len;
 }
 #endif
+
+
+double betaMeanLog(unsigned long a, unsigned long b) {
+    return boost::math::digamma(a) - boost::math::digamma(b + 1);
+}

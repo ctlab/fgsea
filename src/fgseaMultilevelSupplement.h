@@ -6,7 +6,7 @@
 #include <set>
 #include <cmath>
 #include <algorithm>
-#include <boost/math/special_functions/digamma.hpp>
+
 
 using namespace std;
 
@@ -49,8 +49,6 @@ public:
 
     pair<double, bool> getPvalue(double ES, double eps, bool sign);
 };
-
-double betaMeanLog(unsigned long a, unsigned long b);
 
 pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector,
                                      long probCorrIndx, unsigned int sampleSize);

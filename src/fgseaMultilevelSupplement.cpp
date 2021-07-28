@@ -2,10 +2,6 @@
 #include "esCalculation.h"
 #include "util.h"
 
-double betaMeanLog(unsigned long a, unsigned long b) {
-    return boost::math::digamma(a) - boost::math::digamma(b + 1);
-}
-
 pair<double, bool> calcLogCorrection(const vector<unsigned int> &probCorrector,
                                      long probCorrIndx, unsigned int sampleSize){
     double result = 0.0;
