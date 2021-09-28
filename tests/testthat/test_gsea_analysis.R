@@ -154,14 +154,14 @@ test_that("collapsePathways work", {
 test_that("fgseaSimple throws a warning when there are unbalanced gene-level statistic values", {
     data(exampleRanks)
     data(examplePathways)
-    set.seed(42)
 
     ranks <- sort(exampleRanks, decreasing = TRUE)
     firstNegative <- which(ranks < 0)[1]
     ranks <- c(abs(ranks[1:(firstNegative - 1)]) ^ 0.1, ranks[firstNegative:length(ranks)])
 
-    pathway <- examplePathways["5990976_Assembly_of_the_pre-replicative_complex"]
-    expect_warning(fgseaSimple(pathway, ranks, nperm = 1000, minSize = 15, maxSize = 500))
+    pathway <- list(testPathway = names(ranks)[1:100])
+    set.seed(1)
+    expect_warning(fgseaSimple(pathway, ranks, nperm = 200, minSize = 15, maxSize = 500))
 })
 
 test_that("fgseaSimple and fgseaMultilevel properly handle duplicated in gene sets", {
