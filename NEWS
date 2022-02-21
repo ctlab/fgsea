@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.21.1
+* fix a reproducibility problem (https://github.com/ctlab/fgsea/issues/110)
+
 CHANGES IN VERSION 1.19.4
 * plotGseaTable now accepts units vector for column widths
 
