@@ -621,7 +621,8 @@ fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes,
         leZeroSum <- rep(0, toKeepLength)
         geZeroSum <- rep(0, toKeepLength)
         if (toKeepLength == 1) {
-            for (i in seq_len(nperm1)) {
+            set.seed(seeds[i])
+            for (j in seq_len(nperm1)) {
                 randSample <- sample.int(length(universe), K)
                 randEsP <- calcGseaStat(
                     stats = stats,

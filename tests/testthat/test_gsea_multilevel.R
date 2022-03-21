@@ -47,6 +47,20 @@ test_that("fgseaMultilevel is reproducable independent of bpparam settings", {
     expect_equal(fr3$nMoreExtreme, fr$nMoreExtreme)
 })
 
+test_that("fgseaMultilevel is reproducible", {
+    # https://github.com/ctlab/fgsea/issues/110
+    stats <- setNames(c(1, 1.1, 0.9, 0.5, 0.0, -0.1, 0.1), paste0("g", 1:7))
+    pathways <- list(p=c("g1", "g2", "g5"))
+
+    set.seed(1)
+    fr1 <- fgseaMultilevel(pathways=pathways, stats=stats)
+
+    set.seed(1)
+    fr2 <- fgseaMultilevel(pathways=pathways, stats=stats)
+
+    expect_equal(fr1$pval, fr2$pval)
+})
+
 
 test_that("fgseaMultilevel works with zero pathways", {
     data(examplePathways)
