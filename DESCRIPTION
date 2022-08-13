@@ -37,7 +37,7 @@ Suggests:
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp, BH
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.1
 Encoding: UTF-8
 VignetteBuilder: knitr
 URL: https://github.com/ctlab/fgsea/
