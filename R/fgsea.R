@@ -4,6 +4,11 @@
 #' \link[fgsea]{fgseaSimple}, \link[fgsea]{fgseaMultilevel}.
 #' By default, the \link[fgsea]{fgseaMultilevel} function is used for analysis.
 #' For compatibility with the previous implementation you can pass the `nperm` argument to the function.
+#' @param pathways List of gene sets to check.
+#' @param stats Named vector of gene-level stats. Names should be the same as in 'pathways'
+#' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
+#' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
+#' @param gseaParam GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
 #' @param ... optional arguments for functions \link[fgsea]{fgseaSimple}, \link[fgsea]{fgseaMultilevel}
 #' @return A table with GSEA results. Each row corresponds to a tested pathway.
 #' @export
@@ -13,17 +18,21 @@
 #' fgseaRes <- fgsea(examplePathways, exampleRanks, maxSize=500)
 #' # Testing only one pathway is implemented in a more efficient manner
 #' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks)
-fgsea <- function(...){
+fgsea <- function(pathways, stats, minSize = 1, maxSize = Inf, gseaParam = 1, ...){
     arguments <- list(...)
     if ("nperm" %in% names(arguments)){
         warning("You are trying to run fgseaSimple. ",
                 "It is recommended to use fgseaMultilevel. ",
                 "To run fgseaMultilevel, you need to remove ",
                 "the nperm argument in the fgsea function call.")
-        res <- fgseaSimple(...)
+        res <- fgseaSimple(pathways = pathways, stats = stats,
+                           minSize = minSize, maxSize = maxSize,
+                           gseaParam = gseaParam, ...)
     }
     else{
-        res <- fgseaMultilevel(...)
+        res <- fgseaMultilevel(pathways = pathways, stats = stats,
+                               minSize = minSize, maxSize = maxSize,
+                               gseaParam = gseaParam, ...)
     }
     res
 }
@@ -186,7 +195,11 @@ calcGseaStat <- function(stats,
 #' @param nperm Number of permutations to do. Minimial possible nominal p-value is about 1/nperm
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
-#' @param scoreType This parameter defines the GSEA score type. Possible options are ("std", "pos", "neg")
+#' @param scoreType This parameter defines the GSEA score type.
+#' Possible options are ("std", "pos", "neg").
+#' By default ("std") the enrichment score is computed as in the original GSEA.
+#' The "pos" and "neg" score types are intended to be used for one-tailed tests
+#' (i.e. when one is interested only in positive ("pos") or negateive ("neg") enrichment).
 #' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
 #' @param gseaParam GSEA parameter value, all gene-level statis are raised to the power of `gseaParam`
 #'                  before calculation of GSEA enrichment scores.
