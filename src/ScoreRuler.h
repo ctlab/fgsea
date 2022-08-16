@@ -15,12 +15,12 @@ private:
     const unsigned genesetSize;
 
     std::vector<double> scores;
-    std::vector<std::vector<int> > currentSample;
+    std::vector<std::vector<unsigned> > currentSample;
     std::vector<std::vector<double> > currentProfiles;
 
 
     void duplicateSampleElements();
-    int updateElement(std::vector<int> & element, std::vector<double> & profile,
+    int updateElement(std::vector<unsigned> & element, std::vector<double> & profile,
                       double threshold, std::mt19937 &mtGen);
 public:
     ScoreRuler(const std::vector<std::vector<double> > & inpE,

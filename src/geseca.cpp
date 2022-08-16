@@ -3,7 +3,7 @@
 
 
 NumericVector gesecaCpp(const NumericMatrix & E, const NumericVector & inpScores,
-                    unsigned genesetSize, unsigned sampleSize, int seed, double eps){
+                        unsigned genesetSize, unsigned sampleSize, int seed, double eps){
     std::vector<double> scores = as<std::vector<double> > (inpScores);
     std::vector<std::vector<double> > expressionMatrix(E.nrow());
     for (unsigned i = 0; i < E.nrow(); i++){

@@ -7,7 +7,8 @@
 #' @param pathways List of gene sets to check.
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
-#' @param scale a logical value indicating whether the gene expression should be scaled to have unit variance before the analysis takes place.
+#' @param scale a logical value indicating whether the gene expression should be scaled to have
+#' unit variance before the analysis takes place.
 #' The default is FALSE The value is passed to \link[base]{scale}.
 #' @param sampleSize sample size for conditional sampling.
 #' @param eps This parameter sets the boundary for calculating P-values.
@@ -19,7 +20,8 @@
 #' @import BiocParallel
 #' @import fastmatch
 #' @import data.table
-#' @return A table with GESECA results. Each row corresponds to a tested pathway. The columns are the following
+#' @return A table with GESECA results. Each row corresponds to a tested pathway.
+#' The columns are the following
 #' \itemize{
 #' \item pathway -- name of the pathway as in `names(pathways)`;
 #' \item pctVar -- percent of explained variance along gene set;
@@ -35,8 +37,8 @@
 #' @export
 geseca <- function(E,
                    pathways,
-                   minSize     = 1,
-                   maxSize     = Inf,
+                   minSize     = 2,
+                   maxSize     = nrow(E) - 1,
                    scale       = FALSE,
                    sampleSize  = 101,
                    eps         = 1e-50,
@@ -51,10 +53,14 @@ geseca <- function(E,
 
     checkGesecaArgs(E, pathways)
     pp <- gesecaPreparePathways(E, pathways, minSize, maxSize)
+
     pathwayFiltered <- pp$filtered
     pathwaySizes <- pp$sizes
-    m <- length(pathwayFiltered)
+    pathwayNames <- names(pathwayFiltered)
 
+    totalVar <- sum(apply(E, 1, var))
+
+    m <- length(pathwayFiltered)
     if (m == 0) {
         return(data.table(pathway = character(),
                           score   = numeric(),
@@ -76,37 +82,43 @@ geseca <- function(E,
     eps <- max(0, min(1, eps))
 
     pathwayScores <- sapply(pathwayFiltered, calcGesecaScores, E = E)
+
+    granularity <- max(1000, ceiling(nPermSimple / 128))
+    permPerProc <- rep(granularity, floor(nPermSimple / granularity))
+    if (nPermSimple - sum(permPerProc) > 0) {
+        permPerProc <- c(permPerProc, nPermSimple - sum(permPerProc))
+    }
+
+    seeds <- sample.int(10^9, length(permPerProc))
     BPPARAM <- setUpBPPARAM(nproc=nproc, BPPARAM=BPPARAM)
 
-    grSimple <- gesecaSimple(E        = E,
-                             pathways = pathways,
-                             minSize  = minSize,
-                             maxSize  = maxSize,
-                             scale    = scale,
-                             nperm    = nPermSimple,
-                             nproc    = nproc,
-                             BPPARAM  = BPPARAM)
 
-    roughEstimator <- log2((grSimple$nMoreExtreme + 1) / (nPermSimple + 1))
-    simpleError <- getSimpleError(roughEstimator, grSimple$nMoreExtreme, nPermSimple)
-    multilevelError <- sapply((grSimple$nMoreExtreme + 1) / (nPermSimple + 1),
+    grSimple <- gesecaSimpleImpl(pathwayScores, pathwaySizes,
+                                 pathwayNames, permPerProc,
+                                 seeds, m, E, BPPARAM)
+    grSimple[,  gsScore := pathwayScores]
+
+    roughEstimator <- log2((grSimple$nGeScore + 1) / (nPermSimple + 1))
+    simpleError <- getSimpleError(roughEstimator, grSimple$nGeScore, nPermSimple)
+    multilevelError <- sapply((grSimple$nGeScore + 1) / (nPermSimple + 1),
                               multilevelError, sampleSize)
 
+    # todo: check this if
     if (all(multilevelError >= simpleError)){
-        grSimple[, log2err := 1/log(2) * sqrt(trigamma(nMoreExtreme + 1) -
+        grSimple[, log2err := 1/log(2) * sqrt(trigamma(nGeScore + 1) -
                                                   trigamma((nPermSimple + 1)))]
 
-        setorder(grSimple, pathway)
-        grSimple[, "nMoreExtreme" := NULL]
-        setcolorder(grSimple, c("pathway", "pctVar", "pval", "padj",
-                                "log2err","size"))
+        grSimple[, pctVar := gsScore / size / totalVar * 100]
 
+        setorder(grSimple, pathway)
+        grSimple <- grSimple[, .(pathway, pctVar, pval, padj,
+                                 log2err,size)]
         grSimple <- grSimple[]
         return(grSimple)
     }
 
     dtGrSimple <- grSimple[multilevelError >= simpleError]
-    dtGrSimple[, log2err := 1 / log(2) * sqrt(trigamma(nMoreExtreme + 1) -
+    dtGrSimple[, log2err := 1 / log(2) * sqrt(trigamma(nGeScore + 1) -
                                                   trigamma(nPermSimple + 1))]
 
 
@@ -119,17 +131,20 @@ geseca <- function(E,
 
 
 
-    totalVar <- sum(apply(E, 1, var))
 
-    seed=sample.int(1e9, size=1)
-    pvals <- bplapply(mPathwaysList, function(x){
-        scaledScore <- x[, pctVar] # this is pctVar
-        size <- unique(x[, size])
+
+    # seed=sample.int(1e9, size=1)
+    seeds <- sample.int(10^9, length(mPathwaysList))
+    pvals <- bplapply(seq_along(mPathwaysList), function(i){
+        x <- mPathwaysList[[i]]
+        # scaledScore <- x[, pctVar] # this is pctVar
+        scores <- x[["gsScore"]]
+        size <- unique(x[["size"]])
         return(gesecaCpp(E           = E,
-                         inpScores   = scaledScore * size * totalVar / 100,
+                         inpScores   = scores,
                          genesetSize = size,
                          sampleSize  = sampleSize,
-                         seed        = seed,
+                         seed        = seeds[i],
                          eps         = eps))
     }, BPPARAM = BPPARAM)
 
@@ -142,14 +157,17 @@ geseca <- function(E,
     result[, padj := p.adjust(pval, method = "BH")]
 
     result <- rbindlist(list(result, dtGrSimple), use.names = TRUE)
-    result[, nMoreExtreme := NULL]
+    result[, pctVar := gsScore / size / totalVar * 100]
+    result[, nGeScore := NULL]
+
 
     if (nrow(result[pval==eps & is.na(log2err)])){
         warning("For some pathways, in reality P-values are less than ",
                 paste(eps),
                 ". You can set the `eps` argument to zero for better estimation.")
     }
-
+    result <- result[, .(pathway, pctVar, pval, padj,
+                         log2err, size)]
     setcolorder(result, c("pathway", "pctVar", "pval", "padj",
                           "log2err","size"))
     setorder(result, pathway)
@@ -159,8 +177,8 @@ geseca <- function(E,
     return(result)
 }
 
-# This function finds error for rough P-value estimators and based
-# on the Clopper-Pearson interval
+# This function finds error for rough P-value estimators.
+# Function is based on the Clopper-Pearson interval.
 getSimpleError <- function(roughEstimator, x, n, alpha = 0.025){
     leftBorder <- log2(qbeta(alpha,
                              shape1 = x,

@@ -4,7 +4,7 @@ checkGesecaArgs <- function(E, pathways){
         stop("pathways should be a list with each element containing names of the stats argument")
     }
 
-    # Error if stats is not named
+    # Error if E matrix doesn't have rownames
     if (is.null(rownames(E))) {
         stop("E rows should be named")
     }
@@ -22,6 +22,8 @@ checkGesecaArgs <- function(E, pathways){
 
 gesecaPreparePathways <- function(E, pathways, minSize, maxSize){
     minSize <- max(minSize, 2)
+    maxSize <- min(nrow(E) - 1, maxSize)
+
     pathwaysFiltered <- lapply(pathways, function(p) {unique(na.omit(fmatch(p, rownames(E))))})
     pathwaysSizes <- sapply(pathwaysFiltered, length)
 

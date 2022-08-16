@@ -1,7 +1,8 @@
 #include "ScoreRuler.h"
 #include "util.h"
+#include "Rcpp.h"
 
-
+using namespace Rcpp;
 
 ScoreRuler::ScoreRuler(const std::vector<std::vector<double> > & inpE,
                        unsigned inpSampleSize, unsigned inpGenesetSize):
@@ -32,7 +33,7 @@ void ScoreRuler::duplicateSampleElements(){
         scores.push_back(scoreAndIndex[elemIndex].first);
     }
 
-    std::vector<std::vector<int> > tempSample;
+    std::vector<std::vector<unsigned> > tempSample;
     std::vector<std::vector<double> > tempProfiles;
     for (unsigned elemIndex = 0; 2 * elemIndex < sampleSize - 2; elemIndex++) {
         for (unsigned rep = 0; rep < 2; rep++) {
@@ -49,19 +50,20 @@ void ScoreRuler::duplicateSampleElements(){
 void ScoreRuler::extend(double inpScore, int seed, double eps) {
     std::mt19937 mtGen(seed);
 
-    std::vector<unsigned> indexSpace(expressionMatrix.size());
-    std::iota(indexSpace.begin(), indexSpace.end(), 0);
     // fill currentSample
-    for (int elemIndex = 0; elemIndex < sampleSize; elemIndex++) {
-        currentSample[elemIndex] = combination(0, indexSpace.size() - 1, genesetSize, mtGen);
+    for (unsigned elemIndex = 0; elemIndex < sampleSize; elemIndex++) {
+        std::vector<int> comb = combination(0, expressionMatrix.size() - 1, genesetSize, mtGen);
+        currentSample[elemIndex] = std::vector<unsigned>(comb.begin(), comb.end());
         currentProfiles[elemIndex] = getProfile(expressionMatrix, currentSample[elemIndex]);
     }
 
     duplicateSampleElements();
+
     while (scores.back() <= inpScore - 1e-10){
         for (int moves = 0; moves < sampleSize * genesetSize;) {
-            for (int elemIndex = 0; elemIndex < sampleSize; elemIndex++) {
-                moves += updateElement(currentSample[elemIndex], currentProfiles[elemIndex], scores.back(), mtGen);
+            for (unsigned elemIndex = 0; elemIndex < sampleSize; elemIndex++) {
+                moves += updateElement(currentSample[elemIndex], currentProfiles[elemIndex],
+                                       scores.back(), mtGen);
             }
         }
 
@@ -98,17 +100,17 @@ double ScoreRuler::getPvalue(double inpScore, double eps){
 }
 
 
-int ScoreRuler::updateElement(std::vector<int> & element,
+int ScoreRuler::updateElement(std::vector<unsigned> & element,
                               std::vector<double> & profile,
                               double threshold,
                               std::mt19937 &mtGen){
     double upPrmtr = 0.1;
-    auto n = (unsigned) (expressionMatrix.size());
+    unsigned n = expressionMatrix.size();
 
     uid_wrapper uid_n(0, n - 1, mtGen);
     uid_wrapper uid_k(0, genesetSize - 1, mtGen);
 
-    unsigned niters = std::max(1, (int) (genesetSize * upPrmtr));
+    unsigned niters = std::max(unsigned(1), unsigned(genesetSize * upPrmtr));
     int moves = 0;
     std::vector<double> newProfile(profile.size());
     for (unsigned i = 0; i < niters; i++){
@@ -116,16 +118,19 @@ int ScoreRuler::updateElement(std::vector<int> & element,
         unsigned indxOld = element[toDrop];
         unsigned indxNew = uid_n();
 
+        if (find(element.begin(), element.end(), indxNew) != element.end()){
+            continue;
+        }
+
         adjustProfile(expressionMatrix, profile, newProfile, indxNew, indxOld);
         double newScore = getScore(newProfile);
 
-        if (newScore < threshold || (*find(element.begin(), element.end(), indxNew) == indxNew)){
-            element[toDrop] = indxOld;
-        } else{
+        if (newScore >= threshold){
             element[toDrop] = indxNew;
-            profile.swap(newProfile);
+            std::swap(profile, newProfile);
             moves++;
         }
+
     }
     return moves;
 }

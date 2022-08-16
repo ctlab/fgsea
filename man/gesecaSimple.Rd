@@ -7,8 +7,8 @@
 gesecaSimple(
   E,
   pathways,
-  minSize = 1,
-  maxSize = Inf,
+  minSize = 2,
+  maxSize = nrow(E) - 1,
   scale = FALSE,
   nperm = 1000,
   nproc = 0,

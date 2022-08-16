@@ -9,7 +9,8 @@ double getVarianceEstimator(const std::vector<double> & elems);
 
 double getScore(const std::vector<double> & profile);
 
-std::vector<double> getProfile(const std::vector<std::vector<double> > & E, const std::vector<int> & indexes);
+std::vector<double> getProfile(const std::vector<std::vector<double> > & E,
+                               const std::vector<unsigned> & indexes);
 
 void adjustProfile(const std::vector<std::vector<double> > & E,
                   const std::vector<double> & profile,

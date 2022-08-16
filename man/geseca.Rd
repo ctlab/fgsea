@@ -7,8 +7,8 @@
 geseca(
   E,
   pathways,
-  minSize = 1,
-  maxSize = Inf,
+  minSize = 2,
+  maxSize = nrow(E) - 1,
   scale = FALSE,
   sampleSize = 101,
   eps = 1e-50,
@@ -26,7 +26,8 @@ geseca(
 
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
 
-\item{scale}{a logical value indicating whether the gene expression should be scaled to have unit variance before the analysis takes place.
+\item{scale}{a logical value indicating whether the gene expression should be scaled to have
+unit variance before the analysis takes place.
 The default is FALSE The value is passed to \link[base]{scale}.}
 
 \item{sampleSize}{sample size for conditional sampling.}
@@ -41,7 +42,8 @@ The default is FALSE The value is passed to \link[base]{scale}.}
 for preliminary estimation of P-values.}
 }
 \value{
-A table with GESECA results. Each row corresponds to a tested pathway. The columns are the following
+A table with GESECA results. Each row corresponds to a tested pathway.
+The columns are the following
 \itemize{
 \item pathway -- name of the pathway as in `names(pathways)`;
 \item pctVar -- percent of explained variance along gene set;

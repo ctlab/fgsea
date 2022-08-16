@@ -31,8 +31,8 @@
 #' @export
 gesecaSimple <- function(E,
                          pathways,
-                         minSize    = 1,
-                         maxSize    = Inf,
+                         minSize    = 2,
+                         maxSize    = nrow(E) - 1,
                          scale      = FALSE,
                          nperm      = 1000,
                          nproc      = 0,
@@ -100,6 +100,7 @@ gesecaSimpleImpl <- function(pathwayScores,
     universe <- seq_len(nrow(E))
 
     counts <- bplapply(seq_along(permPerProc), function(i){
+        set.seed(seeds[i])
         nperm1 <- permPerProc[i]
         scores <- gesecaCumScores(nperm1, pathwaySizes, E)
         geScore <- t(apply(scores, 1, function(x){
