@@ -50,11 +50,11 @@ gesecaSimple <- function(E,
 
     m <- length(pathwayFiltered)
     if (m == 0) {
-        return(data.table(pathway=character(),
-                          score=numeric(),
-                          pval=numeric(),
-                          padj=numeric(),
-                          size=integer()))
+        return(data.table(pathway = character(),
+                          pctVar  = numeric(),
+                          pval    = numeric(),
+                          padj    = numeric(),
+                          size    = integer()))
     }
 
     pathwayScores <- sapply(pathwayFiltered, calcGesecaScores, E = E)

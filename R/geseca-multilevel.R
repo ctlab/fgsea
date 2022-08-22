@@ -63,7 +63,7 @@ geseca <- function(E,
     m <- length(pathwayFiltered)
     if (m == 0) {
         return(data.table(pathway = character(),
-                          score   = numeric(),
+                          pctVar  = numeric(),
                           pval    = numeric(),
                           padj    = numeric(),
                           log2err = numeric(),

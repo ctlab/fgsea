@@ -20,7 +20,7 @@ test_that("fgseaMultilevel works", {
     fgseaMultilevelRes <- fgseaMultilevel(examplePathways, exampleRanks,
                                           sampleSize=100, maxSize=100,
                                           eps=0.0, nproc=2)
-	})
+})
 
 
 test_that("fgseaMultilevel is reproducable independent of bpparam settings", {
