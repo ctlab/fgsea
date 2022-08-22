@@ -77,8 +77,7 @@ gesecaSimple <- function(E,
     totalVar <- sum(apply(E, 1, var))
     pvals[, pctVar := pctVar / size / totalVar * 100]
 
-    pvals[, nMoreExtreme := nGeScore]
-    pvals[, nGeScore := NULL]
+    setnames(pvals, "nGeScore", "nMoreExtreme")
 
     setcolorder(pvals, c("pathway", "pctVar", "pval",
                          "padj", "nMoreExtreme", "size"))

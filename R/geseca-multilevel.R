@@ -168,8 +168,6 @@ geseca <- function(E,
     }
     result <- result[, .(pathway, pctVar, pval, padj,
                          log2err, size)]
-    setcolorder(result, c("pathway", "pctVar", "pval", "padj",
-                          "log2err","size"))
     setorder(result, pathway)
 
 
