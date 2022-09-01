@@ -10,7 +10,7 @@ plotGseaTable(
   fgseaRes,
   gseaParam = 1,
   colwidths = c(5, 3, 0.8, 1.2, 1.2),
-  render = TRUE
+  render = NULL
 )
 }
 \arguments{
@@ -28,11 +28,10 @@ choice too.}
 grid.arrange. Can be both units and simple numeric vector, in latter case
 it defines proportions, not actual sizes. If column width is set to zero, the column is not drawn.}
 
-\item{render}{If true, the plot is rendered to the current device.
-Otherwise, the grob is returned. Default is true.}
+\item{render}{(deprecated)}
 }
 \value{
-TableGrob object returned by grid.arrange.
+ggplot object with enrichment barcode plots
 }
 \description{
 Plots table of enrichment graphs using ggplot and gridExtra.
@@ -40,8 +39,7 @@ Plots table of enrichment graphs using ggplot and gridExtra.
 \examples{
 data(examplePathways)
 data(exampleRanks)
-fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=1000,
-                  minSize=15, maxSize=100)
+fgseaRes <- fgsea(examplePathways, exampleRanks, minSize=15, maxSize=500)
 topPathways <- fgseaRes[head(order(pval), n=15)][order(NES), pathway]
 \dontrun{
 plotGseaTable(examplePathways[topPathways], exampleRanks,

@@ -8,18 +8,16 @@
 #' @param colwidths Vector of five elements corresponding to column width for
 #'      grid.arrange. Can be both units and simple numeric vector, in latter case
 #'      it defines proportions, not actual sizes. If column width is set to zero, the column is not drawn.
-#' @param render If true, the plot is rendered to the current device.
-#'      Otherwise, the grob is returned. Default is true.
-#' @return TableGrob object returned by grid.arrange.
+#' @param render (deprecated)
+#' @return ggplot object with enrichment barcode plots
 #' @import ggplot2
-#' @import gridExtra
 #' @import grid
+#' @import cowplot
 #' @export
 #' @examples
 #' data(examplePathways)
 #' data(exampleRanks)
-#' fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=1000,
-#'                   minSize=15, maxSize=100)
+#' fgseaRes <- fgsea(examplePathways, exampleRanks, minSize=15, maxSize=500)
 #' topPathways <- fgseaRes[head(order(pval), n=15)][order(NES), pathway]
 #' \dontrun{
 #' plotGseaTable(examplePathways[topPathways], exampleRanks,
@@ -28,7 +26,11 @@
 plotGseaTable <- function(pathways, stats, fgseaRes,
                           gseaParam=1,
                           colwidths=c(5, 3, 0.8, 1.2, 1.2),
-                          render=TRUE) {
+                          render=NULL) {
+
+    if (!is.null(render)) {
+        warning("render argument is deprecated, a ggplot object is always returned")
+    }
 
     rnk <- rank(-stats)
     ord <- order(rnk)
@@ -73,7 +75,6 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
             )
     })
 
-
     rankPlot <-
         ggplot() +
         geom_blank() +
@@ -106,15 +107,11 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
     grobsToDraw <- rep(as.numeric(colwidths) != 0, length(grobs)/length(colwidths))
 
 
-    p <- arrangeGrob(grobs=grobs[grobsToDraw],
-                 ncol=sum(as.numeric(colwidths) != 0),
-                 widths=colwidths[as.numeric(colwidths) != 0])
+    p <- plot_grid(plotlist=grobs[grobsToDraw],
+                   ncol=sum(as.numeric(colwidths) != 0),
+                   rel_widths=colwidths[as.numeric(colwidths) != 0])
 
-    if (render) {
-        grid.draw(p)
-    } else {
-        p
-    }
+    p
 }
 
 #' Plots GSEA enrichment plot.
