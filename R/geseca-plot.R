@@ -51,7 +51,7 @@ plotCoregulationProfile <- function(pathway, E,
     profilePlot
 }
 
-
+#' @import cowplot
 plotGesecaTable <- function(pathways,
                             E,
                             gesecaRes,
@@ -105,8 +105,8 @@ plotGesecaTable <- function(pathways,
                       axis.ticks = element_blank(),
                       panel.grid = element_blank(),
                       axis.title = element_blank(),
-                      plot.margin = rep(unit(0, "null"), 4),
-                      panel.spacing = rep(unit(0, "null"), 4),
+                      plot.margin = unit(c(0.05,0,0.05,0), "npc"),
+                      panel.spacing = unit(c(0.05,0,0.05,0), "npc"),
                       legend.position = "none") +
                 # coord_equal() +
                 NULL,
@@ -116,16 +116,29 @@ plotGesecaTable <- function(pathways,
         )
     })
 
-    sampleTitle <- ggplot(data = prjspd, aes(x = sample)) +
+    sampleTitle <- ggplot(data = data.table(sample=titles), aes(x = sample)) +
+        geom_text(aes(label=sample), y=0, angle=90, hjust=1) +
         theme(panel.background = element_blank(),
               axis.line = element_blank(),
               axis.ticks = element_blank(),
               panel.grid = element_blank(),
               axis.title = element_blank(),
-              plot.margin = rep(unit(0, "null"), 4),
-              panel.spacing = rep(unit(0, "null"), 4),
+              plot.margin = unit(c(0,0,0,0), "npc"),
+              panel.spacing = unit(c(0,0,0,0), "npc"),
               axis.title.x = element_blank(),
-              axis.text.x = element_text(angle = 90))
+              axis.text.x = element_blank())
+
+
+    sampleTitle <- ggplot(data = data.table(sample=titles), aes(x = sample)) +
+        theme(panel.background = element_blank(),
+              axis.line = element_blank(),
+              axis.ticks = element_blank(),
+              panel.grid = element_blank(),
+              axis.title = element_blank(),
+              plot.margin = unit(c(0,0,0,0), "npc"),
+              panel.spacing = unit(c(0,0,0,0), "npc"),
+              axis.title.x = element_blank(),
+              axis.text.x = element_text(angle = 90, hjust = 1))
 
     grobs <- c(
         list(textGrob("Pathway", just="right", x=unit(0.95, "npc"))),
@@ -135,22 +148,16 @@ plotGesecaTable <- function(pathways,
              sampleTitle,
              nullGrob(),
              nullGrob(),
-             nullGrob()),
-        list(nullGrob(),
-             nullGrob(),
-             nullGrob(),
-             nullGrob(),
-             nullGrob()))
+             nullGrob())
+        )
 
 
     grobsToDraw <- rep(as.numeric(colwidths) != 0, length(grobs)/length(colwidths))
 
-    p <- arrangeGrob(grobs=grobs[grobsToDraw],
+    p <- cowplot::plot_grid(plotlist=grobs[grobsToDraw],
                      ncol=sum(as.numeric(colwidths) != 0),
-                     widths=colwidths[as.numeric(colwidths) != 0])
-    if (render) {
-        grid.draw(p)
-    } else {
-        as_ggplot(p)
-    }
+                     rel_widths=colwidths[as.numeric(colwidths) != 0],
+                     rel_heights=c(1, rep(1, length(pathways)), max(sapply(titles, nchar))/4))
+
+    p
 }
