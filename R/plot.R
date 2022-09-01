@@ -19,10 +19,8 @@
 #' data(exampleRanks)
 #' fgseaRes <- fgsea(examplePathways, exampleRanks, minSize=15, maxSize=500)
 #' topPathways <- fgseaRes[head(order(pval), n=15)][order(NES), pathway]
-#' \dontrun{
 #' plotGseaTable(examplePathways[topPathways], exampleRanks,
 #'               fgseaRes, gseaParam=0.5)
-#' }
 plotGseaTable <- function(pathways, stats, fgseaRes,
                           gseaParam=1,
                           colwidths=c(5, 3, 0.8, 1.2, 1.2),
