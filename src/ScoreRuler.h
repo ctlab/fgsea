@@ -12,20 +12,20 @@ class ScoreRuler {
 private:
     const unsigned n;
     const unsigned m;
-    std::vector<double> expressionMatrix;
+    std::vector<float> expressionMatrix;
     const unsigned sampleSize;
     const unsigned genesetSize;
 
     std::vector<double> scores;
     std::vector<std::vector<unsigned> > currentSample;
-    std::vector<std::vector<double> > currentProfiles;
+    std::vector<std::vector<float> > currentProfiles;
 
 
     void duplicateSampleElements();
-    int updateElement(std::vector<unsigned> & element, std::vector<double> & profile,
+    int updateElement(std::vector<unsigned> & element, std::vector<float> & profile,
                       double threshold, std::mt19937 &mtGen);
 public:
-    ScoreRuler(const std::vector<std::vector<double> > & inpE,
+    ScoreRuler(const std::vector<std::vector<float> > & inpE,
                unsigned inpSampleSize, unsigned inpGenesetSize);
     ~ScoreRuler();
 

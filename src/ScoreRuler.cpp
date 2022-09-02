@@ -4,14 +4,14 @@
 
 using namespace Rcpp;
 
-ScoreRuler::ScoreRuler(const std::vector<std::vector<double> > & inpE,
+ScoreRuler::ScoreRuler(const std::vector<std::vector<float> > & inpE,
                        unsigned inpSampleSize, unsigned inpGenesetSize):
         sampleSize(inpSampleSize),
         genesetSize(inpGenesetSize), n(inpE.size()), m(inpE[0].size()) {
     currentSample.resize(inpSampleSize);
     currentProfiles.resize(inpSampleSize);
 
-    expressionMatrix = std::vector<double>(n*m);
+    expressionMatrix = std::vector<float>(n*m);
     for (unsigned i = 0; i < n; ++i) {
         for (unsigned j = 0; j < m; ++j) {
             expressionMatrix[i*m + j] = inpE[i][j];
@@ -43,7 +43,7 @@ void ScoreRuler::duplicateSampleElements(){
     }
 
     std::vector<std::vector<unsigned> > tempSample;
-    std::vector<std::vector<double> > tempProfiles;
+    std::vector<std::vector<float> > tempProfiles;
     for (unsigned elemIndex = 0; 2 * elemIndex < sampleSize - 2; elemIndex++) {
         for (unsigned rep = 0; rep < 2; rep++) {
             tempSample.push_back(currentSample[scoreAndIndex[sampleSize - 1 - elemIndex].second]);
@@ -110,7 +110,7 @@ double ScoreRuler::getPvalue(double inpScore, double eps){
 
 
 int ScoreRuler::updateElement(std::vector<unsigned> & element,
-                              std::vector<double> & profile,
+                              std::vector<float> & profile,
                               double threshold,
                               std::mt19937 &mtGen){
     double upPrmtr = 0.1;
@@ -121,7 +121,7 @@ int ScoreRuler::updateElement(std::vector<unsigned> & element,
 
     unsigned niters = std::max(unsigned(1), unsigned(genesetSize * upPrmtr));
     int moves = 0;
-    std::vector<double> newProfile(profile.size());
+    std::vector<float> newProfile(profile.size());
     for (unsigned i = 0; i < niters; i++){
         unsigned toDrop = uid_k();
         unsigned indxOld = element[toDrop];

@@ -5,10 +5,10 @@
 NumericVector gesecaCpp(const NumericMatrix & E, const NumericVector & inpScores,
                         unsigned genesetSize, unsigned sampleSize, int seed, double eps){
     std::vector<double> scores = as<std::vector<double> > (inpScores);
-    std::vector<std::vector<double> > expressionMatrix(E.nrow());
+    std::vector<std::vector<float> > expressionMatrix(E.nrow());
     for (unsigned i = 0; i < E.nrow(); i++){
         NumericVector currentRow = E(i, _);
-        expressionMatrix[i] = as<std::vector<double> >(currentRow);
+        expressionMatrix[i] = as<std::vector<float> >(currentRow);
     }
 
     ScoreRuler ruler(expressionMatrix, sampleSize, genesetSize);

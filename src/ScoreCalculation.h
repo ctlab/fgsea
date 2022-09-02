@@ -5,17 +5,17 @@
 #include <numeric>
 #include <vector>
 
-double getVarianceEstimator(const std::vector<double> & elems);
+double getVarianceEstimator(const std::vector<float> & elems);
 
-double getScore(const std::vector<double> & profile);
+double getScore(const std::vector<float> & profile);
 
-std::vector<double> getProfile(const std::vector<double> & E,
+std::vector<float> getProfile(const std::vector<float> & E,
                                const std::vector<unsigned> & indexes,
                                unsigned m);
 
-void adjustProfile(const std::vector<double> & E,
-                  const std::vector<double> & profile,
-                  std::vector<double> & newProfile,
+void adjustProfile(const std::vector<float> & E,
+                  const std::vector<float> & profile,
+                  std::vector<float> & newProfile,
                   unsigned idNew, unsigned idOld,
                   unsigned m);
 
