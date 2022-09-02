@@ -10,7 +10,9 @@
 
 class ScoreRuler {
 private:
-    const std::vector<std::vector<double> > & expressionMatrix;
+    const unsigned n;
+    const unsigned m;
+    std::vector<double> expressionMatrix;
     const unsigned sampleSize;
     const unsigned genesetSize;
 

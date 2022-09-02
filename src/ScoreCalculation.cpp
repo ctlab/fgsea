@@ -10,15 +10,16 @@ double getVarianceEstimator(const std::vector<double> & elems){
 }
 
 
-std::vector<double> getProfile(const std::vector<std::vector<double> > & E,
-                               const std::vector<unsigned> & indexes){
-    unsigned m = E[0].size(); // number or rows must be nonzero
+std::vector<double> getProfile(const std::vector<double> & E,
+                               const std::vector<unsigned> & indexes,
+                               unsigned m){
+    // unsigned m = E[0].size(); // number or rows must be nonzero
     std::vector<double> profile(m);
 
     for (unsigned j = 0; j < m; j++){
         double value = 0.0;
         for (unsigned indx : indexes){
-            value += E[indx][j];
+            value += E[indx*m + j];
         }
         profile[j] = value;
     }
@@ -32,11 +33,12 @@ double getScore(const std::vector<double> & profile){
 
 
 
-void adjustProfile(const std::vector<std::vector<double> > & E,
+void adjustProfile(const std::vector<double> & E,
                                   const std::vector<double> & profile,
                                   std::vector<double> & newProfile,
-                                  unsigned idNew, unsigned idOld){
+                                  unsigned idNew, unsigned idOld,
+                                  unsigned m){
     for (unsigned i = 0; i < newProfile.size(); i++){
-        newProfile[i] = profile[i] - E[idOld][i] + E[idNew][i];
+        newProfile[i] = profile[i] - E[idOld*m + i] + E[idNew*m + i];
     }
 }

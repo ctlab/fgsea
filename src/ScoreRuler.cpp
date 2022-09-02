@@ -6,8 +6,17 @@ using namespace Rcpp;
 
 ScoreRuler::ScoreRuler(const std::vector<std::vector<double> > & inpE,
                        unsigned inpSampleSize, unsigned inpGenesetSize):
-    expressionMatrix(inpE), sampleSize(inpSampleSize), genesetSize(inpGenesetSize){
-    currentSample.resize(inpSampleSize), currentProfiles.resize(inpSampleSize);
+        sampleSize(inpSampleSize),
+        genesetSize(inpGenesetSize), n(inpE.size()), m(inpE[0].size()) {
+    currentSample.resize(inpSampleSize);
+    currentProfiles.resize(inpSampleSize);
+
+    expressionMatrix = std::vector<double>(n*m);
+    for (unsigned i = 0; i < n; ++i) {
+        for (unsigned j = 0; j < m; ++j) {
+            expressionMatrix[i*m + j] = inpE[i][j];
+        }
+    }
 }
 
 
@@ -52,9 +61,9 @@ void ScoreRuler::extend(double inpScore, int seed, double eps) {
 
     // fill currentSample
     for (unsigned elemIndex = 0; elemIndex < sampleSize; elemIndex++) {
-        std::vector<int> comb = combination(0, expressionMatrix.size() - 1, genesetSize, mtGen);
+        std::vector<int> comb = combination(0, n - 1, genesetSize, mtGen);
         currentSample[elemIndex] = std::vector<unsigned>(comb.begin(), comb.end());
-        currentProfiles[elemIndex] = getProfile(expressionMatrix, currentSample[elemIndex]);
+        currentProfiles[elemIndex] = getProfile(expressionMatrix, currentSample[elemIndex], m);
     }
 
     duplicateSampleElements();
@@ -105,7 +114,7 @@ int ScoreRuler::updateElement(std::vector<unsigned> & element,
                               double threshold,
                               std::mt19937 &mtGen){
     double upPrmtr = 0.1;
-    unsigned n = expressionMatrix.size();
+    // unsigned n = expressionMatrix.size();
 
     uid_wrapper uid_n(0, n - 1, mtGen);
     uid_wrapper uid_k(0, genesetSize - 1, mtGen);
@@ -122,7 +131,7 @@ int ScoreRuler::updateElement(std::vector<unsigned> & element,
             continue;
         }
 
-        adjustProfile(expressionMatrix, profile, newProfile, indxNew, indxOld);
+        adjustProfile(expressionMatrix, profile, newProfile, indxNew, indxOld, m);
         double newScore = getScore(newProfile);
 
         if (newScore >= threshold){
