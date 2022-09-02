@@ -10,6 +10,10 @@ plotGseaTable(
   fgseaRes,
   gseaParam = 1,
   colwidths = c(5, 3, 0.8, 1.2, 1.2),
+  pathwayLabelStyle = NULL,
+  headerLabelStyle = NULL,
+  valueStyle = NULL,
+  axisLabelStyle = NULL,
   render = NULL
 )
 }
@@ -28,7 +32,18 @@ choice too.}
 grid.arrange. Can be both units and simple numeric vector, in latter case
 it defines proportions, not actual sizes. If column width is set to zero, the column is not drawn.}
 
+\item{pathwayLabelStyle}{list with style parameter adjustments for pathway labels.
+For example, `list(size=10, color="red")` set the font size to 10 and color to red.
+See `cowplot::draw_text` for possible options.}
+
+\item{headerLabelStyle}{similar to `pathwayLabelStyle` but for the table header.}
+
+\item{valueStyle}{similar to `pathwayLabelStyle` but for NES and p-value columns.}
+
 \item{render}{(deprecated)}
+
+\item{axisLabelStlye}{list with style parameter adjustments for stats axis labels.
+See `ggplot2::element_text` for possible options.}
 }
 \value{
 ggplot object with enrichment barcode plots
@@ -41,8 +56,6 @@ data(examplePathways)
 data(exampleRanks)
 fgseaRes <- fgsea(examplePathways, exampleRanks, minSize=15, maxSize=500)
 topPathways <- fgseaRes[head(order(pval), n=15)][order(NES), pathway]
-\dontrun{
 plotGseaTable(examplePathways[topPathways], exampleRanks,
               fgseaRes, gseaParam=0.5)
-}
 }
