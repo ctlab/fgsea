@@ -101,6 +101,7 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
                                    expand=c(0, 0)) +
                 xlab(NULL) + ylab(NULL) +
                 theme(panel.background = element_blank(),
+                      plot.background=element_blank(),
                       axis.line=element_blank(),
                       axis.text=element_blank(),
                       axis.ticks=element_blank(),
@@ -124,6 +125,7 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
                            expand=c(0, 0)) +
         xlab(NULL) + ylab(NULL) +
         theme(panel.background = element_blank(),
+              plot.background=element_blank(),
               axis.line=element_blank(),
               axis.text.y=element_blank(),
               axis.ticks.y=element_blank(),
