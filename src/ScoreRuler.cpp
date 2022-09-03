@@ -113,7 +113,7 @@ int ScoreRuler::updateElement(std::vector<unsigned> & element,
                               std::vector<float> & profile,
                               double threshold,
                               std::mt19937 &mtGen){
-    double upPrmtr = 0.1;
+    double upPrmtr = 0.2;
     // unsigned n = expressionMatrix.size();
 
     uid_wrapper uid_n(0, n - 1, mtGen);
