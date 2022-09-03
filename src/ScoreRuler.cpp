@@ -119,6 +119,11 @@ int ScoreRuler::updateElement(std::vector<unsigned> & element,
     uid_wrapper uid_n(0, n - 1, mtGen);
     uid_wrapper uid_k(0, genesetSize - 1, mtGen);
 
+    std::vector<bool> used(n);
+    for (auto el: element) {
+        used[el] = 1;
+    }
+
     unsigned niters = std::max(unsigned(1), unsigned(genesetSize * upPrmtr));
     int moves = 0;
     std::vector<float> newProfile(profile.size());
@@ -127,7 +132,7 @@ int ScoreRuler::updateElement(std::vector<unsigned> & element,
         unsigned indxOld = element[toDrop];
         unsigned indxNew = uid_n();
 
-        if (find(element.begin(), element.end(), indxNew) != element.end()){
+        if (used[indxNew]) {
             continue;
         }
 
@@ -135,6 +140,8 @@ int ScoreRuler::updateElement(std::vector<unsigned> & element,
         double newScore = getScore(newProfile);
 
         if (newScore >= threshold){
+            used[element[toDrop]] = 0;
+            used[indxNew] = 1;
             element[toDrop] = indxNew;
             std::swap(profile, newProfile);
             moves++;
