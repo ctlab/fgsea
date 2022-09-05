@@ -4,7 +4,7 @@
 \alias{fora}
 \title{Simple overrepresentation analysis based on hypergeometric test}
 \usage{
-fora(pathways, genes, universe, minSize = 1, maxSize = Inf)
+fora(pathways, genes, universe, minSize = 1, maxSize = length(universe) - 1)
 }
 \arguments{
 \item{pathways}{List of gene sets to check.}

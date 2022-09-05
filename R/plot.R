@@ -1,3 +1,25 @@
+cowplotText <- function(text, style) {
+    ggdraw() + do.call(cowplot::draw_text, c(list(text=text), style))
+}
+
+cowplotLabel <- function(label, style) {
+    ggdraw() + do.call(cowplot::draw_label, c(list(label=label), style))
+}
+
+valueToExpExpression <- function(val, log2err=NULL) {
+    a <- floor(log10(val))
+    b <- val/(10**a)
+    x <- sprintf("%.1f\u00B710", b)
+    if (is.null(log2err)) {
+        y <- as.character(a)
+    } else {
+        y <- sprintf("%s±%.2f", a, log2err / log2(10))
+    }
+
+    as.expression(substitute(x ^ y, list(y=y,  x=x)))
+}
+
+
 #' Plots table of enrichment graphs using ggplot and gridExtra.
 #' @param pathways Pathways to plot table, as in `fgsea` function.
 #' @param stats Gene-level stats, as in `fgsea` function.
@@ -8,27 +30,47 @@
 #' @param colwidths Vector of five elements corresponding to column width for
 #'      grid.arrange. Can be both units and simple numeric vector, in latter case
 #'      it defines proportions, not actual sizes. If column width is set to zero, the column is not drawn.
-#' @param render If true, the plot is rendered to the current device.
-#'      Otherwise, the grob is returned. Default is true.
-#' @return TableGrob object returned by grid.arrange.
+#' @param pathwayLabelStyle list with style parameter adjustments for pathway labels.
+#'      For example, `list(size=10, color="red")` set the font size to 10 and color to red.
+#'      See `cowplot::draw_text` for possible options.
+#' @param headerLabelStyle similar to `pathwayLabelStyle` but for the table header.
+#' @param valueStyle similar to `pathwayLabelStyle` but for NES and p-value columns.
+#' @param axisLabelStlye list with style parameter adjustments for stats axis labels.
+#'      See `ggplot2::element_text` for possible options.
+#' @param render (deprecated)
+#' @return ggplot object with enrichment barcode plots
 #' @import ggplot2
-#' @import gridExtra
 #' @import grid
+#' @import cowplot
 #' @export
 #' @examples
 #' data(examplePathways)
 #' data(exampleRanks)
-#' fgseaRes <- fgsea(examplePathways, exampleRanks, nperm=1000,
-#'                   minSize=15, maxSize=100)
+#' fgseaRes <- fgsea(examplePathways, exampleRanks, minSize=15, maxSize=500)
 #' topPathways <- fgseaRes[head(order(pval), n=15)][order(NES), pathway]
-#' \dontrun{
 #' plotGseaTable(examplePathways[topPathways], exampleRanks,
 #'               fgseaRes, gseaParam=0.5)
-#' }
 plotGseaTable <- function(pathways, stats, fgseaRes,
                           gseaParam=1,
                           colwidths=c(5, 3, 0.8, 1.2, 1.2),
-                          render=TRUE) {
+                          pathwayLabelStyle=NULL,
+                          headerLabelStyle=NULL,
+                          valueStyle=NULL,
+                          axisLabelStyle=NULL,
+                          render=NULL) {
+
+    pathwayLabelStyleDefault <- list(size=12, hjust=1, x=0.95, vjust=0)
+    pathwayLabelStyle <- modifyList(pathwayLabelStyleDefault, as.list(pathwayLabelStyle))
+
+    headerLabelStyleDefault <- list(size=12)
+    headerLabelStyle <- modifyList(headerLabelStyleDefault, as.list(headerLabelStyle))
+
+    valueStyleDefault <- list(size=12, vjust=0)
+    valueStyle <- modifyList(valueStyleDefault, as.list(valueStyle))
+
+    if (!is.null(render)) {
+        warning("render argument is deprecated, a ggplot object is always returned")
+    }
 
     rnk <- rank(-stats)
     ord <- order(rnk)
@@ -48,7 +90,7 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
         p <- pathways[[pn]]
         annotation <- fgseaRes[match(pn, fgseaRes$pathway), ]
         list(
-            textGrob(pn, just="right", x=unit(0.95, "npc")),
+            cowplotText(pn, pathwayLabelStyle),
             ggplot() +
                 geom_segment(aes(x=p, xend=p,
                                  y=0, yend=statsAdj[p]),
@@ -59,6 +101,7 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
                                    expand=c(0, 0)) +
                 xlab(NULL) + ylab(NULL) +
                 theme(panel.background = element_blank(),
+                      plot.background=element_blank(),
                       axis.line=element_blank(),
                       axis.text=element_blank(),
                       axis.ticks=element_blank(),
@@ -67,12 +110,11 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
                       plot.margin = rep(unit(0,"null"),4),
                       panel.spacing = rep(unit(0,"null"),4)
                 ),
-            textGrob(sprintf("%.2f", annotation$NES)),
-            textGrob(sprintf("%.1e", annotation$pval)),
-            textGrob(sprintf("%.1e", annotation$padj))
+            cowplotText(sprintf("%.2f", annotation$NES), valueStyle),
+            cowplotLabel(valueToExpExpression(annotation$pval), valueStyle),
+            cowplotLabel(valueToExpExpression(annotation$padj), valueStyle)
             )
     })
-
 
     rankPlot <-
         ggplot() +
@@ -83,18 +125,22 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
                            expand=c(0, 0)) +
         xlab(NULL) + ylab(NULL) +
         theme(panel.background = element_blank(),
+              plot.background=element_blank(),
               axis.line=element_blank(),
               axis.text.y=element_blank(),
               axis.ticks.y=element_blank(),
               panel.grid = element_blank(),
               axis.title=element_blank(),
+              axis.text=do.call(element_text, as.list(axisLabelStyle)),
               plot.margin = unit(c(0,0,0.5,0), "npc"),
               panel.spacing = unit(c(0,0,0,0), "npc")
         )
 
     grobs <- c(
-        list(textGrob("Pathway", just="right", x=unit(0.95, "npc"))),
-        lapply(c("Gene ranks", "NES", "pval", "padj"), textGrob),
+        list(cowplotText("Pathway",
+                         modifyList(headerLabelStyle, pathwayLabelStyle[c("hjust", "x")])
+                         )),
+        lapply(c("Gene ranks", "NES", "pval", "padj"), cowplotText, style=headerLabelStyle),
         unlist(ps, recursive = FALSE),
         list(nullGrob(),
              rankPlot,
@@ -106,15 +152,11 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
     grobsToDraw <- rep(as.numeric(colwidths) != 0, length(grobs)/length(colwidths))
 
 
-    p <- arrangeGrob(grobs=grobs[grobsToDraw],
-                 ncol=sum(as.numeric(colwidths) != 0),
-                 widths=colwidths[as.numeric(colwidths) != 0])
+    p <- plot_grid(plotlist=grobs[grobsToDraw],
+                   ncol=sum(as.numeric(colwidths) != 0),
+                   rel_widths=colwidths[as.numeric(colwidths) != 0])
 
-    if (render) {
-        grid.draw(p)
-    } else {
-        p
-    }
+    p
 }
 
 #' Plots GSEA enrichment plot.

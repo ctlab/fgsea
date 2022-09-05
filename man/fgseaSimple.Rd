@@ -9,7 +9,7 @@ fgseaSimple(
   stats,
   nperm,
   minSize = 1,
-  maxSize = Inf,
+  maxSize = length(stats) - 1,
   scoreType = c("std", "pos", "neg"),
   nproc = 0,
   gseaParam = 1,
