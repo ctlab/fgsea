@@ -47,7 +47,7 @@ str(head(examplePathways, 3))
 
 Running `geseca`:
 ```{r}
-gesecaRes <- geseca(exampleExpressionMatrix, examplePathways, minSize = 15, maxSize = 500)
+gesecaRes <- geseca(examplePathways, exampleExpressionMatrix, minSize = 15, maxSize = 500)
 head(gesecaRes[order(pval), ], 5)
 ```
 Optionally, it is possible to scale the values of each gene-row to a unit variance by passing the `scale=TRUE` to `geseca`.
@@ -97,8 +97,7 @@ Running GESECA analysis.
 
 ```{r}
 set.seed(1)
-gesecaRes <- geseca(exprs(es), pathways, minSize = 15, maxSize = 500)   
-gesecaRes <- gesecaRes[order(pval)]
+gesecaRes <- geseca(pathways, exprs(es), minSize = 15, maxSize = 500)   
 
 head(gesecaRes, 10)
 ```
@@ -107,7 +106,7 @@ We can plot gene expression profile of HALLMARK_E2F_TARGETS pathway and see that
 these gene are strongly activated at 24 hours time point:
 
 
-```{r}
+```{r fig.width=7, fig.height=4}
 plotCoregulationProfile(pathway=pathways[["HALLMARK_E2F_TARGETS"]], 
                         E=exprs(es), titles = es$title, conditions=es$`time point:ch1`)
 ```
@@ -115,7 +114,7 @@ plotCoregulationProfile(pathway=pathways[["HALLMARK_E2F_TARGETS"]],
 Hypoxia genes have slightly different profile, getting activated around 48 hours:
 
 
-```{r}
+```{r fig.width=7, fig.height=4}
 plotCoregulationProfile(pathway=pathways[["HALLMARK_HYPOXIA"]], 
                         E=exprs(es), titles = es$title, conditions=es$`time point:ch1`)
 
@@ -124,8 +123,6 @@ plotCoregulationProfile(pathway=pathways[["HALLMARK_HYPOXIA"]],
 
 To get an overview of the pathway patterns we can use `plotGesecaTable` function:
 
-```{r}
-topPathways <- gesecaRes[order(pval), pathway] |> head(10)
-
-plotGesecaTable(pathways[topPathways], E=exprs(es), gesecaRes, titles = es$title)
+```{r fig.width=7, fig.height=6}
+plotGesecaTable(gesecaRes |> head(10), pathways, E=exprs(es), titles = es$title)
 ```

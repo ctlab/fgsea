@@ -5,8 +5,8 @@
 \title{Runs simple variant for performing gene sets co-regulation analysis}
 \usage{
 gesecaSimple(
-  E,
   pathways,
+  E,
   minSize = 2,
   maxSize = nrow(E) - 1,
   scale = FALSE,
@@ -16,9 +16,9 @@ gesecaSimple(
 )
 }
 \arguments{
-\item{E}{expression matrix, rows corresponds to genes, columns corresponds to samples.}
-
 \item{pathways}{List of gene sets to check.}
+
+\item{E}{expression matrix, rows corresponds to genes, columns corresponds to samples.}
 
 \item{minSize}{Minimal size of a gene set to test. All pathways below the threshold are excluded.}
 
@@ -50,5 +50,5 @@ and P-value calculation accuracy is limited to `1 / nperm` value.
 \examples{
 data("exampleExpressionMatrix")
 data("examplePathways")
-gesecaRes <- gesecaSimple(exampleExpressionMatrix, examplePathways, minSize=15, maxSize=500)
+gesecaRes <- gesecaSimple(examplePathways, exampleExpressionMatrix, minSize=15, maxSize=500)
 }

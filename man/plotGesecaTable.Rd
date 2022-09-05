@@ -5,9 +5,9 @@
 \title{Plots table of gene set profiles.}
 \usage{
 plotGesecaTable(
+  gesecaRes,
   pathways,
   E,
-  gesecaRes,
   colwidths = c(5, 3, 0.8, 1.2, 1.2),
   titles = colnames(E),
   pathwayLabelStyle = NULL,
@@ -18,11 +18,11 @@ plotGesecaTable(
 )
 }
 \arguments{
+\item{gesecaRes}{Table with geseca results.}
+
 \item{pathways}{Pathways to plot table, as in `geseca` function.}
 
 \item{E}{gene expression matrix, as in `geseca` function.}
-
-\item{gesecaRes}{Table with geseca results.}
 
 \item{colwidths}{Vector of five elements corresponding to column width for
 grid.arrange. Can be both units and simple numeric vector, in latter case

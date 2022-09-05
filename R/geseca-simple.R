@@ -2,8 +2,8 @@
 #'
 #' This function is based on the rude Monte Carlo sampling approach
 #' and P-value calculation accuracy is limited to `1 / nperm` value.
-#' @param E expression matrix, rows corresponds to genes, columns corresponds to samples.
 #' @param pathways List of gene sets to check.
+#' @param E expression matrix, rows corresponds to genes, columns corresponds to samples.
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
 #' @param scale a logical value indicating whether the gene expression should be scaled to have unit variance before the analysis takes place.
@@ -27,10 +27,10 @@
 #' @examples
 #' data("exampleExpressionMatrix")
 #' data("examplePathways")
-#' gesecaRes <- gesecaSimple(exampleExpressionMatrix, examplePathways, minSize=15, maxSize=500)
+#' gesecaRes <- gesecaSimple(examplePathways, exampleExpressionMatrix, minSize=15, maxSize=500)
 #' @export
-gesecaSimple <- function(E,
-                         pathways,
+gesecaSimple <- function(pathways,
+                         E,
                          minSize    = 2,
                          maxSize    = nrow(E) - 1,
                          scale      = FALSE,
@@ -81,7 +81,7 @@ gesecaSimple <- function(E,
 
     setcolorder(pvals, c("pathway", "pctVar", "pval",
                          "padj", "nMoreExtreme", "size"))
-    pvals <- pvals[]
+    pvals <- pvals[order(pval)]
     return(pvals)
 }
 

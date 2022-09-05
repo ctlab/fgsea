@@ -5,8 +5,8 @@
 \title{Runs multilevel Monte-Carlo variant for performing gene sets co-regulation analysis}
 \usage{
 geseca(
-  E,
   pathways,
+  E,
   minSize = 2,
   maxSize = nrow(E) - 1,
   scale = FALSE,
@@ -18,9 +18,9 @@ geseca(
 )
 }
 \arguments{
-\item{E}{expression matrix, rows corresponds to genes, columns corresponds to samples.}
-
 \item{pathways}{List of gene sets to check.}
+
+\item{E}{expression matrix, rows corresponds to genes, columns corresponds to samples.}
 
 \item{minSize}{Minimal size of a gene set to test. All pathways below the threshold are excluded.}
 
@@ -60,5 +60,5 @@ variance along a set of genes.
 \examples{
 data("exampleExpressionMatrix")
 data("examplePathways")
-gr <- geseca(exampleExpressionMatrix, examplePathways, minSize=15, maxSize=500)
+gr <- geseca(examplePathways, exampleExpressionMatrix, minSize=15, maxSize=500)
 }

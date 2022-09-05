@@ -3,8 +3,8 @@
 #' This function is based on the adaptive multilevel splitting Monte Carlo approach
 #' and allows to estimate arbitrarily small P-values for the task of analyzing
 #' variance along a set of genes.
-#' @param E expression matrix, rows corresponds to genes, columns corresponds to samples.
 #' @param pathways List of gene sets to check.
+#' @param E expression matrix, rows corresponds to genes, columns corresponds to samples.
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
 #' @param scale a logical value indicating whether the gene expression should be scaled to have
@@ -33,10 +33,10 @@
 #' @examples
 #' data("exampleExpressionMatrix")
 #' data("examplePathways")
-#' gr <- geseca(exampleExpressionMatrix, examplePathways, minSize=15, maxSize=500)
+#' gr <- geseca(examplePathways, exampleExpressionMatrix, minSize=15, maxSize=500)
 #' @export
-geseca <- function(E,
-                   pathways,
+geseca <- function(pathways,
+                   E,
                    minSize     = 2,
                    maxSize     = nrow(E) - 1,
                    scale       = FALSE,
@@ -168,10 +168,7 @@ geseca <- function(E,
     }
     result <- result[, .(pathway, pctVar, pval, padj,
                          log2err, size)]
-    setorder(result, pathway)
-
-
-    result <- result[]
+    result <- result[order(pval)]
     return(result)
 }
 

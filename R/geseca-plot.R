@@ -1,4 +1,11 @@
+#' Plots expression profile of a gene set
+#' @param pathway Gene set to plot.
+#' @param E matrix with gene expression values
+#' @param titles sample titles to use for labels
+#' @param conditions sample grouping to use for coloring
+#' @return ggplot object with the coregulation profile plot
 #' @import data.table ggplot2
+#' @export
 plotCoregulationProfile <- function(pathway, E,
                                     titles=colnames(E),
                                     conditions=NULL) {
@@ -57,10 +64,27 @@ plotCoregulationProfile <- function(pathway, E,
     profilePlot
 }
 
+#' Plots table of gene set profiles.
+#' @param gesecaRes Table with geseca results.
+#' @param pathways Pathways to plot table, as in `geseca` function.
+#' @param E gene expression matrix, as in `geseca` function.
+#' @param colwidths Vector of five elements corresponding to column width for
+#'      grid.arrange. Can be both units and simple numeric vector, in latter case
+#'      it defines proportions, not actual sizes. If column width is set to zero, the column is not drawn.
+#' @param pathwayLabelStyle list with style parameter adjustments for pathway labels.
+#'      For example, `list(size=10, color="red")` set the font size to 10 and color to red.
+#'      See `cowplot::draw_text` for possible options.
+#' @param headerLabelStyle similar to `pathwayLabelStyle` but for the table header.
+#' @param valueStyle similar to `pathwayLabelStyle` but for pctVar and p-value columns.
+#' @param axisLabelStlye list with style parameter adjustments for sample labels.
+#'      See `ggplot2::element_text` for possible options.
+#' @return ggplot object with gene set profile plots
+#' @import ggplot2
 #' @import cowplot
-plotGesecaTable <- function(pathways,
+#' @export
+plotGesecaTable <- function(gesecaRes,
+                            pathways,
                             E,
-                            gesecaRes,
                             colwidths=c(5, 3, 0.8, 1.2, 1.2),
                             titles=colnames(E),
                             pathwayLabelStyle=NULL,
@@ -86,6 +110,11 @@ plotGesecaTable <- function(pathways,
                                 axisLabelStyle$size/pathwayLabelStyle$size
     }
 
+    gesecaRes <- gesecaRes[pathway %in% names(pathways)]
+    pathways <- pathways[gesecaRes$pathway]
+    # ^^ works with #40, as there can't be no empty pathways in the results
+
+
     E <- t(scale(t(E), scale = FALSE))
     colnames(E) <- titles
 
@@ -93,8 +122,6 @@ plotGesecaTable <- function(pathways,
         unname(as.vector(na.omit(fmatch(p, rownames(E)))))
     })
 
-    # fixes #40
-    pathways <- pathways[sapply(pathways, length) > 0]
 
     prjs <- t(do.call(cbind, lapply(pathways, function(p){
         colSums(E[p, ])/(length(p))
