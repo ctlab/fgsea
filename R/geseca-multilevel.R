@@ -184,3 +184,178 @@ getSimpleError <- function(roughEstimator, x, n, alpha = 0.025){
     simpleError <- 0.5 * pmax(roughEstimator - leftBorder, rightBorder - roughEstimator)
     return(simpleError)
 }
+
+#' Collapse list of enriched pathways to independent ones (GESECA version).
+#'
+#' @param gesecaRes Table with results of running geseca(), should be filtered
+#'                 by p-value, for example by selecting ones with padj < 0.01.
+#' @param pathways List of pathways, should contain all the pathways present in
+#'                 `gesecaRes`.
+#' @param E expression matrix, the same as in `geseca()`.
+#' @param pval.threshold Two pathways are considered dependent when p-value
+#'                       of enrichment of one pathways on background of another
+#'                       is greater then `pval.threshold`.
+#' @param nperm Number of permutations to test for independence, should be
+#'              several times greater than `1/pval.threhold`.
+#'              Default value: `10/pval.threshold`.
+#' @return Named list with two elments: `mainPathways` containing IDs of pathways
+#'         not reducable to each other, and `parentPathways` with vector describing
+#'         for all the pathways to which ones they can be reduced. For
+#'         pathways from `mainPathwyas` vector `parentPathways` contains `NA` values.
+collapsePathwaysGeseca <- function(gesecaRes,
+                             pathways,
+                             E,
+                             eps=1e-50,
+                             checkDepth=10,
+                             nproc       = 0,
+                             BPPARAM     = NULL) {
+    universe <- rownames(E)
+    E <- t(scale(t(E), scale = FALSE))
+
+    pathways <- pathways[gesecaRes$pathway]
+    pathways <- lapply(pathways, intersect, universe)
+
+    pvalCondMat <- matrix(nrow=length(pathways),
+                          ncol=length(pathways),
+                          dimnames = list(names(pathways), names(pathways)))
+
+    BPPARAM <- setUpBPPARAM(nproc=nproc, BPPARAM=BPPARAM)
+
+    message("Calculating pairwise simple p-values...")
+
+    pvalCondRows <- BiocParallel::bplapply(seq_along(pathways), function(i) {
+
+        p2n <- names(pathways)[i]
+        p2 <- pathways[[p2n]]
+
+        u1 <- setdiff(universe, p2)
+        u2 <- p2
+
+        pval1 <- setNames(rep(1, length(pathways)), names(pathways))
+        pval2 <- setNames(rep(1, length(pathways)), names(pathways))
+
+        gesecaRes1 <- gesecaSimple(pathways = pathways, E=E[u1, ], nperm = 100, BPPARAM = SerialParam())
+        gesecaRes2 <- gesecaSimple(pathways = pathways, E=E[u2, ], nperm = 100, BPPARAM = SerialParam())
+
+        pval1[gesecaRes1$pathway] <- gesecaRes1$pval
+        pval2[gesecaRes2$pathway] <- gesecaRes2$pval
+
+        pval1[pval1 < 1/100] <- 0
+        pval2[pval2 < 1/100] <- 0
+
+        # warnings about zero p-values
+        suppressWarnings(pvalCond <- apply(cbind(pval1, pval2), 1, aggregation::fisher))
+
+        pvalCond
+    }, BPPARAM = BPPARAM)
+
+    pvalCondMat <- do.call(rbind, pvalCondRows)
+    rownames(pvalCondMat) <- names(pathways)
+    diag(pvalCondMat) <- NA
+    pvalCondMax <- apply(pvalCondMat, 2, max, na.rm=TRUE)
+    parentPathway <- setNames(names(pathways)[apply(pvalCondMat, 2, which.max)],
+                              names(pathways))
+
+
+    checkDepth <- 10
+    message("Calculating pairwise multilevel p-values...")
+    condTable <- rbindlist(bplapply(which(pvalCondMax == 0), function(i) {
+
+        p1n <- names(pathways)[i]
+        p1 <- pathways[[i]]
+
+        pathwaysToCheck <- names(pathways)[which(pvalCondMat[, p1n] == 0)]
+
+        distances <- sapply(pathways[pathwaysToCheck], function(p2) { length(intersect(p1, p2))**2/
+                length(p1) / length(p2) } )
+
+        # distances <- distances[-i]
+        distances <- sort(distances, decreasing = TRUE)
+        pathwaysToCheck <- names(head(distances, checkDepth))
+
+        maxPvalCond <- 0
+        parentPathway <- NULL
+
+        for (p2n in pathwaysToCheck) {
+            p2 <- pathways[[p2n]]
+
+            u1 <- setdiff(universe, p2)
+            u2 <- p2
+
+            chisq <- qchisq(maxPvalCond, df=2*2, lower.tail = FALSE)
+            pvalBound <- exp(-chisq / 2)
+            # if at least one of gesecaRes1$pval, gesecaRes2$pval is below pvalBound,
+            # then pvalCond is less than maxPvalCond
+            eps1 <- max(pvalBound/2, 1e-50)
+
+            suppressWarnings({ # warnings about reaching eps
+                gesecaRes1 <- geseca(pathways = list(p=p1), E=E[u1, ], eps=eps1, BPPARAM = SerialParam())
+                gesecaRes2 <- geseca(pathways = list(p=p1), E=E[u2, ], eps=eps1, BPPARAM = SerialParam())
+            })
+
+            pvals <- c(min(gesecaRes1$pval, 1, na.rm=TRUE),
+                       min(gesecaRes2$pval, 1, na.rm=TRUE))
+            pvalCond <- aggregation::fisher(pvals)
+            if (length(pvals) == 0) {
+                pvalCond <- 1
+            }
+
+            if (pvalCond > maxPvalCond) {
+                # if (match(p2n, pathwaysToCheck) >= 5) {
+                #     message(match(p2n, pathwaysToCheck), ": ", p1n, " ##### ", p2n)
+                #     message("      ", maxPvalCond, " -> ", pvalCond)
+                # }
+
+                maxPvalCond <- pvalCond
+                parentPathway <- p2n
+            }
+        }
+        return(data.table(pathway=p1n, parentPathway=parentPathway, pvalCond=maxPvalCond))
+    }, BPPARAM=BPPARAM))
+
+    pvalCondMax[condTable$pathway] <- condTable$pvalCond
+    parentPathway[condTable$pathway] <- condTable$parentPathway
+
+    pvalCondReciprocal <- pvalCondMat[cbind(parentPathway, names(parentPathway))]
+    names(pvalCondReciprocal) <- names(parentPathway)
+
+    message("Calculating reciprocal multilevel p-values...")
+    reciprocalCondTable <- rbindlist(bplapply(which(pvalCondReciprocal == 0), function(i) {
+        p2n <- names(pathways)[i]
+        p2 <- pathways[[i]]
+
+        p1n <- parentPathway[p2n]
+        p1 <- pathways[[p1n]]
+
+        u1 <- setdiff(universe, p2)
+        u2 <- p2
+
+        suppressWarnings({ # warnings about reaching eps
+            gesecaRes1 <- geseca(pathways = list(p=p1), E=E[u1, ], eps=eps, BPPARAM = SerialParam())
+            gesecaRes2 <- geseca(pathways = list(p=p1), E=E[u2, ], eps=eps, BPPARAM = SerialParam())
+        })
+
+        pvals <- c(min(gesecaRes1$pval, 1, na.rm=TRUE),
+                   min(gesecaRes2$pval, 1, na.rm=TRUE))
+
+        pvalCond <- aggregation::fisher(pvals)
+        if (length(pvals) == 0) {
+            pvalCond <- 1
+        }
+
+        return(data.table(pathway=p1n, parentPathway=p2n, pvalCond=pvalCond))
+    }, BPPARAM=BPPARAM))
+
+    pvalCondReciprocal[reciprocalCondTable$parentPathway] <- reciprocalCondTable$pvalCond
+
+    res <- copy(gesecaRes)
+
+    res[, pvalCond := pvalCondMax[pathway]]
+    res[, parentPathway := parentPathway[pathway]]
+    res[, reciprocalPvalCond := pvalCondReciprocal[pathway]]
+
+    res[, pScore := exp(log(pvalCond) + (log(pval)-log(pvalCond))*(log(pvalCond)/(log(pvalCond)+log(pvalCondReciprocal))))]
+    # res[, pScore := sqrt(pval * pvalCond)]
+
+    return(res)
+}
