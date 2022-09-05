@@ -563,10 +563,10 @@ collapsePathways <- function(fgseaRes,
         u1 <- setdiff(universe, pathways[[p]])
 
         fgseaResUp1 <- fgseaSimple(pathways = pathways[pathwaysUp], stats=stats[u1],
-                                   nperm=nperm, maxSize=length(u1)-1, nproc=1,
+                                   nperm=nperm, maxSize=length(u1)-1, BPPARAM = SerialParam(),
                                    gseaParam=gseaParam, scoreType = "pos")
         fgseaResDown1 <- fgseaSimple(pathways = pathways[pathwaysDown], stats=stats[u1],
-                                     nperm=nperm, maxSize=length(u1)-1, nproc=1,
+                                     nperm=nperm, maxSize=length(u1)-1, BPPARAM = SerialParam(),
                                      gseaParam=gseaParam, scoreType = "neg")
         fgseaRes1 <- rbindlist(list(fgseaResUp1, fgseaResDown1), use.names = TRUE)
 
@@ -575,10 +575,10 @@ collapsePathways <- function(fgseaRes,
         u2 <- pathways[[p]]
 
         fgseaResUp2 <- fgseaSimple(pathways = pathways[pathwaysUp], stats=stats[u2],
-                                   nperm=nperm, maxSize=length(u2)-1, nproc=1,
+                                   nperm=nperm, maxSize=length(u2)-1, BPPARAM = SerialParam(),
                                    gseaParam=gseaParam, scoreType = "pos")
         fgseaResDown2 <- fgseaSimple(pathways = pathways[pathwaysDown], stats=stats[u2],
-                                     nperm=nperm, maxSize=length(u2)-1, nproc=1,
+                                     nperm=nperm, maxSize=length(u2)-1, BPPARAM = SerialParam(),
                                      gseaParam=gseaParam, scoreType = "neg")
         fgseaRes2 <- rbindlist(list(fgseaResUp2, fgseaResDown2), use.names = TRUE)
 
@@ -724,11 +724,14 @@ fgseaSimpleImpl <- function(pathwayScores, pathwaysSizes,
 setUpBPPARAM <- function(nproc=0, BPPARAM=NULL){
     if (is.null(BPPARAM)) {
         if (nproc != 0) {
+            if (nproc == 1) {
+                result <- SerialParam(progressbar = TRUE)
+            }
             if (.Platform$OS.type == "windows") {
                 # windows doesn't support multicore, using snow instead
-                result <- SnowParam(workers = nproc)
+                result <- SnowParam(workers = nproc, progressbar = TRUE)
             } else {
-                result <- MulticoreParam(workers = nproc)
+                result <- MulticoreParam(workers = nproc, progress = TRUE)
             }
         } else {
             result <- bpparam()
