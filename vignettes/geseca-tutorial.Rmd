@@ -1,9 +1,6 @@
 ---
 title: "geseca-tutorial"
-# output: rmarkdown::html_vignette
-output:
-  md_document:
-    variant: markdown_github
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{geseca-tutorial}
   %\VignetteEngine{knitr::rmarkdown}
@@ -54,3 +51,81 @@ gesecaRes <- geseca(exampleExpressionMatrix, examplePathways, minSize = 15, maxS
 head(gesecaRes[order(pval), ], 5)
 ```
 Optionally, it is possible to scale the values of each gene-row to a unit variance by passing the `scale=TRUE` to `geseca`.
+
+
+## Analysis of time course data
+
+We will analyze time course data of Th2 activation from the dataset GSE200250.
+
+
+First, let prepare the dataset.
+
+```{r message=FALSE}
+library(GEOquery)
+library(limma)
+
+gse200250 <- getGEO("GSE200250", AnnotGPL = TRUE)[[1]]
+
+es <- gse200250
+es <- es[, grep("Th2_", es$title)]
+es$time <- as.numeric(gsub(" hours", "", es$`time point:ch1`))
+es <- es[, order(es$time)]
+
+exprs(es) <- normalizeBetweenArrays(log2(exprs(es)), method="quantile")
+
+es <- es[order(rowMeans(exprs(es)), decreasing=TRUE), ]
+es <- es[!duplicated(fData(es)$`Gene ID`), ]
+rownames(es) <- fData(es)$`Gene ID`
+es <- es[!grepl("///", rownames(es)), ]
+es <- es[rownames(es) != "", ]
+
+fData(es) <- fData(es)[, c("ID", "Gene ID", "Gene symbol")]
+
+es <- es[head(order(rowMeans(exprs(es)), decreasing=TRUE), 12000), ]
+```
+
+We will consider MSigDB Hallmark pathways.
+
+
+```{r}
+library(msigdbr)
+pathwaysDF <- msigdbr("mouse", category="H")
+pathways <- split(pathwaysDF$entrez_gene, pathwaysDF$gs_name)
+```
+
+Running GESECA analysis.
+
+```{r}
+set.seed(1)
+gesecaRes <- geseca(exprs(es), pathways, minSize = 15, maxSize = 500)   
+gesecaRes <- gesecaRes[order(pval)]
+
+head(gesecaRes, 10)
+```
+
+We can plot gene expression profile of HALLMARK_E2F_TARGETS pathway and see that 
+these gene are strongly activated at 24 hours time point:
+
+
+```{r}
+plotCoregulationProfile(pathway=pathways[["HALLMARK_E2F_TARGETS"]], 
+                        E=exprs(es), titles = es$title, conditions=es$`time point:ch1`)
+```
+
+Hypoxia genes have slightly different profile, getting activated around 48 hours:
+
+
+```{r}
+plotCoregulationProfile(pathway=pathways[["HALLMARK_HYPOXIA"]], 
+                        E=exprs(es), titles = es$title, conditions=es$`time point:ch1`)
+
+
+```
+
+To get an overview of the pathway patterns we can use `plotGesecaTable` function:
+
+```{r}
+topPathways <- gesecaRes[order(pval), pathway] |> head(10)
+
+plotGesecaTable(pathways[topPathways], E=exprs(es), gesecaRes, titles = es$title)
+```
