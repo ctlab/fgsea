@@ -17,6 +17,12 @@ plotCoregulationProfile <- function(pathway, E,
     mdt[, gene := as.factor(gene)]
     mdt[, sample := factor(sample, levels=titles)]
 
+    if (!is.null(conditions)) {
+        if (is.character(conditions)) {
+            conditions <- factor(conditions, levels=unique(conditions))
+        }
+    }
+
     pointDt <- data.table(x = seq_len(ncol(E)),
                           y = colSums(E[rownames(E) %in% genes, ]) / sum(rownames(E) %in% genes),
                           condition=if (!is.null(conditions)) { conditions  } else "x")
@@ -57,7 +63,28 @@ plotGesecaTable <- function(pathways,
                             gesecaRes,
                             colwidths=c(5, 3, 0.8, 1.2, 1.2),
                             titles=colnames(E),
-                            render = TRUE){
+                            pathwayLabelStyle=NULL,
+                            headerLabelStyle=NULL,
+                            valueStyle=NULL,
+                            axisLabelStyle=NULL,
+                            axisLabelHeightScale=NULL){
+
+    pathwayLabelStyleDefault <- list(size=12, hjust=1, x=0.95, vjust=0)
+    pathwayLabelStyle <- modifyList(pathwayLabelStyleDefault, as.list(pathwayLabelStyle))
+
+    headerLabelStyleDefault <- list(size=12)
+    headerLabelStyle <- modifyList(headerLabelStyleDefault, as.list(headerLabelStyle))
+
+    valueStyleDefault <- list(size=12, vjust=0)
+    valueStyle <- modifyList(valueStyleDefault, as.list(valueStyle))
+
+    axisLabelStyleDefault <- list(angle = 90, hjust = 1, size=10)
+    axisLabelStyle <- modifyList(axisLabelStyleDefault, as.list(axisLabelStyle))
+
+    if (is.null(axisLabelHeightScale)) {
+        axisLabelHeightScale <- max(sapply(titles, nchar))/4*
+                                axisLabelStyle$size/pathwayLabelStyle$size
+    }
 
     E <- t(scale(t(E), scale = FALSE))
     colnames(E) <- titles
@@ -79,8 +106,9 @@ plotGesecaTable <- function(pathways,
 
     prjspd <- copy(melt(prjspd, id.vars = "pathway",
                         measure.vars = colnames(prjspd)[2:ncol(prjspd)],
-                        variable.name = "sample"))
+                        variable.name = "sample", variable.factor=FALSE))
     prjspd[, pathway := factor(pathway, levels = rev(rownames(prjs)))]
+    prjspd[, sample := factor(sample, levels=titles)]
 
     maxValue <- max(prjspd$value)
     minValue <- min(prjspd$value)
@@ -90,10 +118,10 @@ plotGesecaTable <- function(pathways,
         p <- pathways[[pn]]
         annotation <- gesecaRes[match(pn, gesecaRes$pathway), ]
         list(
-            textGrob(pn, just=c("right", "centre"), x=unit(0.95, "npc")),
+            cowplotText(pn, pathwayLabelStyle),
             ggplot(prjspd[pathway %fin% pn],
                    aes(x=sample, y=pathway, fill=value)) +
-                geom_tile(color = "black", size = 0.75) +
+                geom_tile(color = "black", size = min(10/ncol(E), 0.5)) +
                 scale_fill_gradient2(low = "blue",
                                      high = "red",
                                      mid = "white",
@@ -110,14 +138,13 @@ plotGesecaTable <- function(pathways,
                       legend.position = "none") +
                 # coord_equal() +
                 NULL,
-            textGrob(sprintf("%.3f", annotation$pctVar)),
-            textGrob(sprintf("%.1e", annotation$pval)),
-            textGrob(sprintf("%.1e", annotation$padj))
+            cowplotText(sprintf("%.3f", annotation$pctVar), valueStyle),
+            cowplotLabel(valueToExpExpression(annotation$pval), valueStyle),
+            cowplotLabel(valueToExpExpression(annotation$padj), valueStyle)
         )
     })
 
-    sampleTitle <- ggplot(data = data.table(sample=titles), aes(x = sample)) +
-        geom_text(aes(label=sample), y=0, angle=90, hjust=1) +
+    sampleTitle <- ggplot(data = data.table(sample=unique(prjspd$sample)), aes(x=sample)) +
         theme(panel.background = element_blank(),
               axis.line = element_blank(),
               axis.ticks = element_blank(),
@@ -126,23 +153,13 @@ plotGesecaTable <- function(pathways,
               plot.margin = unit(c(0,0,0,0), "npc"),
               panel.spacing = unit(c(0,0,0,0), "npc"),
               axis.title.x = element_blank(),
-              axis.text.x = element_blank())
-
-
-    sampleTitle <- ggplot(data = data.table(sample=titles), aes(x = sample)) +
-        theme(panel.background = element_blank(),
-              axis.line = element_blank(),
-              axis.ticks = element_blank(),
-              panel.grid = element_blank(),
-              axis.title = element_blank(),
-              plot.margin = unit(c(0,0,0,0), "npc"),
-              panel.spacing = unit(c(0,0,0,0), "npc"),
-              axis.title.x = element_blank(),
-              axis.text.x = element_text(angle = 90, hjust = 1))
+              axis.text.x = do.call(element_text, as.list(axisLabelStyle)))
 
     grobs <- c(
-        list(textGrob("Pathway", just="right", x=unit(0.95, "npc"))),
-        lapply(c("Projection", "pctVar", "pval", "padj"), textGrob),
+        list(cowplotText("Pathway",
+                         modifyList(headerLabelStyle, pathwayLabelStyle[c("hjust", "x")])
+        )),
+        lapply(c("Projection", "pctVar", "pval", "padj"), cowplotText, style=headerLabelStyle),
         unlist(ps, recursive = FALSE),
         list(nullGrob(),
              sampleTitle,
@@ -151,13 +168,13 @@ plotGesecaTable <- function(pathways,
              nullGrob())
         )
 
-
+    # not drawing column if corresponding colwidth is set to zero
     grobsToDraw <- rep(as.numeric(colwidths) != 0, length(grobs)/length(colwidths))
 
     p <- cowplot::plot_grid(plotlist=grobs[grobsToDraw],
                      ncol=sum(as.numeric(colwidths) != 0),
                      rel_widths=colwidths[as.numeric(colwidths) != 0],
-                     rel_heights=c(1, rep(1, length(pathways)), max(sapply(titles, nchar))/4))
+                     rel_heights=c(1, rep(1, length(pathways)), axisLabelHeightScale))
 
     p
 }
