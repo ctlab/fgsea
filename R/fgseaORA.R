@@ -20,7 +20,7 @@
 #' data(examplePathways)
 #' data(exampleRanks)
 #' foraRes <- fora(examplePathways, genes=tail(names(exampleRanks), 200), universe=names(exampleRanks))
-fora <- function(pathways, genes, universe, minSize=1, maxSize=Inf) {
+fora <- function(pathways, genes, universe, minSize=1, maxSize=length(universe)-1) {
     # Error if pathways is not a list
     if (!is.list(pathways)) {
         stop("pathways should be a list with each element containing genes from the universe")

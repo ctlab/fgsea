@@ -235,7 +235,7 @@ fgseaSimple <- function(pathways,
                         stats,
                         nperm,
                         minSize   = 1,
-                        maxSize   = Inf,
+                        maxSize   = length(stats)-1,
                         scoreType = c("std", "pos", "neg"),
                         nproc     = 0,
                         gseaParam = 1,
@@ -368,7 +368,7 @@ calcGseaStatBatch <- function(stats, selectedStats, geneRanks=seq_along(stats),
 #'
 #' @importFrom Matrix invPerm
 fgseaLabel <- function(pathways, mat, labels, nperm,
-                      minSize=1, maxSize=Inf,
+                      minSize=1, maxSize=nrow(mat)-1,
                       nproc=0,
                       gseaParam=1,
                       BPPARAM=NULL) {
