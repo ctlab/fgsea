@@ -16,6 +16,9 @@ private:
     const unsigned sampleSize;
     const unsigned genesetSize;
 
+    const double upPrmtr = 0.2;
+    const unsigned itersPerStep;
+
     std::vector<double> scores;
     std::vector<std::vector<unsigned> > currentSample;
     std::vector<std::vector<float> > currentProfiles;
@@ -30,7 +33,7 @@ public:
     ~ScoreRuler();
 
     void extend(double inpScore, int seed, double eps);
-    double getPvalue(double inpScore, double eps);
+    std::pair<double, double> getPvalue(double inpScore, double eps);
 
     // pair<double, bool> getPvalue(double ES, double eps, bool sign);
 };

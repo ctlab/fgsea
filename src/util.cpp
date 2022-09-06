@@ -69,3 +69,9 @@ int uid_wrapper::operator()() {
 double betaMeanLog(unsigned long a, unsigned long b) {
     return boost::math::digamma(a) - boost::math::digamma(b + 1);
 }
+
+double multilevelError(int level, int sampleSize) {
+    double singleLevelError = boost::math::trigamma((sampleSize+1)/2) -
+        boost::math::trigamma(sampleSize+1);
+    return sqrt(level * singleLevelError) / log(2);
+}

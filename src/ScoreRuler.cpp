@@ -7,7 +7,8 @@ using namespace Rcpp;
 ScoreRuler::ScoreRuler(const std::vector<std::vector<float> > & inpE,
                        unsigned inpSampleSize, unsigned inpGenesetSize):
         sampleSize(inpSampleSize),
-        genesetSize(inpGenesetSize), n(inpE.size()), m(inpE[0].size()) {
+        genesetSize(inpGenesetSize), n(inpE.size()), m(inpE[0].size()),
+        itersPerStep(std::max(unsigned(1), unsigned(inpGenesetSize * upPrmtr))) {
     currentSample.resize(inpSampleSize);
     currentProfiles.resize(inpSampleSize);
 
@@ -69,11 +70,18 @@ void ScoreRuler::extend(double inpScore, int seed, double eps) {
     duplicateSampleElements();
 
     while (scores.back() <= inpScore - 1e-10){
-        for (int moves = 0; moves < sampleSize * genesetSize;) {
+        int moves = 0;
+        int totalIters = 0;
+        for (moves = 0; moves < sampleSize * genesetSize;) {
             for (unsigned elemIndex = 0; elemIndex < sampleSize; elemIndex++) {
                 moves += updateElement(currentSample[elemIndex], currentProfiles[elemIndex],
                                        scores.back(), mtGen);
+                totalIters += itersPerStep;
             }
+        }
+
+        if (double(moves)/totalIters < 0.01) {
+            break;
         }
 
         duplicateSampleElements();
@@ -86,7 +94,7 @@ void ScoreRuler::extend(double inpScore, int seed, double eps) {
     }
 }
 
-double ScoreRuler::getPvalue(double inpScore, double eps){
+std::pair<double, double> ScoreRuler::getPvalue(double inpScore, double eps){
     unsigned long halfSize = (sampleSize + 1) / 2;
 
     auto it = scores.begin();
@@ -105,7 +113,15 @@ double ScoreRuler::getPvalue(double inpScore, double eps){
 
     double adjLog = betaMeanLog(halfSize, sampleSize);
     double adjLogPval = k * adjLog + betaMeanLog(remainder + 1, sampleSize);
-    return std::max(0.0, std::min(1.0, exp(adjLogPval)));
+
+    double pval = std::max(0.0, std::min(1.0, exp(adjLogPval)));
+    double log2err = multilevelError(k+1, sampleSize);
+
+    if (inpScore > scores.back()) {
+        log2err = std::numeric_limits<double>::infinity();
+    }
+
+    return std::make_pair(pval, log2err);
 }
 
 
@@ -113,7 +129,6 @@ int ScoreRuler::updateElement(std::vector<unsigned> & element,
                               std::vector<float> & profile,
                               double threshold,
                               std::mt19937 &mtGen){
-    double upPrmtr = 0.2;
     // unsigned n = expressionMatrix.size();
 
     uid_wrapper uid_n(0, n - 1, mtGen);
@@ -124,7 +139,7 @@ int ScoreRuler::updateElement(std::vector<unsigned> & element,
         used[el] = 1;
     }
 
-    unsigned niters = std::max(unsigned(1), unsigned(genesetSize * upPrmtr));
+    unsigned niters = itersPerStep;
     int moves = 0;
     std::vector<float> newProfile(profile.size());
     for (unsigned i = 0; i < niters; i++){

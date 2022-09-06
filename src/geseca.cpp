@@ -2,7 +2,7 @@
 #include "ScoreRuler.h"
 
 
-NumericVector gesecaCpp(const NumericMatrix & E, const NumericVector & inpScores,
+Rcpp::List gesecaCpp(const NumericMatrix & E, const NumericVector & inpScores,
                         unsigned genesetSize, unsigned sampleSize, int seed, double eps){
     std::vector<double> scores = as<std::vector<double> > (inpScores);
     std::vector<std::vector<float> > expressionMatrix(E.nrow());
@@ -16,8 +16,14 @@ NumericVector gesecaCpp(const NumericMatrix & E, const NumericVector & inpScores
 
     double maxScore = *std::max_element(scores.begin(), scores.end());
     ruler.extend(maxScore, seed, eps);
+
+    Rcpp::List res;
+
     for (auto score : scores){
-        pvals.push_back(ruler.getPvalue(score, eps));
+        std::pair<double, double> pval = ruler.getPvalue(score, eps);
+        res.push_back(Rcpp::List::create(Rcpp::Named("pval") = pval.first,
+                                         Rcpp::Named("log2err") = pval.second));
     }
-    return wrap(pvals);
+
+    return res;
 }

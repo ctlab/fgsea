@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // [[Rcpp::plugins(cpp17)]]
 // [[Rcpp::export]]
-NumericVector gesecaCpp(const NumericMatrix & E, const NumericVector & inpScores,
+Rcpp::List gesecaCpp(const NumericMatrix & E, const NumericVector & inpScores,
                     unsigned genesetSize, unsigned sampleSize, int seed, double eps);
 
 #endif // GESECA_H

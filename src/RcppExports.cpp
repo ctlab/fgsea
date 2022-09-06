@@ -72,7 +72,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // gesecaCpp
-NumericVector gesecaCpp(const NumericMatrix& E, const NumericVector& inpScores, unsigned genesetSize, unsigned sampleSize, int seed, double eps);
+Rcpp::List gesecaCpp(const NumericMatrix& E, const NumericVector& inpScores, unsigned genesetSize, unsigned sampleSize, int seed, double eps);
 RcppExport SEXP _fgsea_gesecaCpp(SEXP ESEXP, SEXP inpScoresSEXP, SEXP genesetSizeSEXP, SEXP sampleSizeSEXP, SEXP seedSEXP, SEXP epsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

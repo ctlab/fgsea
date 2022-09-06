@@ -148,10 +148,12 @@ geseca <- function(pathways,
                          eps         = eps))
     }, BPPARAM = BPPARAM)
 
+    pvals <- rbindlist(unlist(pvals, recursive = FALSE))
+
     result <- rbindlist(mPathwaysList)
 
-    result[, pval := unlist(pvals)]
-    result[, log2err := multilevelError(pval, sampleSize)]
+    result[, pval := pvals$pval]
+    result[, log2err := pvals$log2err]
     result[pval < eps, c("pval", "log2err") := list(eps, NA)]
 
     result[, padj := p.adjust(pval, method = "BH")]
