@@ -14,51 +14,45 @@ knitr::opts_chunk$set(
 )
 ```
 
-An R-package for performing GEne SEt Co-regulation Analysis (GESECA).
 
-## Quick run
+This vignette describes GESECA (gene set co-regulation analysis): a method
+to identify gene sets that have high gene correlation.
+We will show how GESECA can be used to find regulated pathways
+in high-dimensional data, where there is no obvious contrast that 
+can be used to rank genes for GSEA analysis.
+As examples we will consider a time course microarray experiment 
+and a spatial transcriptomics dataset.
 
-Loading necessary libraries
+## Overiew of GESECA method
 
-```{r message=FALSE}
-library(fgsea)
-library(data.table)
-```
+GESECA takes as an input a list of pathways *P* and a gene
+expression matrix *E*.
+For each pathway *p* a score is calculated as:
 
-```{r echo=FALSE}
-library(BiocParallel)
-register(SerialParam())
-```
+$$
+S(p) = \mathrm {Var}(\sum_{g \in p} (E[g]-\mathrm{mean}(E[g]))).
+$$
 
-Loading example expression matrix and pathways:
+This score correspond to a variance explained by a particular gene set.
+When the genes are highly correlated with each other, their
+variances are summed up to a high score.
+When the genes are not correlated they cancel each other and the total
+gene set variance is low.
 
-```{r message=FALSE}
-data(exampleExpressionMatrix)
-str(exampleExpressionMatrix)
-```
-`exampleExpressionMatrix` - numeric expression matrix of the GSE14308 dataset. Rows correspond to genes (ENTREZID is used as identifiers), columns correspond to samples. **Note:** `geseca` expects that the values of expression matrix are log-scaled and the samples are quantile normalized. To get more information about steps that were performed to process the GSE14308 expression matrix, use: `?exampleExpressionMatrix`.
-
-
-```{r message=FALSE}
-data(examplePathways)
-str(head(examplePathways, 3))
-```
-`examplePathways` - list of mouse pathways from `reactome.db` package. The list of gene sets should use the same identifiers that are used in `rownames(exampleExpressionMatrix)`. To get more information about this list, use: `?examplePathways`
-
-Running `geseca`:
-```{r}
-gesecaRes <- geseca(examplePathways, exampleExpressionMatrix, minSize = 15, maxSize = 500)
-head(gesecaRes[order(pval), ], 5)
-```
-Optionally, it is possible to scale the values of each gene-row to a unit variance by passing the `scale=TRUE` to `geseca`.
-
+To asses statistical significance, where a high score is not random
+we calculate an empirical P-value, by comparing the score
+with a scores for random gene sets of the same size. 
+The P-value is calculated with a adaptive multilevel Markov Chain Monte Carlo
+scheme, similar to `fgseaMultilevel` procedure.
 
 ## Analysis of time course data
 
-We will analyze time course data of Th2 activation from the dataset GSE200250.
+In the first example we will consider a time course data of Th2 activation
+from the dataset GSE200250.
 
 
-First, let prepare the dataset.
+First, let prepare the dataset. We load it from Gene Expression Omnibus,
+apply log and quantile normalization and filter lowly expressed genes.
 
 ```{r message=FALSE}
 library(GEOquery)
@@ -82,28 +76,35 @@ es <- es[rownames(es) != "", ]
 fData(es) <- fData(es)[, c("ID", "Gene ID", "Gene symbol")]
 
 es <- es[head(order(rowMeans(exprs(es)), decreasing=TRUE), 12000), ]
+head(exprs(es))
 ```
 
-We will consider MSigDB Hallmark pathways.
+
+Then we let obtain the pathway list. Here we use Hallmarks
+collection from MSigDB database.
 
 
 ```{r}
 library(msigdbr)
 pathwaysDF <- msigdbr("mouse", category="H")
-pathways <- split(pathwaysDF$entrez_gene, pathwaysDF$gs_name)
+pathways <- split(as.character(pathwaysDF$entrez_gene), pathwaysDF$gs_name)
 ```
 
-Running GESECA analysis.
+Now we can run GESECA analysis:
 
-```{r}
+```{r message=FALSE}
+library(fgsea)
 set.seed(1)
-gesecaRes <- geseca(pathways, exprs(es), minSize = 15, maxSize = 500)   
+gesecaRes <- geseca(pathways, exprs(es), minSize = 15, maxSize = 500)
+```
 
+The resulting table contain GESECA scores and the corresponding P-values:
+```{r}
 head(gesecaRes, 10)
 ```
 
-We can plot gene expression profile of HALLMARK_E2F_TARGETS pathway and see that 
-these gene are strongly activated at 24 hours time point:
+We can plot gene expression profile of HALLMARK_E2F_TARGETS pathway and see
+that these genes are strongly activated at 24 hours time point:
 
 
 ```{r fig.width=7, fig.height=4}
@@ -121,8 +122,90 @@ plotCoregulationProfile(pathway=pathways[["HALLMARK_HYPOXIA"]],
 
 ```
 
-To get an overview of the pathway patterns we can use `plotGesecaTable` function:
+To get an overview of the top pathway patterns we can use `plotGesecaTable`
+function:
 
 ```{r fig.width=7, fig.height=6}
 plotGesecaTable(gesecaRes |> head(10), pathways, E=exprs(es), titles = es$title)
 ```
+
+## Analysis of spatial RNA-seq
+
+As the second example we will consider a spatial transcriptomics dataset
+of a mouse brain.
+
+To load the data we will use `SeuratData` package that can be 
+installed with the following command:
+
+```{r eval=FALSE}
+devtools::install_github('satijalab/seurat-data')
+```
+
+Next we install the package with the dataset:
+```{r eval=FALSE}
+SeuratData::InstallData("stxBrain")
+```
+
+Now we can load the data:
+
+```{r message=FALSE}
+library(Seurat)
+library(SeuratData)
+library(ggplot2)
+library(patchwork)
+brain <- LoadData("stxBrain", type = "anterior1")
+```
+
+
+Apply an appropriate normalization (note that we are using 10000 genes, 
+which will be later used as a gene universe for the analysis):
+
+```{r}
+brain <- SCTransform(brain, assay = "Spatial", verbose = FALSE, variable.features.n = 10000)
+```
+
+To speed up the analysis, instead of using the full transformed
+gene expression matrix, we will consider only its first 
+principal components:
+
+```{r}
+brain <- RunPCA(brain, assay = "SCT", verbose = FALSE, rev.pca = TRUE)
+E <- brain@reductions$pca@feature.loadings
+dim(E)
+```
+
+We will use KEGG pathways as the gene set collection.
+
+```{r}
+library(msigdbr)
+pathwaysDF <- msigdbr("mouse", category="C2", subcategory = "CP:KEGG")
+pathways <- split(pathwaysDF$gene_symbol, pathwaysDF$gs_name)
+```
+
+Now we can run the analysis:
+
+```{r message=FALSE}
+library(fgsea)
+set.seed(1)
+gesecaRes <- geseca(pathways, E, minSize = 5, maxSize = 500, scale = FALSE)    
+
+head(gesecaRes[order(pval), ], 10)
+```
+
+Finally, let us plot spatial expression of the top four pathways:
+
+
+```{r fig.width=8, fig.height=8}
+
+topPathways <- gesecaRes[, pathway] |> head(4)
+
+for (ppn in topPathways) {
+    pp <- pathways[[ppn]]
+    pp <- intersect(pp, rownames(E))
+    
+    score <- colSums(brain@assays$SCT@scale.data[pp, ])
+    brain@meta.data[[ppn]] <- score
+}
+SpatialFeaturePlot(brain, features = topPathways, )
+```
+
