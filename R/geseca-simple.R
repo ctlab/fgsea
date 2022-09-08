@@ -6,8 +6,10 @@
 #' @param E expression matrix, rows corresponds to genes, columns corresponds to samples.
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
+#' @param center a logical value indicating whether the gene expression should be centered to have zero mean before the analysis takes place.
+#' The default is TRUE. The value is passed to \link[base]{scale}.
 #' @param scale a logical value indicating whether the gene expression should be scaled to have unit variance before the analysis takes place.
-#' The default is FALSE The value is passed to \link[base]{scale}.
+#' The default is FALSE. The value is passed to \link[base]{scale}.
 #' @param nperm Number of permutations to do. Minimal possible nominal p-value is about 1/nperm
 #' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
 #' @param BPPARAM Parallelization parameter used in bplapply.
@@ -33,6 +35,7 @@ gesecaSimple <- function(pathways,
                          E,
                          minSize    = 2,
                          maxSize    = nrow(E) - 1,
+                         center     = TRUE,
                          scale      = FALSE,
                          nperm      = 1000,
                          nproc      = 0,
@@ -40,7 +43,7 @@ gesecaSimple <- function(pathways,
     if (scale && any(apply(E, 1, sd) == 0)){
         stop("Cannot rescale the constant/zero gene expression rows to unit variance")
     }
-    E <- t(base::scale(t(E), scale = scale))
+    E <- t(base::scale(t(E), center=center, scale = scale))
 
     checkGesecaArgs(E, pathways)
     pp <- gesecaPreparePathways(E, pathways, minSize, maxSize)
@@ -74,7 +77,7 @@ gesecaSimple <- function(pathways,
                               seeds, m, E, BPPARAM)
     pvals[, pctVar := pathwayScores]
 
-    totalVar <- sum(apply(E, 1, var))
+    totalVar <- sum(rowSums(E**2))
     pvals[, pctVar := pctVar / size / totalVar * 100]
 
     setnames(pvals, "nGeScore", "nMoreExtreme")
@@ -136,7 +139,7 @@ gesecaCumScores <- function(nperm, pathwaySizes, E){
         Esubset <- E[randIndxs, ]
 
         Ecum <- apply(Esubset, 2, cumsum)
-        Esq <- (Ecum ^ 2) / (ncol(Ecum) - 1)
+        Esq <- (Ecum ^ 2)
 
         res <- unname(rowSums(Esq)[pathwaySizes])
         return(res)

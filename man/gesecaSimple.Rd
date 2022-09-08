@@ -9,6 +9,7 @@ gesecaSimple(
   E,
   minSize = 2,
   maxSize = nrow(E) - 1,
+  center = TRUE,
   scale = FALSE,
   nperm = 1000,
   nproc = 0,
@@ -24,8 +25,11 @@ gesecaSimple(
 
 \item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
 
+\item{center}{a logical value indicating whether the gene expression should be centered to have zero mean before the analysis takes place.
+The default is TRUE. The value is passed to \link[base]{scale}.}
+
 \item{scale}{a logical value indicating whether the gene expression should be scaled to have unit variance before the analysis takes place.
-The default is FALSE The value is passed to \link[base]{scale}.}
+The default is FALSE. The value is passed to \link[base]{scale}.}
 
 \item{nperm}{Number of permutations to do. Minimal possible nominal p-value is about 1/nperm}
 

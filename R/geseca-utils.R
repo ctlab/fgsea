@@ -36,6 +36,23 @@ gesecaPreparePathways <- function(E, pathways, minSize, maxSize){
 }
 
 
+# E should be row-centered
 calcGesecaScores <- function(indxs, E){
-    return(var(colSums(E[indxs, ])))
+    return(sum(colSums(E[indxs, ])**2))
+}
+
+# E should be row-centered
+getGesecaLeadingEdge <- function(indxs, E, extend=FALSE, sort=TRUE) {
+    profile <- colSums(E[indxs, ])
+    profile <- profile / sqrt(sum(profile**2))
+    Ey <- E[indxs,]
+    if (extend) {
+        Ey <- E
+    }
+    weights <- (Ey %*% profile)[,1]
+    weights <- weights / sqrt(apply(Ey**2, 1, sum))
+    if (sort) {
+        weights <- base::sort(weights, decreasing = TRUE)
+    }
+    return(names(weights[weights >= 0.5]))
 }

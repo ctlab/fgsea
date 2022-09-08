@@ -5,7 +5,6 @@ double getVarianceEstimator(const std::vector<float> & elems){
     for (double elem : elems){
         varHat += elem * elem;
     }
-    varHat = varHat / (elems.size() - 1);
     return varHat;
 }
 

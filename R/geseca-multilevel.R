@@ -7,9 +7,11 @@
 #' @param E expression matrix, rows corresponds to genes, columns corresponds to samples.
 #' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
 #' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
+#' @param center a logical value indicating whether the gene expression should be centered to have zero mean before the analysis takes place.
+#' The default is TRUE. The value is passed to \link[base]{scale}.
 #' @param scale a logical value indicating whether the gene expression should be scaled to have
 #' unit variance before the analysis takes place.
-#' The default is FALSE The value is passed to \link[base]{scale}.
+#' The default is FALSE. The value is passed to \link[base]{scale}.
 #' @param sampleSize sample size for conditional sampling.
 #' @param eps This parameter sets the boundary for calculating P-values.
 #' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
@@ -39,6 +41,7 @@ geseca <- function(pathways,
                    E,
                    minSize     = 2,
                    maxSize     = nrow(E) - 1,
+                   center      = TRUE,
                    scale       = FALSE,
                    sampleSize  = 101,
                    eps         = 1e-50,
@@ -49,7 +52,7 @@ geseca <- function(pathways,
     if (scale && any(apply(E, 1, sd) == 0)){
         stop("Cannot rescale a constant/zero gene expression rows to unit variance")
     }
-    E <- t(base::scale(t(E), scale = scale))
+    E <- t(base::scale(t(E), center=center, scale = scale))
 
     checkGesecaArgs(E, pathways)
     pp <- gesecaPreparePathways(E, pathways, minSize, maxSize)
@@ -58,7 +61,7 @@ geseca <- function(pathways,
     pathwaySizes <- pp$sizes
     pathwayNames <- names(pathwayFiltered)
 
-    totalVar <- sum(apply(E, 1, var))
+    totalVar <- sum(rowSums(E**2))
 
     m <- length(pathwayFiltered)
     if (m == 0) {
@@ -194,6 +197,11 @@ getSimpleError <- function(roughEstimator, x, n, alpha = 0.025){
 #' @param pathways List of pathways, should contain all the pathways present in
 #'                 `gesecaRes`.
 #' @param E expression matrix, the same as in `geseca()`.
+#' @param center a logical value indicating whether the gene expression should be centered to have zero mean before the analysis takes place.
+#' The default is TRUE. The value is passed to \link[base]{scale}.
+#' @param scale a logical value indicating whether the gene expression should be scaled to have
+#' unit variance before the analysis takes place.
+#' The default is FALSE. The value is passed to \link[base]{scale}.
 #' @param pval.threshold Two pathways are considered dependent when p-value
 #'                       of enrichment of one pathways on background of another
 #'                       is greater then `pval.threshold`.
@@ -207,6 +215,7 @@ getSimpleError <- function(roughEstimator, x, n, alpha = 0.025){
 collapsePathwaysGeseca <- function(gesecaRes,
                              pathways,
                              E,
+
                              eps=1e-50,
                              checkDepth=10,
                              nproc       = 0,
@@ -236,8 +245,12 @@ collapsePathwaysGeseca <- function(gesecaRes,
         pval1 <- setNames(rep(1, length(pathways)), names(pathways))
         pval2 <- setNames(rep(1, length(pathways)), names(pathways))
 
-        gesecaRes1 <- gesecaSimple(pathways = pathways, E=E[u1, ], nperm = 100, BPPARAM = SerialParam())
-        gesecaRes2 <- gesecaSimple(pathways = pathways, E=E[u2, ], nperm = 100, BPPARAM = SerialParam())
+        gesecaRes1 <- gesecaSimple(pathways = pathways,
+                                   E=E[u1, ], center=FALSE, scale=FALSE,
+                                   nperm = 100, BPPARAM = SerialParam())
+        gesecaRes2 <- gesecaSimple(pathways = pathways,
+                                   E=E[u2, ], center=FALSE, scale=FALSE,
+                                   nperm = 100, BPPARAM = SerialParam())
 
         pval1[gesecaRes1$pathway] <- gesecaRes1$pval
         pval2[gesecaRes2$pathway] <- gesecaRes2$pval
@@ -291,8 +304,12 @@ collapsePathwaysGeseca <- function(gesecaRes,
             eps1 <- max(pvalBound/2, 1e-50)
 
             suppressWarnings({ # warnings about reaching eps
-                gesecaRes1 <- geseca(pathways = list(p=p1), E=E[u1, ], eps=eps1, BPPARAM = SerialParam())
-                gesecaRes2 <- geseca(pathways = list(p=p1), E=E[u2, ], eps=eps1, BPPARAM = SerialParam())
+                gesecaRes1 <- geseca(pathways = list(p=p1),
+                                     E=E[u1, ], center=FALSE, scale=FALSE,
+                                     eps=eps1, BPPARAM = SerialParam())
+                gesecaRes2 <- geseca(pathways = list(p=p1),
+                                     E=E[u2, ], center=FALSE, scale=FALSE,
+                                     eps=eps1, BPPARAM = SerialParam())
             })
 
             pvals <- c(min(gesecaRes1$pval, 1, na.rm=TRUE),
@@ -333,8 +350,12 @@ collapsePathwaysGeseca <- function(gesecaRes,
         u2 <- p2
 
         suppressWarnings({ # warnings about reaching eps
-            gesecaRes1 <- geseca(pathways = list(p=p1), E=E[u1, ], eps=eps, BPPARAM = SerialParam())
-            gesecaRes2 <- geseca(pathways = list(p=p1), E=E[u2, ], eps=eps, BPPARAM = SerialParam())
+            gesecaRes1 <- geseca(pathways = list(p=p1),
+                                 E=E[u1, ], center=FALSE, scale=FALSE,
+                                 eps=eps, BPPARAM = SerialParam())
+            gesecaRes2 <- geseca(pathways = list(p=p1),
+                                 E=E[u2, ], center=FALSE, scale=FALSE,
+                                 eps=eps, BPPARAM = SerialParam())
         })
 
         pvals <- c(min(gesecaRes1$pval, 1, na.rm=TRUE),
@@ -358,6 +379,8 @@ collapsePathwaysGeseca <- function(gesecaRes,
 
     res[, pScore := exp(log(pvalCond) + (log(pval)-log(pvalCond))*(log(pvalCond)/(log(pvalCond)+log(pvalCondReciprocal))))]
     # res[, pScore := sqrt(pval * pvalCond)]
+
+    res <- res[]
 
     return(res)
 }

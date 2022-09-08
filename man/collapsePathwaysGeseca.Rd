@@ -23,6 +23,13 @@ by p-value, for example by selecting ones with padj < 0.01.}
 
 \item{E}{expression matrix, the same as in `geseca()`.}
 
+\item{center}{a logical value indicating whether the gene expression should be centered to have zero mean before the analysis takes place.
+The default is TRUE. The value is passed to \link[base]{scale}.}
+
+\item{scale}{a logical value indicating whether the gene expression should be scaled to have
+unit variance before the analysis takes place.
+The default is FALSE. The value is passed to \link[base]{scale}.}
+
 \item{pval.threshold}{Two pathways are considered dependent when p-value
 of enrichment of one pathways on background of another
 is greater then `pval.threshold`.}
