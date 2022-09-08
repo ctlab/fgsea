@@ -26,14 +26,16 @@ and a spatial transcriptomics dataset.
 ## Overiew of GESECA method
 
 GESECA takes as an input a list of pathways *P* and a gene
-expression matrix *E*.
-For each pathway *p* a score is calculated as:
+expression matrix *E*. 
+By default the matrix is centered, so that the gene values are assumed to zero mean.
 
-$$
-S(p) = \mathrm {Var}(\sum_{g \in p} (E[g]-\mathrm{mean}(E[g]))).
-$$
+Then for each pathway *p* a score is calculated as:
 
-This score correspond to a variance explained by a particular gene set.
+```{r eval=FALSE}
+score <- sum(colSums(E[p, ])**2) / length(p)
+```
+
+This score can be viewed as a variance explained by a particular gene set.
 When the genes are highly correlated with each other, their
 variances are summed up to a high score.
 When the genes are not correlated they cancel each other and the total
@@ -49,7 +51,6 @@ scheme, similar to `fgseaMultilevel` procedure.
 
 In the first example we will consider a time course data of Th2 activation
 from the dataset GSE200250.
-
 
 First, let prepare the dataset. We load it from Gene Expression Omnibus,
 apply log and quantile normalization and filter lowly expressed genes.
@@ -80,7 +81,7 @@ head(exprs(es))
 ```
 
 
-Then we let obtain the pathway list. Here we use Hallmarks
+Then we obtain the pathway list. Here we use Hallmarks
 collection from MSigDB database.
 
 
@@ -129,6 +130,36 @@ function:
 plotGesecaTable(gesecaRes |> head(10), pathways, E=exprs(es), titles = es$title)
 ```
 
+When the expression matrix contains many samples, a PCA-reduced expression matrix
+can be used instead of the full matrix to improve the performance. 
+Let reduce the sample space from `r ncol(es)` to 10 dimensions, preserving as much gene variation as possible.
+
+```{r}
+E <- t(base::scale(t(exprs(es)), scale=FALSE))
+pcaRev <- prcomp(E, center=FALSE)
+Ered <- pcaRev$x[, 1:10]
+dim(Ered)
+```
+
+Now we run GESECA on the reduced matrix, but need to disable automatic centering, as we already have done it before the reduction.
+
+```{r}
+set.seed(1)
+gesecaResRed <- geseca(pathways, Ered, minSize = 15, maxSize = 500, center=FALSE)
+head(gesecaResRed, 10)
+```
+
+The scores and P-values are similar to the ones we obtained for the full matrix.
+
+```{r fig.width=4, fig.height=4}
+library(ggplot2)
+ggplot(data=merge(gesecaRes[, list(pathway, logPvalFull=-log10(pval))],
+                  gesecaResRed[, list(pathway, logPvalRed=-log10(pval))])) +
+    geom_point(aes(x=logPvalFull, y=logPvalRed)) +
+    coord_fixed() + theme_classic()
+```
+
+
 ## Analysis of spatial RNA-seq
 
 As the second example we will consider a spatial transcriptomics dataset
@@ -157,7 +188,7 @@ brain <- LoadData("stxBrain", type = "anterior1")
 ```
 
 
-Apply an appropriate normalization (note that we are using 10000 genes, 
+We apply an appropriate normalization (note that we are using 10000 genes, 
 which will be later used as a gene universe for the analysis):
 
 ```{r}
@@ -166,12 +197,17 @@ brain <- SCTransform(brain, assay = "Spatial", verbose = FALSE, variable.feature
 
 To speed up the analysis, instead of using the full transformed
 gene expression matrix, we will consider only its first 
-principal components:
+principal components. Note that a "reverse" PCA should be done: 
+the principal components should correspond to linear combinations
+of the cells, not linear combinations of the genes as in "normal" PCA.
+By default `SCTransform` returns centered gene expression, so we
+can run PCA directly.
+
 
 ```{r}
-brain <- RunPCA(brain, assay = "SCT", verbose = FALSE, rev.pca = TRUE)
-E <- brain@reductions$pca@feature.loadings
-dim(E)
+brain <- RunPCA(brain, assay = "SCT", verbose = FALSE, 
+                rev.pca = TRUE, reduction.name = "pca.rev", reduction.key="PCR_")
+E <- brain@reductions$pca.rev@feature.loadings
 ```
 
 We will use KEGG pathways as the gene set collection.
@@ -182,12 +218,15 @@ pathwaysDF <- msigdbr("mouse", category="C2", subcategory = "CP:KEGG")
 pathways <- split(pathwaysDF$gene_symbol, pathwaysDF$gs_name)
 ```
 
-Now we can run the analysis:
+Now we can run the analysis (we set `center=FALSE` because we use the 
+reduced matrix):
 
 ```{r message=FALSE}
-library(fgsea)
 set.seed(1)
-gesecaRes <- geseca(pathways, E, minSize = 5, maxSize = 500, scale = FALSE)    
+
+system.time({
+gesecaRes <- geseca(pathways, E, minSize = 15, maxSize = 500, center = FALSE)
+})
 
 head(gesecaRes[order(pval), ], 10)
 ```
@@ -203,9 +242,10 @@ for (ppn in topPathways) {
     pp <- pathways[[ppn]]
     pp <- intersect(pp, rownames(E))
     
-    score <- colSums(brain@assays$SCT@scale.data[pp, ])
+    score <- colSums(brain@assays$SCT@scale.data[pp, ])/sqrt(length(pp))
     brain@meta.data[[ppn]] <- score
 }
 SpatialFeaturePlot(brain, features = topPathways, )
 ```
+
 
