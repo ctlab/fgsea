@@ -18,7 +18,7 @@
 #' fgseaRes <- fgsea(examplePathways, exampleRanks, maxSize=500)
 #' # Testing only one pathway is implemented in a more efficient manner
 #' fgseaRes1 <- fgsea(examplePathways[1], exampleRanks)
-fgsea <- function(pathways, stats, minSize = 1, maxSize = Inf, gseaParam = 1, ...){
+fgsea <- function(pathways, stats, minSize = 1, maxSize = length(stats)-1, gseaParam = 1, ...){
     arguments <- list(...)
     if ("nperm" %in% names(arguments)){
         warning("You are trying to run fgseaSimple. ",
