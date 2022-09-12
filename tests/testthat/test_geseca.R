@@ -20,7 +20,7 @@ test_that("GESECA: works with zero pathways", {
     set.seed(42)
     sampleSize <- 11
 
-    gr1 <- geseca(exampleExpressionMatrix, examplePathways,
+    gr1 <- geseca(pathways=examplePathways, E=exampleExpressionMatrix,
                   sampleSize=sampleSize, minSize=50, maxSize=10)
     expect_equal(nrow(gr1), 0)
 
@@ -36,7 +36,7 @@ test_that("GESECA: throws a warning when there are duplicate gene names", {
     E <- exampleExpressionMatrix
     rownames(E)[1] <- rownames(E)[2]
 
-    expect_warning(geseca(E, examplePathways, minSize=15))
+    expect_warning(geseca(E=E, pathways=examplePathways, minSize=15))
 })
 
 
@@ -45,7 +45,7 @@ test_that("GESECA: The eps parameter works correctly", {
     data("examplePathways")
 
     set.seed(42)
-    expect_warning(gr <- geseca(E=exampleExpressionMatrix, pathways = examplePathways, eps = 1e-10))
+    expect_warning(gr <- geseca(E=exampleExpressionMatrix, pathways=examplePathways, eps=1e-10))
 
     expect_true(all(gr$pval >= 1e-10))
     expect_true(any(is.na(gr$log2err)))
@@ -74,6 +74,6 @@ test_that("GESECA: throws a warning when reaching eps", {
     data("examplePathways")
 
     set.seed(42)
-    expect_warning(gr <- geseca(E=exampleExpressionMatrix, pathways = examplePathways, eps = 1e-10))
+    expect_warning(gr <- geseca(E=exampleExpressionMatrix, pathways=examplePathways, eps=1e-10))
 })
 
