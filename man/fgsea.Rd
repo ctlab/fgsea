@@ -4,7 +4,14 @@
 \alias{fgsea}
 \title{Wrapper to run methods for preranked gene set enrichment analysis.}
 \usage{
-fgsea(pathways, stats, minSize = 1, maxSize = Inf, gseaParam = 1, ...)
+fgsea(
+  pathways,
+  stats,
+  minSize = 1,
+  maxSize = length(stats) - 1,
+  gseaParam = 1,
+  ...
+)
 }
 \arguments{
 \item{pathways}{List of gene sets to check.}

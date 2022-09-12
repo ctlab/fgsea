@@ -190,7 +190,7 @@ getSimpleError <- function(roughEstimator, x, n, alpha = 0.025){
     return(simpleError)
 }
 
-#' Collapse list of enriched pathways to independent ones (GESECA version).
+#' Collapse list of enriched pathways to independent ones (GESECA version, highly experimental).
 #'
 #' @param gesecaRes Table with results of running geseca(), should be filtered
 #'                 by p-value, for example by selecting ones with padj < 0.01.
@@ -202,26 +202,21 @@ getSimpleError <- function(roughEstimator, x, n, alpha = 0.025){
 #' @param scale a logical value indicating whether the gene expression should be scaled to have
 #' unit variance before the analysis takes place.
 #' The default is FALSE. The value is passed to \link[base]{scale}.
-#' @param pval.threshold Two pathways are considered dependent when p-value
-#'                       of enrichment of one pathways on background of another
-#'                       is greater then `pval.threshold`.
-#' @param nperm Number of permutations to test for independence, should be
-#'              several times greater than `1/pval.threhold`.
-#'              Default value: `10/pval.threshold`.
-#' @return Named list with two elments: `mainPathways` containing IDs of pathways
-#'         not reducable to each other, and `parentPathways` with vector describing
-#'         for all the pathways to which ones they can be reduced. For
-#'         pathways from `mainPathwyas` vector `parentPathways` contains `NA` values.
+#' @param eps eps prameter for internal gesecaMultilevel runs. Default: min(c(1e-50, gesecaRes$pval))
+#' @param checkDepth how much pathways to check against
+#' @param nproc If not equal to zero sets BPPARAM to use nproc workers (default = 0).
+#' @param BPPARAM Parallelization parameter used in bplapply.
 collapsePathwaysGeseca <- function(gesecaRes,
                              pathways,
                              E,
-
-                             eps=1e-50,
+                             center      = TRUE,
+                             scale       = FALSE,
+                             eps=min(c(1e-50, gesecaRes$pval)),
                              checkDepth=10,
                              nproc       = 0,
                              BPPARAM     = NULL) {
     universe <- rownames(E)
-    E <- t(scale(t(E), scale = FALSE))
+    E <- t(base::scale(t(E), center=center, scale = scale))
 
     pathways <- pathways[gesecaRes$pathway]
     pathways <- lapply(pathways, intersect, universe)

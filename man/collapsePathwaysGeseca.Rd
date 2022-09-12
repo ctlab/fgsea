@@ -2,13 +2,15 @@
 % Please edit documentation in R/geseca-multilevel.R
 \name{collapsePathwaysGeseca}
 \alias{collapsePathwaysGeseca}
-\title{Collapse list of enriched pathways to independent ones (GESECA version).}
+\title{Collapse list of enriched pathways to independent ones (GESECA version, highly experimental).}
 \usage{
 collapsePathwaysGeseca(
   gesecaRes,
   pathways,
   E,
-  eps = 1e-50,
+  center = TRUE,
+  scale = FALSE,
+  eps = min(c(1e-50, gesecaRes$pval)),
   checkDepth = 10,
   nproc = 0,
   BPPARAM = NULL
@@ -30,20 +32,14 @@ The default is TRUE. The value is passed to \link[base]{scale}.}
 unit variance before the analysis takes place.
 The default is FALSE. The value is passed to \link[base]{scale}.}
 
-\item{pval.threshold}{Two pathways are considered dependent when p-value
-of enrichment of one pathways on background of another
-is greater then `pval.threshold`.}
+\item{eps}{eps prameter for internal gesecaMultilevel runs. Default: min(c(1e-50, gesecaRes$pval))}
 
-\item{nperm}{Number of permutations to test for independence, should be
-several times greater than `1/pval.threhold`.
-Default value: `10/pval.threshold`.}
-}
-\value{
-Named list with two elments: `mainPathways` containing IDs of pathways
-        not reducable to each other, and `parentPathways` with vector describing
-        for all the pathways to which ones they can be reduced. For
-        pathways from `mainPathwyas` vector `parentPathways` contains `NA` values.
+\item{checkDepth}{how much pathways to check against}
+
+\item{nproc}{If not equal to zero sets BPPARAM to use nproc workers (default = 0).}
+
+\item{BPPARAM}{Parallelization parameter used in bplapply.}
 }
 \description{
-Collapse list of enriched pathways to independent ones (GESECA version).
+Collapse list of enriched pathways to independent ones (GESECA version, highly experimental).
 }
