@@ -104,11 +104,14 @@ test_that("Ties detection in ranking works", {
     exampleRanks.ties.zero <- exampleRanks.ties
     exampleRanks.ties.zero[41] <- exampleRanks.ties.zero[42] <- 0
 
-    expect_silent(fgseaSimple(examplePathways, exampleRanks, nperm=100, minSize=10, maxSize=50, nproc=1))
+    expect_silent(fgseaSimple(examplePathways, exampleRanks, nperm=100,
+                              minSize=10, maxSize=50, BPPARAM=SerialParam()))
 
-    expect_warning(fgseaSimple(examplePathways, exampleRanks.ties, nperm=100, minSize=10, maxSize=50, nproc=1))
+    expect_warning(fgseaSimple(examplePathways, exampleRanks.ties, nperm=100,
+                               minSize=10, maxSize=50, BPPARAM=SerialParam()))
 
-    expect_silent(fgseaSimple(examplePathways, exampleRanks.ties.zero, nperm=100, minSize=10, maxSize=50, nproc=1))
+    expect_silent(fgseaSimple(examplePathways, exampleRanks.ties.zero, nperm=100,
+                              minSize=10, maxSize=50, BPPARAM=SerialParam()))
 })
 
 test_that("fgseaSimple throws a warning when there are duplicate gene names", {

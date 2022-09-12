@@ -94,13 +94,13 @@ test_that("fgseaMultilevel: Ties detection in ranking works", {
     exampleRanks.ties.zero[41] <- exampleRanks.ties.zero[42] <- 0
 
     expect_silent(fgseaMultilevel(examplePathways, exampleRanks,
-                                  minSize=10, maxSize=50, nproc=1))
+                                  minSize=10, maxSize=50, BPPARAM=SerialParam()))
 
     expect_warning(fgseaMultilevel(examplePathways, exampleRanks.ties,
-                                   minSize=10, maxSize=50, nproc=1))
+                                   minSize=10, maxSize=50, BPPARAM=SerialParam()))
 
     expect_silent(fgseaMultilevel(examplePathways, exampleRanks.ties.zero,
-                                  minSize=10, maxSize=50, nproc=1))
+                                  minSize=10, maxSize=50, BPPARAM=SerialParam()))
 })
 
 test_that("fgseaMultilevel gives valid P-value for 5990980_Cell_Cycle", {
