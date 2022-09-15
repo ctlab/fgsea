@@ -1,6 +1,8 @@
 ---
 title: "geseca-tutorial"
-output: rmarkdown::html_vignette
+output: 
+    rmarkdown::html_vignette:
+        toc: true
 vignette: >
   %\VignetteIndexEntry{geseca-tutorial}
   %\VignetteEngine{knitr::rmarkdown}
@@ -25,27 +27,54 @@ and a spatial transcriptomics dataset.
 
 ## Overiew of GESECA method
 
-GESECA takes as an input a list of pathways *P* and a gene
-expression matrix *E*. 
-By default the matrix is centered, so that the gene values are assumed to zero mean.
+GESECA takes as an input:
 
-Then for each pathway *p* a score is calculated as:
+* *E* - gene expression matrix, where rows and columns correspond to genes and samples respectively.
+* *P* - list of gene sets (i.e. 
+[hallmark gene sets](http://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp#H)).
+
+**Note**: genes identifier type should be the same for both elements of *P* and for row names of matrix *E*.
+
+By default, GESECA method performs centering for rows of the matrix *E*. 
+So, after that, the gene values are assumed to have zero mean.
+Then for each gene set *p* in *P* let us introduce the gene set score in the following form:
 
 ```{r eval=FALSE}
 score <- sum(colSums(E[p, ])**2) / length(p)
 ```
 
-This score can be viewed as a variance explained by a particular gene set.
-When the genes are highly correlated with each other, their
-variances are summed up to a high score.
-When the genes are not correlated they cancel each other and the total
-gene set variance is low.
+This score was inspired by the variance of principal components 
+from the principal component analysis (PCA).
+Therefore, the given score can be viewed in terms of explained variance by the gene set *p*.
+Geometrically, this can be imagined as an embedding of samples into 
+a one-dimensional space, given by a unit vector in which nonzero 
+positions correspond to genes from gene set *p*.
 
-To asses statistical significance, where a high score is not random
-we calculate an empirical P-value, by comparing the score
-with a scores for random gene sets of the same size. 
-The P-value is calculated with a adaptive multilevel Markov Chain Monte Carlo
-scheme, similar to `fgseaMultilevel` procedure.
+In the case of row-centered matrix *E* the variance of 
+highly correlated genes is summed up to a higher score.
+While the genes that are not correlated cancel each other and the total
+gene set variance is low.
+See the toy example:
+
+![toy example](geseca-vignette-score-toy-example.png){width=90%}
+
+Another major feature of proposed score is that it does not require 
+an explicit sample annotation or a contrast.
+As a result, GESECA can be applied to various types of sequencing technologies:
+RNA-Seq, single-cell sequencing, spatial RNA-seq, etc.
+
+To assess statistical significance for a given gene set *p* we calculate 
+an empirical P-value by using gene permutations.
+The definition of the P-value is given by the following expression:
+\[
+    \mathrm{P} \left(\text{random score} \geqslant \text{score of p} \right).
+\]
+The estimation of the given P-value is done by sampling random gene sets 
+with the same size as *p* from the row names of matrix *E*.
+In practice, the theoretical P-value can be extremely small, 
+so we use the adaptive multilevel Markov Chain Monte Carlo scheme,
+that we used previously in `fgseaMultilevel` procedure.
+For more details, see the [preprint](https://www.biorxiv.org/content/10.1101/060012v3).
 
 ## Analysis of time course data
 
@@ -247,5 +276,6 @@ for (ppn in topPathways) {
 }
 SpatialFeaturePlot(brain, features = topPathways, )
 ```
+
 
 
