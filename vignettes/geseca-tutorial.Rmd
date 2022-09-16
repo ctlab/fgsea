@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 This vignette describes GESECA (gene set co-regulation analysis): a method
 to identify gene sets that have high gene correlation.
 We will show how GESECA can be used to find regulated pathways
-in high-dimensional data, where there is no obvious contrast that 
+in multi-conditional data, where there is no obvious contrast that 
 can be used to rank genes for GSEA analysis.
 As examples we will consider a time course microarray experiment 
 and a spatial transcriptomics dataset.
@@ -46,7 +46,7 @@ score <- sum(colSums(E[p, ])**2) / length(p)
 This score was inspired by the variance of principal components 
 from the principal component analysis (PCA).
 Therefore, the given score can be viewed in terms of explained variance by the gene set *p*.
-Geometrically, this can be imagined as an embedding of samples into 
+Geometrically, this can be considered as an embedding of samples into 
 a one-dimensional space, given by a unit vector in which nonzero 
 positions correspond to genes from gene set *p*.
 
@@ -56,12 +56,11 @@ While the genes that are not correlated cancel each other and the total
 gene set variance is low.
 See the toy example:
 
-![toy example](geseca-vignette-score-toy-example.png){width=90%}
+![Toy example of GESECA score calculation](geseca-vignette-score-toy-example.png){width=90%}
 
-Another major feature of proposed score is that it does not require 
+Another major feature of the proposed score is that it does not require 
 an explicit sample annotation or a contrast.
-As a result, GESECA can be applied to various types of sequencing technologies:
-RNA-Seq, single-cell sequencing, spatial RNA-seq, etc.
+As the result, GESECA can be applied to various types of sequencing technologies: RNA-seq, single-cell sequencing, spatial RNA-seq, etc.
 
 To assess statistical significance for a given gene set *p* we calculate 
 an empirical P-value by using gene permutations.
@@ -145,7 +144,7 @@ plotCoregulationProfile(pathway=pathways[["HALLMARK_E2F_TARGETS"]],
 Hypoxia genes have slightly different profile, getting activated around 48 hours:
 
 
-```{r fig.width=7, fig.height=4}
+```{r fig.width=10, fig.height=4, out.width="100%"}
 plotCoregulationProfile(pathway=pathways[["HALLMARK_HYPOXIA"]], 
                         E=exprs(es), titles = es$title, conditions=es$`time point:ch1`)
 
@@ -155,7 +154,7 @@ plotCoregulationProfile(pathway=pathways[["HALLMARK_HYPOXIA"]],
 To get an overview of the top pathway patterns we can use `plotGesecaTable`
 function:
 
-```{r fig.width=7, fig.height=6}
+```{r fig.width=10, fig.height=6, out.width="100%"}
 plotGesecaTable(gesecaRes |> head(10), pathways, E=exprs(es), titles = es$title)
 ```
 
@@ -170,7 +169,7 @@ Ered <- pcaRev$x[, 1:10]
 dim(Ered)
 ```
 
-Now we run GESECA on the reduced matrix, but need to disable automatic centering, as we already have done it before the reduction.
+Now we can run GESECA on the reduced matrix, however we need to disable automatic centering, as we already have done it before the reduction.
 
 ```{r}
 set.seed(1)
@@ -263,7 +262,7 @@ head(gesecaRes[order(pval), ], 10)
 Finally, let us plot spatial expression of the top four pathways:
 
 
-```{r fig.width=8, fig.height=8}
+```{r fig.width=8, fig.height=8, out.width="100%"}
 
 topPathways <- gesecaRes[, pathway] |> head(4)
 
