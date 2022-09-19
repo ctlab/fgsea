@@ -1,3 +1,8 @@
+CHANGES IN VERSION 1.21.3
+* Introduced GESECA method for multi-conditional gene set enrichment (see geseca-tutorial vignette for details)
+* Enrichment table plots now use cowplot (issue #101)
+* Enrichment table plots are more easily fine-tuned (issue #29)
+
 CHANGES IN VERSION 1.21.1
 * fix a reproducibility problem (https://github.com/ctlab/fgsea/issues/110)
 

@@ -207,7 +207,7 @@ SeuratData::InstallData("stxBrain")
 
 Now we can load the data:
 
-```{r message=FALSE}
+```{r message=FALSE, eval=FALSE}
 library(Seurat)
 library(SeuratData)
 library(ggplot2)
@@ -219,7 +219,7 @@ brain <- LoadData("stxBrain", type = "anterior1")
 We apply an appropriate normalization (note that we are using 10000 genes, 
 which will be later used as a gene universe for the analysis):
 
-```{r}
+```{r eval=FALSE}
 brain <- SCTransform(brain, assay = "Spatial", verbose = FALSE, variable.features.n = 10000)
 ```
 
@@ -232,7 +232,7 @@ By default `SCTransform` returns centered gene expression, so we
 can run PCA directly.
 
 
-```{r}
+```{r eval=FALSE}
 brain <- RunPCA(brain, assay = "SCT", verbose = FALSE, 
                 rev.pca = TRUE, reduction.name = "pca.rev", reduction.key="PCR_")
 E <- brain@reductions$pca.rev@feature.loadings
@@ -240,7 +240,7 @@ E <- brain@reductions$pca.rev@feature.loadings
 
 We will use KEGG pathways as the gene set collection.
 
-```{r}
+```{r eval=FALSE}
 library(msigdbr)
 pathwaysDF <- msigdbr("mouse", category="C2", subcategory = "CP:KEGG")
 pathways <- split(pathwaysDF$gene_symbol, pathwaysDF$gs_name)
@@ -249,20 +249,15 @@ pathways <- split(pathwaysDF$gene_symbol, pathwaysDF$gs_name)
 Now we can run the analysis (we set `center=FALSE` because we use the 
 reduced matrix):
 
-```{r message=FALSE}
+```{r message=FALSE, eval=FALSE}
 set.seed(1)
 
-system.time({
 gesecaRes <- geseca(pathways, E, minSize = 15, maxSize = 500, center = FALSE)
-})
-
-head(gesecaRes[order(pval), ], 10)
 ```
 
 Finally, let us plot spatial expression of the top four pathways:
 
-
-```{r fig.width=8, fig.height=8, out.width="100%"}
+```{r fig.width=8, fig.height=8, out.width="100%", eval=FALSE}
 
 topPathways <- gesecaRes[, pathway] |> head(4)
 
@@ -276,5 +271,5 @@ for (ppn in topPathways) {
 SpatialFeaturePlot(brain, features = topPathways, )
 ```
 
-
+![](geseca-spatial-top.png){width=100%}
 

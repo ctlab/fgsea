@@ -151,7 +151,7 @@ pathways <- gmtPathways(gmt.file)
 str(head(pathways))
 ```
 
-And runnig fgsea:
+And running fgsea:
 
 ```{r warning=FALSE}
 fgseaRes <- fgsea(pathways, ranks, minSize=15, maxSize=500)
