@@ -6,8 +6,9 @@ using namespace Rcpp;
 
 ScoreRuler::ScoreRuler(const std::vector<std::vector<float> > & inpE,
                        unsigned inpSampleSize, unsigned inpGenesetSize):
+        n(inpE.size()), m(inpE[0].size()),
         sampleSize(inpSampleSize),
-        genesetSize(inpGenesetSize), n(inpE.size()), m(inpE[0].size()),
+        genesetSize(inpGenesetSize),
         itersPerStep(std::max(unsigned(1), unsigned(inpGenesetSize * upPrmtr))) {
     currentSample.resize(inpSampleSize);
     currentProfiles.resize(inpSampleSize);

@@ -40,10 +40,10 @@ See `cowplot::draw_text` for possible options.}
 
 \item{valueStyle}{similar to `pathwayLabelStyle` but for NES and p-value columns.}
 
-\item{render}{(deprecated)}
-
-\item{axisLabelStlye}{list with style parameter adjustments for stats axis labels.
+\item{axisLabelStyle}{list with style parameter adjustments for stats axis labels.
 See `ggplot2::element_text` for possible options.}
+
+\item{render}{(deprecated)}
 }
 \value{
 ggplot object with enrichment barcode plots

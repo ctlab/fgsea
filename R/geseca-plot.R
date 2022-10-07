@@ -71,13 +71,16 @@ plotCoregulationProfile <- function(pathway, E,
 #' @param colwidths Vector of five elements corresponding to column width for
 #'      grid.arrange. Can be both units and simple numeric vector, in latter case
 #'      it defines proportions, not actual sizes. If column width is set to zero, the column is not drawn.
+#' @param titles sample titles to use an axis labels. Default to `colnames(E)`
 #' @param pathwayLabelStyle list with style parameter adjustments for pathway labels.
 #'      For example, `list(size=10, color="red")` set the font size to 10 and color to red.
 #'      See `cowplot::draw_text` for possible options.
 #' @param headerLabelStyle similar to `pathwayLabelStyle` but for the table header.
 #' @param valueStyle similar to `pathwayLabelStyle` but for pctVar and p-value columns.
-#' @param axisLabelStlye list with style parameter adjustments for sample labels.
+#' @param axisLabelStyle list with style parameter adjustments for sample labels.
 #'      See `ggplot2::element_text` for possible options.
+#' @param axisLabelHeightScale height of the row with axis labels compared to other rows.
+#'      When set to `NULL` the value is determined automatically.
 #' @return ggplot object with gene set profile plots
 #' @import ggplot2
 #' @import cowplot

@@ -1,5 +1,5 @@
 ---
-title: "geseca-tutorial"
+title: "Gene set co-regulation analysis tutorial"
 output: 
     rmarkdown::html_vignette:
         toc: true

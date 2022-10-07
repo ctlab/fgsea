@@ -1,6 +1,6 @@
 Package: fgsea
 Title: Fast Gene Set Enrichment Analysis
-Version: 1.23.2
+Version: 1.23.4
 Authors@R: c(person("Gennady", "Korotkevich", role = "aut"),
              person("Vladimir", "Sukhov", role = "aut"),
              person("Nikolay", "Budin", role = "ctb"),
@@ -34,7 +34,8 @@ Suggests:
     org.Mm.eg.db,
     limma,
     GEOquery,
-    msigdbr
+    msigdbr,
+    aggregation
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp, BH

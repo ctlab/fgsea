@@ -13,7 +13,7 @@ valueToExpExpression <- function(val, log2err=NULL) {
     if (is.null(log2err)) {
         y <- as.character(a)
     } else {
-        y <- sprintf("%s±%.2f", a, log2err / log2(10))
+        y <- sprintf("%s\u00B1%.2f", a, log2err / log2(10))
     }
 
     as.expression(substitute(x ^ y, list(y=y,  x=x)))
@@ -35,7 +35,7 @@ valueToExpExpression <- function(val, log2err=NULL) {
 #'      See `cowplot::draw_text` for possible options.
 #' @param headerLabelStyle similar to `pathwayLabelStyle` but for the table header.
 #' @param valueStyle similar to `pathwayLabelStyle` but for NES and p-value columns.
-#' @param axisLabelStlye list with style parameter adjustments for stats axis labels.
+#' @param axisLabelStyle list with style parameter adjustments for stats axis labels.
 #'      See `ggplot2::element_text` for possible options.
 #' @param render (deprecated)
 #' @return ggplot object with enrichment barcode plots
