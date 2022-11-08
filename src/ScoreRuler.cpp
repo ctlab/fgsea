@@ -79,6 +79,10 @@ void ScoreRuler::extend(double inpScore, int seed, double eps) {
                                        scores.back(), mtGen);
                 totalIters += itersPerStep;
             }
+
+            if (double(moves)/totalIters < 0.01) {
+                break;
+            }
         }
 
         if (double(moves)/totalIters < 0.01) {
