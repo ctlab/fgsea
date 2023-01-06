@@ -186,6 +186,7 @@ plotEnrichment <- function(pathway, stats,
 
     pathway <- unname(as.vector(na.omit(match(pathway, names(statsAdj)))))
     pathway <- sort(pathway)
+    pathway <- unique(pathway)
 
     gseaRes <- calcGseaStat(statsAdj, selectedStats = pathway,
                             returnAllExtremes = TRUE)

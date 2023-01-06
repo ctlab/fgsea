@@ -130,6 +130,7 @@ calcGseaStat <- function(stats,
     p <- gseaParam
 
     S <- sort(S)
+    stopifnot(all(head(S, -1) < tail(S, -1)))
 
     m <- length(S)
     N <- length(r)
