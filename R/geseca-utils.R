@@ -39,6 +39,7 @@ gesecaPreparePathways <- function(E, pathways, minSize, maxSize){
 # E should be row-centered
 calcGesecaScores <- function(indxs, E){
     return(sum(colSums(E[indxs, ])**2))
+    # return(sum(abs(colSums(E[indxs, ]))))
 }
 
 # E should be row-centered
@@ -55,4 +56,19 @@ getGesecaLeadingEdge <- function(indxs, E, extend=FALSE, sort=TRUE) {
         weights <- base::sort(weights, decreasing = TRUE)
     }
     return(names(weights[weights >= 0.5]))
+}
+
+# E should be row-centered
+getGesecaLeadingEdge2 <- function(genes, E, extend=FALSE, sort=TRUE) {
+    genes <- intersect(genes, rownames(E))
+    profile <- colSums(E[genes, ])
+    profile <- profile / sqrt(sum(profile**2))
+
+    weights <- (E %*% profile)[,1]
+    weights <- sort(weights, decreasing=TRUE)
+    res <- calcGseaStat(stats = weights,
+                 selectedStats = fmatch(genes, names(weights)),
+                 returnLeadingEdge = TRUE, scoreType = "pos")$leadingEdge
+    res <- names(weights)[res]
+    return(res)
 }
