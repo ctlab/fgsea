@@ -208,3 +208,54 @@ plotGesecaTable <- function(gesecaRes,
 
     p
 }
+
+#' Plot a spatial expression profile of a gene set
+#' @param pathway Gene set to plot or a list of gene sets (see details below)
+#' @param object Seurat object
+#' @param title plot title
+#' @param assary assay to use for obtaining scaled data, preferably with
+#' the same universe of genes in the scaled data
+#' @return ggplot object (or a list of objects) with the coregulation profile plot
+#'
+#' When the input is a list of pathways, pathway names are used for titles.
+#' A list of ggplot objects a returned in that case.
+#
+#' @import ggplot2
+#' @export
+plotCoregulationProfileSpatial <- function(pathway, object, title=NULL, assay=DefaultAssay(object)) {
+    stopifnot(requireNamespace("Seurat"))
+    if (is.list(pathway)) {
+        ps <- lapply(seq_along(pathway), function(i)
+            plotCoregulationProfileSpatial(pathway[[i]],
+                                           object=object,
+                                           title=names(pathway)[i],
+                                           assay=assay))
+        names(ps) <- names(pathway)
+        return(ps)
+    }
+    x <- GetAssay(object, assay)
+    E <- x@scale.data
+
+    pathway <- intersect(pathway, rownames(E))
+
+    score <- colSums(E[pathway, ])/sqrt(length(pathway))
+    score <- scale(score)
+    score <- pmax(pmin(score, 3), -3)
+    obj2 <- object
+    obj2@meta.data[["pathway"]] <- score
+
+    p <- Seurat::SpatialFeaturePlot(obj2, features = "pathway",
+                            combine = FALSE, image.alpha = 0)[[1]]
+    p$scales$scales[p$scales$find("fill")] <- NULL
+
+    p2 <- p +
+        scale_fill_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
+                             colors=c("blue", "lightgrey", "red"),
+                             guide = "none"
+        )
+
+    if (!is.null(title)) {
+        p2 <- p2 + ggtitle(title)
+    }
+    p2
+}
