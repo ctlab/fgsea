@@ -224,6 +224,7 @@ plotGesecaTable <- function(gesecaRes,
 #' @export
 plotCoregulationProfileSpatial <- function(pathway, object, title=NULL, assay=DefaultAssay(object)) {
     stopifnot(requireNamespace("Seurat"))
+    # TODO duplicated code with plotCoregulationProfileReduction
     if (is.list(pathway)) {
         ps <- lapply(seq_along(pathway), function(i)
             plotCoregulationProfileSpatial(pathway[[i]],
@@ -233,26 +234,114 @@ plotCoregulationProfileSpatial <- function(pathway, object, title=NULL, assay=De
         names(ps) <- names(pathway)
         return(ps)
     }
+
+
+
+    obj2 <- addGesecaScores(list(pathway=pathway), object, assay=assay,
+                            scale=TRUE)
+
+    p <- Seurat::SpatialFeaturePlot(obj2, features = "pathway",
+                                    combine = FALSE, image.alpha = 0)[[1]]
+    p$scales$scales[p$scales$find("fill")] <- NULL
+
+    # suppress message of replacing existing color palette
+    suppressMessages({
+        p2 <- p +
+            scale_fill_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
+                                 colors=c("blue", "lightgrey", "red"),
+                                 guide = "none"
+            )
+    })
+
+    if (!is.null(title)) {
+        p2 <- p2 + ggtitle(title)
+    }
+    p2
+}
+
+addGesecaScores <- function(pathways,
+                            object,
+                            assay=DefaultAssay(object),
+                            prefix="",
+                            scale=FALSE) {
     x <- GetAssay(object, assay)
     E <- x@scale.data
 
-    pathway <- intersect(pathway, rownames(E))
+    res <- object
 
-    score <- colSums(E[pathway, ])/sqrt(length(pathway))
-    score <- scale(score)
-    score <- pmax(pmin(score, 3), -3)
-    obj2 <- object
-    obj2@meta.data[["pathway"]] <- score
 
-    p <- Seurat::SpatialFeaturePlot(obj2, features = "pathway",
-                            combine = FALSE, image.alpha = 0)[[1]]
-    p$scales$scales[p$scales$find("fill")] <- NULL
+    for (i in seq_along(pathways)) {
+        pathway <- pathways[[i]]
+        pathway <- intersect(unique(pathway), rownames(E))
 
-    p2 <- p +
-        scale_fill_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
-                             colors=c("blue", "lightgrey", "red"),
-                             guide = "none"
-        )
+        score <- colSums(E[pathway, ])/sqrt(length(pathway))
+        score <- scale(score, center=TRUE, scale=scale)
+        res@meta.data[[paste0(prefix, names(pathways)[i])]] <- score
+    }
+
+
+    return(res)
+}
+
+#' Plot a spatial expression profile of a gene set
+#' @param pathway Gene set to plot or a list of gene sets (see details below)
+#' @param object Seurat object
+#' @param title plot title
+#' @param assary assay to use for obtaining scaled data, preferably with
+#' @param reduction reduction to use for plotting (one of the `Seurat::Reductions(object)`)
+#' @param colors vector of three colors to use in the color scheme
+#' @param guide option for `ggplot2::scale_color_gradientn` to control for presence of the color legend
+#' the same universe of genes in the scaled data
+#' @return ggplot object (or a list of objects) with the coregulation profile plot
+#'
+#' When the input is a list of pathways, pathway names are used for titles.
+#' A list of ggplot objects a returned in that case.
+#
+#' @import ggplot2
+#' @export
+plotCoregulationProfileReduction <- function(pathway, object, title=NULL,
+                                             assay=DefaultAssay(object),
+                                             reduction=NULL,
+                                             colors=c("darkblue", "lightgrey", "darkred"),
+                                             guide="colourbar",
+                                             ...) {
+    stopifnot(requireNamespace("Seurat"))
+
+    if (is.list(pathway)) {
+        if (is.null(title)) {
+            titles <- names(pathway)
+        } else {
+            if (length(title) != length(pathway)) {
+                stop("Length of the specified titles does not match count of pathways")
+            }
+            titles <- title
+        }
+        ps <- lapply(seq_along(pathway), function(i)
+            plotCoregulationProfileReduction(pathway[[i]],
+                                           object=object,
+                                           title=titles[i],
+                                           assay=assay,
+                                           reduction=reduction,
+                                           colors=colors,
+                                           guide=guide,
+                                           ...))
+        names(ps) <- names(pathway)
+        return(ps)
+    }
+
+    obj2 <- addGesecaScores(list(pathway=pathway), object, assay=assay,
+                            scale=TRUE)
+
+    p <- Seurat::FeaturePlot(obj2, features = "pathway",
+                                    combine = FALSE, reduction=reduction, ...)[[1]]
+    p$scales$scales[p$scales$find("color")] <- NULL
+
+    # suppress message of replacing existing color palette
+    suppressMessages(p2 <- p +
+        scale_color_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
+                             colors=colors,
+                             guide=guide
+        ))
 
     if (!is.null(title)) {
         p2 <- p2 + ggtitle(title)

@@ -188,6 +188,106 @@ ggplot(data=merge(gesecaRes[, list(pathway, logPvalFull=-log10(pval))],
 ```
 
 
+## Analysis of single-cell RNA-seq
+
+Les us load neccesary libraries. We a going to use `Seurat` package for working with singe cell data.
+
+```{r}
+library(Seurat)
+```
+
+As an example dataset we will use GSE116240 (https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE116240).
+The dataset features single cell RNA sequencing of aortic CD45+ cells 
+and foam cells from atherosclerotic aorta and is extensively described 
+in the corresponding publication (https://pubmed.ncbi.nlm.nih.gov/30359200/).
+We also thank the authors for providing the corresponding Seurat object
+used for the publication.
+
+```{r}
+obj <- readRDS(url("https://ctlab.itmo.ru/files/software/fgsea/GSE116240.rds"))
+obj
+
+newIds <- c("0"="Adventitial MF",
+            "3"="Adventitial MF",
+            "5"="Adventitial MF",
+            "1"="Intimal non-foamy MF",
+            "2"="Intimal non-foamy MF",
+            "4"="Intimal foamy MF",
+            "7"="ISG+ MF",
+            "8"="Proliferating cells",
+            "9"="T-cells",
+            "6"="cDC1",
+            "10"="cDC2",
+            "11"="Non-immune cells")
+
+obj <- RenameIdents(obj, newIds)
+
+DimPlot(obj)
+```
+
+We apply an appropriate normalization (note that we are using 10000 genes, 
+which will be later used as a gene universe for the analysis):
+
+```{r eval=FALSE}
+obj <- SCTransform(obj, verbose = FALSE, variable.features.n = 10000)
+```
+
+To speed up the analysis, instead of using the full transformed
+gene expression matrix, we will consider only its first 
+principal components. Note that a "reverse" PCA should be done: 
+the principal components should correspond to linear combinations
+of the cells, not linear combinations of the genes as in "normal" PCA.
+By default `SCTransform` returns centered gene expression, so we
+can run PCA directly.
+
+```{r eval=FALSE}
+length(VariableFeatures(obj)) # make sure it's a full gene universe of 10000 genes
+obj <- RunPCA(obj, assay = "SCT", verbose = FALSE,
+                rev.pca = TRUE, reduction.name = "pca.rev",
+              reduction.key="PCR_", npcs = 50)
+
+E <- obj@reductions$pca.rev@feature.loadings
+```
+
+Following the authors we are going to use KEGG pathway collection.
+
+```{r}
+library(msigdbr)
+
+pathwaysDF <- msigdbr("mouse", category="C2", subcategory = "CP:KEGG")
+pathways <- split(pathwaysDF$gene_symbol, pathwaysDF$gs_name)
+```
+
+Now we can run the analysis (we set `center=FALSE` because we use the 
+reduced matrix):
+
+
+```{r}
+set.seed(1)
+gesecaRes <- geseca(pathways, E, minSize = 5, maxSize = 500, center = FALSE, eps=1e-100)
+
+head(gesecaRes, 10)
+```
+
+
+Now we can plot profiles of the top pathways (we need to specify the reduction
+as we are using the one from the publication):
+
+```{r}
+topPathways <- gesecaRes[, pathway] |> head(4)
+titles <- sub("KEGG_", "", topPathways)
+
+ps <- plotCoregulationProfileReduction(pathways[topPathways], obj,
+                                       title=titles,
+                                       reduction="tsne")
+cowplot::plot_grid(plotlist=ps[1:4], ncol=2)
+```
+
+We can see that inflammatory pathways (e.g. KEGG_LEISHMANIA_INFECTION) are 
+more associated with non-foamy intimal macrophages, which was one of the
+main points of the Kim et al.
+
+
 ## Analysis of spatial RNA-seq
 
 As the second example we will consider a spatial transcriptomics dataset
@@ -211,7 +311,6 @@ Now we can load the data:
 library(Seurat)
 library(SeuratData)
 library(ggplot2)
-library(patchwork)
 brain <- LoadData("stxBrain", type = "anterior1")
 ```
 
@@ -261,14 +360,9 @@ Finally, let us plot spatial expression of the top four pathways:
 
 topPathways <- gesecaRes[, pathway] |> head(4)
 
-for (ppn in topPathways) {
-    pp <- pathways[[ppn]]
-    pp <- intersect(pp, rownames(E))
-    
-    score <- colSums(brain@assays$SCT@scale.data[pp, ])/sqrt(length(pp))
-    brain@meta.data[[ppn]] <- score
-}
-SpatialFeaturePlot(brain, features = topPathways, )
+ps <- plotCoregulationProfileSpatial(pathways[topPathways], brain,
+                                       title=titles)
+cowplot::plot_grid(plotlist=ps[1:4], ncol=2)
 ```
 
 ![](geseca-spatial-top.png){width=100%}
