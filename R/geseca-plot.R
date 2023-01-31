@@ -222,7 +222,11 @@ plotGesecaTable <- function(gesecaRes,
 #
 #' @import ggplot2
 #' @export
-plotCoregulationProfileSpatial <- function(pathway, object, title=NULL, assay=DefaultAssay(object)) {
+plotCoregulationProfileSpatial <- function(pathway,
+                                           object,
+                                           title=NULL,
+                                           assay=DefaultAssay(object),
+                                           colors=c("darkblue", "lightgrey", "darkred")) {
     stopifnot(requireNamespace("Seurat"))
     # TODO duplicated code with plotCoregulationProfileReduction
     if (is.list(pathway)) {
@@ -248,7 +252,8 @@ plotCoregulationProfileSpatial <- function(pathway, object, title=NULL, assay=De
     suppressMessages({
         p2 <- p +
             scale_fill_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
-                                 colors=c("blue", "lightgrey", "red"),
+                                 oob=scales::squish,
+                                 colors=colors,
                                  guide = "none"
             )
     })
@@ -340,6 +345,7 @@ plotCoregulationProfileReduction <- function(pathway, object, title=NULL,
     suppressMessages(p2 <- p +
         scale_color_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
                              colors=colors,
+                             oob=scales::squish,
                              guide=guide
         ))
 
