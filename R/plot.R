@@ -159,7 +159,88 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
     p
 }
 
-#' Plots GSEA enrichment plot.
+
+#' Returns data required for doing an enrichment plot.
+#' @param pathway Gene set to plot.
+#' @param stats Gene-level statistics.
+#' @param gseaParam GSEA parameter.
+#' @return returns list with the following data:
+#' * `curve` - data.table with the coordinates of the enrichment curve;
+#' * `ticks` - data.table with statistic entries for each pathway gene,adjusted with gseaParam;
+#' * `stats` - data.table with statistic values for all of the genes, adjusted with gseaParam;
+#' * `posES`, `negES`, `spreadES` - values of the positive enrichment score,
+#'  negative enrichment score, and difference between them;
+#' * `maxAbsStat` - maximal absolute value of statistic entries, adjusted with gseaParam
+#' @export
+#' @examples
+#' data(examplePathways)
+#' data(exampleRanks)
+#'
+#' pd <- plotEnrichmentData(
+#'     pathway = examplePathways[["5991130_Programmed_Cell_Death"]],
+#'     stats = exampleRanks
+#' )
+#'
+#' with(pd,
+#'      ggplot(data=curve) +
+#'          geom_line(aes(x=rank, y=ES), color="green") +
+#'          geom_ribbon(data=stats,
+#'                      mapping=aes(x=rank, ymin=0,
+#'                                  ymax=stat/maxAbsStat*(spreadES/4)),
+#'                      fill="grey") +
+#'          geom_segment(data=ticks,
+#'                       mapping=aes(x=rank, y=-spreadES/16,
+#'                                   xend=rank, yend=spreadES/16),
+#'                       size=0.2) +
+#'          geom_hline(yintercept=posES, colour="red", linetype="dashed") +
+#'          geom_hline(yintercept=negES, colour="red", linetype="dashed") +
+#'          geom_hline(yintercept=0, colour="black") +
+#'          theme(
+#'              panel.background = element_blank(),
+#'              panel.grid.major=element_line(color="grey92")
+#'          ) +
+#'          labs(x="rank", y="enrichment score"))
+plotEnrichmentData <- function(pathway, stats,
+                              gseaParam=1) {
+
+    if (any(!is.finite(stats))){
+        stop("Not all stats values are finite numbers")
+    }
+
+    rnk <- rank(-stats)
+    ord <- order(rnk)
+
+    statsAdj <- stats[ord]
+    statsAdj <- sign(statsAdj) * (abs(statsAdj) ^ gseaParam)
+
+    pathway <- unname(as.vector(na.omit(match(pathway, names(statsAdj)))))
+    pathway <- sort(pathway)
+    pathway <- unique(pathway)
+
+    gseaRes <- calcGseaStat(statsAdj, selectedStats = pathway,
+                                   returnAllExtremes = TRUE)
+
+    bottoms <- gseaRes$bottoms
+    tops <- gseaRes$tops
+
+    n <- length(statsAdj)
+    xs <- as.vector(rbind(pathway - 1, pathway))
+    ys <- as.vector(rbind(bottoms, tops))
+    toPlot <- data.table(rank=c(0, xs, n + 1), ES=c(0, ys, 0))
+    ticks <- data.table(rank=pathway, stat=statsAdj[pathway])
+    stats <- data.table(rank=seq_along(stats), stat=statsAdj)
+
+    res <- list(
+        curve=toPlot,
+        ticks=ticks,
+        stats=stats,
+        posES=max(tops),
+        negES=min(bottoms),
+        spreadES=max(tops)-min(bottoms),
+        maxAbsStat=max(abs(statsAdj)))
+}
+
+#' Plots GSEA enrichment plot. For more flexibility use `plotEnrichmentData` function.
 #' @param pathway Gene set to plot.
 #' @param stats Gene-level statistics.
 #' @param gseaParam GSEA parameter.
@@ -177,47 +258,24 @@ plotEnrichment <- function(pathway, stats,
                           gseaParam=1,
                           ticksSize=0.2) {
 
-    rnk <- rank(-stats)
-    ord <- order(rnk)
+    pd <- plotEnrichmentData(
+        pathway = pathway,
+        stats = stats,
+        gseaParam = gseaParam)
 
-    statsAdj <- stats[ord]
-    statsAdj <- sign(statsAdj) * (abs(statsAdj) ^ gseaParam)
-    statsAdj <- statsAdj / max(abs(statsAdj))
-
-    pathway <- unname(as.vector(na.omit(match(pathway, names(statsAdj)))))
-    pathway <- sort(pathway)
-    pathway <- unique(pathway)
-
-    gseaRes <- calcGseaStat(statsAdj, selectedStats = pathway,
-                            returnAllExtremes = TRUE)
-
-    bottoms <- gseaRes$bottoms
-    tops <- gseaRes$tops
-
-    n <- length(statsAdj)
-    xs <- as.vector(rbind(pathway - 1, pathway))
-    ys <- as.vector(rbind(bottoms, tops))
-    toPlot <- data.frame(x=c(0, xs, n + 1), y=c(0, ys, 0))
-
-    diff <- (max(tops) - min(bottoms)) / 8
-
-    # Getting rid of NOTEs
-    x=y=NULL
-    g <- ggplot(toPlot, aes(x=x, y=y)) +
-        geom_point(color="green", size=0.1) +
-        geom_hline(yintercept=max(tops), colour="red", linetype="dashed") +
-        geom_hline(yintercept=min(bottoms), colour="red", linetype="dashed") +
-        geom_hline(yintercept=0, colour="black") +
-        geom_line(color="green") + theme_bw() +
-        geom_segment(data=data.frame(x=pathway),
-                     mapping=aes(x=x, y=-diff/2,
-                                 xend=x, yend=diff/2),
-                     size=ticksSize) +
-
-        theme(panel.border=element_blank(),
-              panel.grid.minor=element_blank()) +
-
-        labs(x="rank", y="enrichment score")
-    g
+    with(pd,
+         ggplot(data=curve) +
+             geom_line(aes(x=rank, y=ES), color="green") +
+             geom_segment(data=ticks,
+                          mapping=aes(x=rank, y=-spreadES/16,
+                                      xend=rank, yend=spreadES/16),
+                          linewidth=ticksSize) +
+             geom_hline(yintercept=posES, colour="red", linetype="dashed") +
+             geom_hline(yintercept=negES, colour="red", linetype="dashed") +
+             geom_hline(yintercept=0, colour="black") +
+             theme(
+                 panel.background = element_blank(),
+                 panel.grid.major=element_line(color="grey92")
+             ) +
+             labs(x="rank", y="enrichment score"))
 }
-

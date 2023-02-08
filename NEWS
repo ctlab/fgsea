@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.25.1
+* introduced plotEnrichmentData() function for more flexible plotting
+
 CHANGES IN VERSION 1.23.1
 * Introduced GESECA method for multi-conditional gene set enrichment (see geseca-tutorial vignette for details)
 * Enrichment table plots now use cowplot (issue #101)
