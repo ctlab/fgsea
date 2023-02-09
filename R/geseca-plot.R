@@ -255,7 +255,6 @@ plotCoregulationProfileSpatial <- function(pathway,
 
     p <- Seurat::SpatialFeaturePlot(obj2, features = "pathway",
                                     combine = FALSE, image.alpha = 0)[[1]]
-    p <- p + coord_fixed()
     p$scales$scales[p$scales$find("fill")] <- NULL
 
     # suppress message of replacing existing color palette
