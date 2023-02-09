@@ -230,11 +230,20 @@ plotCoregulationProfileSpatial <- function(pathway,
     stopifnot(requireNamespace("Seurat"))
     # TODO duplicated code with plotCoregulationProfileReduction
     if (is.list(pathway)) {
+        if (is.null(title)) {
+            titles <- names(pathway)
+        } else {
+            if (length(title) != length(pathway)) {
+                stop("Length of the specified titles does not match count of pathways")
+            }
+            titles <- title
+        }
         ps <- lapply(seq_along(pathway), function(i)
             plotCoregulationProfileSpatial(pathway[[i]],
                                            object=object,
-                                           title=names(pathway)[i],
-                                           assay=assay))
+                                           title=titles[i],
+                                           assay=assay,
+                                           colors=colors))
         names(ps) <- names(pathway)
         return(ps)
     }
@@ -246,6 +255,7 @@ plotCoregulationProfileSpatial <- function(pathway,
 
     p <- Seurat::SpatialFeaturePlot(obj2, features = "pathway",
                                     combine = FALSE, image.alpha = 0)[[1]]
+    p <- p + coord_fixed()
     p$scales$scales[p$scales$find("fill")] <- NULL
 
     # suppress message of replacing existing color palette
@@ -339,6 +349,7 @@ plotCoregulationProfileReduction <- function(pathway, object, title=NULL,
 
     p <- Seurat::FeaturePlot(obj2, features = "pathway",
                                     combine = FALSE, reduction=reduction, ...)[[1]]
+    p <- p + coord_fixed()
     p$scales$scales[p$scales$find("color")] <- NULL
 
     # suppress message of replacing existing color palette

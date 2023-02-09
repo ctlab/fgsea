@@ -4,7 +4,7 @@ output:
     rmarkdown::html_vignette:
         toc: true
 vignette: >
-  %\VignetteIndexEntry{geseca-tutorial}
+  %\VignetteIndexEntry{Gene set co-regulation analysis tutorial}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -136,7 +136,7 @@ We can plot gene expression profile of HALLMARK_E2F_TARGETS pathway and see
 that these genes are strongly activated at 24 hours time point:
 
 
-```{r fig.width=7, fig.height=4}
+```{r fig.width=10, fig.height=4, out.width="100%"}
 plotCoregulationProfile(pathway=pathways[["HALLMARK_E2F_TARGETS"]], 
                         E=exprs(es), titles = es$title, conditions=es$`time point:ch1`)
 ```
@@ -203,7 +203,7 @@ in the corresponding publication (https://pubmed.ncbi.nlm.nih.gov/30359200/).
 We also thank the authors for providing the corresponding Seurat object
 used for the publication.
 
-```{r}
+```{r fig.width=8, fig.height=3.5}
 obj <- readRDS(url("https://ctlab.itmo.ru/files/software/fgsea/GSE116240.rds"))
 obj
 
@@ -222,13 +222,13 @@ newIds <- c("0"="Adventitial MF",
 
 obj <- RenameIdents(obj, newIds)
 
-DimPlot(obj)
+DimPlot(obj) + ggplot2::coord_fixed()
 ```
 
 We apply an appropriate normalization (note that we are using 10000 genes, 
 which will be later used as a gene universe for the analysis):
 
-```{r eval=FALSE}
+```{r}
 obj <- SCTransform(obj, verbose = FALSE, variable.features.n = 10000)
 ```
 
@@ -240,7 +240,7 @@ of the cells, not linear combinations of the genes as in "normal" PCA.
 By default `SCTransform` returns centered gene expression, so we
 can run PCA directly.
 
-```{r eval=FALSE}
+```{r}
 length(VariableFeatures(obj)) # make sure it's a full gene universe of 10000 genes
 obj <- RunPCA(obj, assay = "SCT", verbose = FALSE,
                 rev.pca = TRUE, reduction.name = "pca.rev",
@@ -273,7 +273,7 @@ head(gesecaRes, 10)
 Now we can plot profiles of the top pathways (we need to specify the reduction
 as we are using the one from the publication):
 
-```{r}
+```{r fig.width=12, fig.height=7, out.width="100%"}
 topPathways <- gesecaRes[, pathway] |> head(4)
 titles <- sub("KEGG_", "", topPathways)
 
@@ -284,86 +284,83 @@ cowplot::plot_grid(plotlist=ps[1:4], ncol=2)
 ```
 
 We can see that inflammatory pathways (e.g. KEGG_LEISHMANIA_INFECTION) are 
-more associated with non-foamy intimal macrophages, which was one of the
-main points of the Kim et al.
+more associated with the non-foamy intimal macrophages, which was one of the
+main points of the Kim et al. Another pathway highlighted by the authors, KEGG_LYSOSOME, is specific to intimal foamy macrophages:
 
+```{r fig.width=5, fig.height=3.5, out.width="50%"}
+plotCoregulationProfileReduction(pathways$KEGG_LYSOSOME, 
+                               obj,
+                               title=sprintf("KEGG_LYSOSOME (pval=%.2g)",
+                                             gesecaRes[match("KEGG_LYSOSOME", pathway), pval]),
+                               reduction="tsne")
+```
 
 ## Analysis of spatial RNA-seq
 
-As the second example we will consider a spatial transcriptomics dataset
-of a mouse brain.
+Similarly to single cell RNA-seq, GESECA can be applied to spatial
+transcriptomics profiling. As an example we will use glioblastoma 
+sample from Ravi et al (https://pubmed.ncbi.nlm.nih.gov/35700707/).
 
-To load the data we will use `SeuratData` package that can be 
-installed with the following command:
-
-```{r eval=FALSE}
-devtools::install_github('satijalab/seurat-data')
-```
-
-Next we install the package with the dataset:
-```{r eval=FALSE}
-SeuratData::InstallData("stxBrain")
-```
-
-Now we can load the data:
-
-```{r message=FALSE, eval=FALSE}
+```{r message=FALSE}
 library(Seurat)
-library(SeuratData)
-library(ggplot2)
-brain <- LoadData("stxBrain", type = "anterior1")
+
+obj <- readRDS(url("https://ctlab.itmo.ru/files/software/fgsea/275_T_seurat.rds"))
 ```
 
 
-We apply an appropriate normalization (note that we are using 10000 genes, 
-which will be later used as a gene universe for the analysis):
+As for scRNA-seq, we apply normalization for 10000 genes and run a do a PCA reduction.
 
-```{r eval=FALSE}
-brain <- SCTransform(brain, assay = "Spatial", verbose = FALSE, variable.features.n = 10000)
+```{r}
+obj <- SCTransform(obj, assay = "Spatial", verbose = FALSE, variable.features.n = 10000)
+
+obj <- RunPCA(obj, assay = "SCT", verbose = FALSE,
+                rev.pca = TRUE, reduction.name = "pca.rev",
+              reduction.key="PCR_", npcs = 50)
+
+E <- obj@reductions$pca.rev@feature.loadings
 ```
 
-To speed up the analysis, instead of using the full transformed
-gene expression matrix, we will consider only its first 
-principal components. Note that a "reverse" PCA should be done: 
-the principal components should correspond to linear combinations
-of the cells, not linear combinations of the genes as in "normal" PCA.
-By default `SCTransform` returns centered gene expression, so we
-can run PCA directly.
+We will use HALLMARK pathways as the gene set collection.
 
-
-```{r eval=FALSE}
-brain <- RunPCA(brain, assay = "SCT", verbose = FALSE, 
-                rev.pca = TRUE, reduction.name = "pca.rev", reduction.key="PCR_")
-E <- brain@reductions$pca.rev@feature.loadings
-```
-
-We will use KEGG pathways as the gene set collection.
-
-```{r eval=FALSE}
+```{r}
 library(msigdbr)
-pathwaysDF <- msigdbr("mouse", category="C2", subcategory = "CP:KEGG")
+pathwaysDF <- msigdbr("human", category="H")
 pathways <- split(pathwaysDF$gene_symbol, pathwaysDF$gs_name)
 ```
 
-Now we can run the analysis (we set `center=FALSE` because we use the 
+Now we can run the analysis (remember, we set `center=FALSE` because we use the 
 reduced matrix):
 
-```{r message=FALSE, eval=FALSE}
+```{r}
 set.seed(1)
-
 gesecaRes <- geseca(pathways, E, minSize = 15, maxSize = 500, center = FALSE)
+
+head(gesecaRes, 10)
 ```
 
 Finally, let us plot spatial expression of the top four pathways:
 
-```{r fig.width=8, fig.height=8, out.width="100%", eval=FALSE}
+```{r fig.width=10, fig.height=7, out.width="100%"}
 
 topPathways <- gesecaRes[, pathway] |> head(4)
+titles <- sub("HALLMARK_", "", topPathways)
 
-ps <- plotCoregulationProfileSpatial(pathways[topPathways], brain,
+ps <- plotCoregulationProfileSpatial(pathways[topPathways], obj,
                                        title=titles)
 cowplot::plot_grid(plotlist=ps[1:4], ncol=2)
 ```
 
-![](geseca-spatial-top.png){width=100%}
+<!-- ![](geseca-spatial-top.png){width=100%} -->
 
+Consistent with the Ravi et al, we see a distinct hypoxic region (defined by HALLMARK_HYPOXIA) and a reactive immune region (defined by HALLMARK_INTERFERON_GAMMA_RESPONSE). Further, we can explore behavior of 
+HALLMARK_OXIDATIVE_PHOSPHORYLATION pathway to see that oxidative metabolism
+is more characteristic to the "normal" tissue region:
+
+```{r fig.width=5, fig.height=3.5, out.width="50%"}
+plotCoregulationProfileSpatial(pathways$HALLMARK_OXIDATIVE_PHOSPHORYLATION,
+                               obj,
+                               title=sprintf("HALLMARK_OXIDATIVE_PHOSPHORYLATION (pval=%.2g)",
+                                             gesecaRes[
+                                                 match("HALLMARK_OXIDATIVE_PHOSPHORYLATION", pathway),
+                                                 pval]))
+```
