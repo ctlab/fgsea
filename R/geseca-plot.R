@@ -226,7 +226,8 @@ plotCoregulationProfileSpatial <- function(pathway,
                                            object,
                                            title=NULL,
                                            assay=DefaultAssay(object),
-                                           colors=c("darkblue", "lightgrey", "darkred")) {
+                                           colors=c("darkblue", "lightgrey", "darkred"),
+                                           guide="colourbar") {
     stopifnot(requireNamespace("Seurat"))
     # TODO duplicated code with plotCoregulationProfileReduction
     if (is.list(pathway)) {
@@ -263,8 +264,9 @@ plotCoregulationProfileSpatial <- function(pathway,
             scale_fill_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
                                  oob=scales::squish,
                                  colors=colors,
-                                 guide = "none"
-            )
+                                 guide = guide,
+                                 name = "z-score"
+            ) + theme(legend.position = theme_get()$legend.position)
     })
 
     if (!is.null(title)) {
@@ -356,7 +358,8 @@ plotCoregulationProfileReduction <- function(pathway, object, title=NULL,
         scale_color_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
                              colors=colors,
                              oob=scales::squish,
-                             guide=guide
+                             guide=guide,
+                             name = "z-score"
         ))
 
     if (!is.null(title)) {

@@ -16,6 +16,10 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r echo=FALSE}
+library(BiocParallel)
+register(SerialParam())
+```
 
 This vignette describes GESECA (gene set co-regulation analysis): a method
 to identify gene sets that have high gene correlation.
@@ -347,7 +351,7 @@ titles <- sub("HALLMARK_", "", topPathways)
 
 ps <- plotCoregulationProfileSpatial(pathways[topPathways], obj,
                                        title=titles)
-cowplot::plot_grid(plotlist=ps[1:4], ncol=2)
+cowplot::plot_grid(plotlist=ps, ncol=2)
 ```
 
 <!-- ![](geseca-spatial-top.png){width=100%} -->
