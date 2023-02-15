@@ -78,6 +78,7 @@ preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam
 
 
     minSize <- max(minSize, 1)
+    maxSize <- min(maxSize, length(stats)-1)
 
     pathwaysFiltered <- lapply(pathways, function(p) { unique(na.omit(fmatch(p, names(stats)))) })
     pathwaysSizes <- sapply(pathwaysFiltered, length)

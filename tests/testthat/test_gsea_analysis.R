@@ -202,3 +202,9 @@ test_that("fgsea works correctly if gene sets have signed ES = 0 and scoreType !
     set.seed(1)
     expect_silent(fr <- fgseaSimple(gsInHead, stats, nperm = 1000, scoreType = "neg"))
 })
+
+test_that("fgsea skips pathways containing all the possible genes", {
+    data("exampleRanks")
+    fr <- fgseaSimple(list(p=names(exampleRanks)), exampleRanks, nperm = 1, maxSize=Inf)
+    expect_true(!is.null(fr))
+})
