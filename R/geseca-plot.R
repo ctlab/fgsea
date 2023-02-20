@@ -31,7 +31,7 @@ plotCoregulationProfile <- function(pathway, E,
     }
 
     pointDt <- data.table(x = seq_len(ncol(E)),
-                          y = colSums(E[rownames(E) %in% genes, ]) / sum(rownames(E) %in% genes),
+                          y = colSums(E[rownames(E) %in% genes, , drop=FALSE]) / sum(rownames(E) %in% genes),
                           condition=if (!is.null(conditions)) { conditions  } else "x")
 
 
@@ -127,7 +127,7 @@ plotGesecaTable <- function(gesecaRes,
 
 
     prjs <- t(do.call(cbind, lapply(pathways, function(p){
-        colSums(E[p, ])/(length(p))
+        colSums(E[p, , drop=FALSE])/(length(p))
     })))
 
 
@@ -290,7 +290,7 @@ addGesecaScores <- function(pathways,
         pathway <- pathways[[i]]
         pathway <- intersect(unique(pathway), rownames(E))
 
-        score <- colSums(E[pathway, ])/sqrt(length(pathway))
+        score <- colSums(E[pathway, , drop=FALSE])/sqrt(length(pathway))
         score <- scale(score, center=TRUE, scale=scale)
         res@meta.data[[paste0(prefix, names(pathways)[i])]] <- score
     }
