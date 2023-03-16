@@ -33,7 +33,7 @@
 #' @export
 gesecaSimple <- function(pathways,
                          E,
-                         minSize    = 2,
+                         minSize    = 1,
                          maxSize    = nrow(E) - 1,
                          center     = TRUE,
                          scale      = FALSE,
@@ -136,9 +136,9 @@ gesecaCumScores <- function(nperm, pathwaySizes, E){
     scores <- lapply(seq_len(nperm), function(i){
         randIndxs <- sample.int(nrow(E), K)
 
-        Esubset <- E[randIndxs, ]
+        Esubset <- E[randIndxs, , drop=FALSE]
 
-        Ecum <- apply(Esubset, 2, cumsum)
+        Ecum <- do.call(cbind, apply(Esubset, 2, cumsum, simplify = FALSE))
         Esq <- (Ecum ^ 2)
 
         res <- unname(rowSums(Esq)[pathwaySizes])

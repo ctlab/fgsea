@@ -39,7 +39,7 @@
 #' @export
 geseca <- function(pathways,
                    E,
-                   minSize     = 2,
+                   minSize     = 1,
                    maxSize     = nrow(E) - 1,
                    center      = TRUE,
                    scale       = FALSE,
@@ -241,10 +241,10 @@ collapsePathwaysGeseca <- function(gesecaRes,
         pval2 <- setNames(rep(1, length(pathways)), names(pathways))
 
         gesecaRes1 <- gesecaSimple(pathways = pathways,
-                                   E=E[u1, ], center=FALSE, scale=FALSE,
+                                   E=E[u1, , drop=FALSE], center=FALSE, scale=FALSE,
                                    nperm = 100, BPPARAM = SerialParam())
         gesecaRes2 <- gesecaSimple(pathways = pathways,
-                                   E=E[u2, ], center=FALSE, scale=FALSE,
+                                   E=E[u2, , drop=FALSE], center=FALSE, scale=FALSE,
                                    nperm = 100, BPPARAM = SerialParam())
 
         pval1[gesecaRes1$pathway] <- gesecaRes1$pval
@@ -300,10 +300,10 @@ collapsePathwaysGeseca <- function(gesecaRes,
 
             suppressWarnings({ # warnings about reaching eps
                 gesecaRes1 <- geseca(pathways = list(p=p1),
-                                     E=E[u1, ], center=FALSE, scale=FALSE,
+                                     E=E[u1, , drop=FALSE], center=FALSE, scale=FALSE,
                                      eps=eps1, BPPARAM = SerialParam())
                 gesecaRes2 <- geseca(pathways = list(p=p1),
-                                     E=E[u2, ], center=FALSE, scale=FALSE,
+                                     E=E[u2, , drop=FALSE], center=FALSE, scale=FALSE,
                                      eps=eps1, BPPARAM = SerialParam())
             })
 
@@ -346,10 +346,10 @@ collapsePathwaysGeseca <- function(gesecaRes,
 
         suppressWarnings({ # warnings about reaching eps
             gesecaRes1 <- geseca(pathways = list(p=p1),
-                                 E=E[u1, ], center=FALSE, scale=FALSE,
+                                 E=E[u1, , drop=FALSE], center=FALSE, scale=FALSE,
                                  eps=eps, BPPARAM = SerialParam())
             gesecaRes2 <- geseca(pathways = list(p=p1),
-                                 E=E[u2, ], center=FALSE, scale=FALSE,
+                                 E=E[u2, , drop=FALSE], center=FALSE, scale=FALSE,
                                  eps=eps, BPPARAM = SerialParam())
         })
 

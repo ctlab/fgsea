@@ -13,7 +13,7 @@ plotCoregulationProfile <- function(pathway, E,
 
     genes <- pathway
 
-    dt <- as.data.table(E[rownames(E) %in% genes, ], keep.rownames = TRUE)
+    dt <- as.data.table(E[rownames(E) %in% genes, , drop=FALSE], keep.rownames = TRUE)
 
     colnames(dt) <- c("gene", titles)
 

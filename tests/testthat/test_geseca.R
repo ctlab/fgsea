@@ -30,6 +30,23 @@ test_that("GESECA: works with zero pathways", {
     expect_equal(colnames(gr2), colnames(gr1))
 })
 
+
+test_that("GESECA: works with pathways of one gene", {
+    data("exampleExpressionMatrix")
+    data("examplePathways")
+    set.seed(42)
+    sampleSize <- 11
+
+    p <- rownames(exampleExpressionMatrix)[1]
+    gr1 <- geseca(pathways=list(p=p), E=exampleExpressionMatrix,
+                  sampleSize=sampleSize, minSize=1, maxSize=10)
+    expect_equal(nrow(gr1), 1)
+
+    pl <- plotCoregulationProfile(p, E=exampleExpressionMatrix)
+
+
+})
+
 test_that("GESECA: throws a warning when there are duplicate gene names", {
     data("exampleExpressionMatrix")
     data("examplePathways")

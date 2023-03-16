@@ -21,7 +21,7 @@ checkGesecaArgs <- function(E, pathways){
 }
 
 gesecaPreparePathways <- function(E, pathways, minSize, maxSize){
-    minSize <- max(minSize, 2)
+    minSize <- max(minSize, 1)
     maxSize <- min(nrow(E) - 1, maxSize)
 
     pathwaysFiltered <- lapply(pathways, function(p) {unique(na.omit(fmatch(p, rownames(E))))})
@@ -38,15 +38,15 @@ gesecaPreparePathways <- function(E, pathways, minSize, maxSize){
 
 # E should be row-centered
 calcGesecaScores <- function(indxs, E){
-    return(sum(colSums(E[indxs, ])**2))
+    return(sum(colSums(E[indxs, , drop=FALSE])**2))
     # return(sum(abs(colSums(E[indxs, ]))))
 }
 
 # E should be row-centered
 getGesecaLeadingEdge <- function(indxs, E, extend=FALSE, sort=TRUE) {
-    profile <- colSums(E[indxs, ])
+    profile <- colSums(E[indxs, , drop=FALSE])
     profile <- profile / sqrt(sum(profile**2))
-    Ey <- E[indxs,]
+    Ey <- E[indxs, , drop=FALSE]
     if (extend) {
         Ey <- E
     }
@@ -61,7 +61,7 @@ getGesecaLeadingEdge <- function(indxs, E, extend=FALSE, sort=TRUE) {
 # E should be row-centered
 getGesecaLeadingEdge2 <- function(genes, E, extend=FALSE, sort=TRUE) {
     genes <- intersect(genes, rownames(E))
-    profile <- colSums(E[genes, ])
+    profile <- colSums(E[genes,  , drop=FALSE])
     profile <- profile / sqrt(sum(profile**2))
 
     weights <- (E %*% profile)[,1]
