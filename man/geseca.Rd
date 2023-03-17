@@ -7,7 +7,7 @@
 geseca(
   pathways,
   E,
-  minSize = 2,
+  minSize = 1,
   maxSize = nrow(E) - 1,
   center = TRUE,
   scale = FALSE,
