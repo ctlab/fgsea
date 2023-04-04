@@ -8,8 +8,11 @@ plotGesecaTable(
   gesecaRes,
   pathways,
   E,
+  center = TRUE,
+  scale = FALSE,
   colwidths = c(5, 3, 0.8, 1.2, 1.2),
   titles = colnames(E),
+  colors = c("blue", "white", "red"),
   pathwayLabelStyle = NULL,
   headerLabelStyle = NULL,
   valueStyle = NULL,
@@ -24,11 +27,19 @@ plotGesecaTable(
 
 \item{E}{gene expression matrix, as in `geseca` function.}
 
+\item{center}{a logical value indicating whether the gene expression should be centered to have zero mean before the analysis takes place.
+The default is TRUE. The value is passed to \link[base]{scale}.}
+
+\item{scale}{a logical value indicating whether the gene expression should be scaled to have unit variance before the analysis takes place.
+The default is FALSE. The value is passed to \link[base]{scale}.}
+
 \item{colwidths}{Vector of five elements corresponding to column width for
 grid.arrange. Can be both units and simple numeric vector, in latter case
 it defines proportions, not actual sizes. If column width is set to zero, the column is not drawn.}
 
 \item{titles}{sample titles to use an axis labels. Default to `colnames(E)`}
+
+\item{colors}{vector of three colors to use in the color scheme}
 
 \item{pathwayLabelStyle}{list with style parameter adjustments for pathway labels.
 For example, `list(size=10, color="red")` set the font size to 10 and color to red.

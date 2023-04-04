@@ -23,6 +23,7 @@ Imports:
     grid,
     fastmatch,
     Matrix,
+    scales,
     utils
 Suggests:
     testthat,
@@ -35,7 +36,8 @@ Suggests:
     limma,
     GEOquery,
     msigdbr,
-    aggregation
+    aggregation,
+    Seurat
 License: MIT + file LICENCE
 LazyData: true
 LinkingTo: Rcpp, BH

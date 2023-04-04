@@ -4,12 +4,25 @@
 \alias{plotCoregulationProfile}
 \title{Plots expression profile of a gene set}
 \usage{
-plotCoregulationProfile(pathway, E, titles = colnames(E), conditions = NULL)
+plotCoregulationProfile(
+  pathway,
+  E,
+  center = TRUE,
+  scale = FALSE,
+  titles = colnames(E),
+  conditions = NULL
+)
 }
 \arguments{
 \item{pathway}{Gene set to plot.}
 
 \item{E}{matrix with gene expression values}
+
+\item{center}{a logical value indicating whether the gene expression should be centered to have zero mean before the analysis takes place.
+The default is TRUE. The value is passed to \link[base]{scale}.}
+
+\item{scale}{a logical value indicating whether the gene expression should be scaled to have unit variance before the analysis takes place.
+The default is FALSE. The value is passed to \link[base]{scale}.}
 
 \item{titles}{sample titles to use for labels}
 

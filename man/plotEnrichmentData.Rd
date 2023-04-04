@@ -26,6 +26,7 @@ returns list with the following data:
 Returns data required for doing an enrichment plot.
 }
 \examples{
+library(ggplot2)
 data(examplePathways)
 data(exampleRanks)
 

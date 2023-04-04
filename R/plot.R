@@ -173,6 +173,7 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
 #' * `maxAbsStat` - maximal absolute value of statistic entries, adjusted with gseaParam
 #' @export
 #' @examples
+#' library(ggplot2)
 #' data(examplePathways)
 #' data(exampleRanks)
 #'

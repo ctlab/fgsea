@@ -22,6 +22,8 @@ plotCoregulationProfileReduction(
 
 \item{title}{plot title}
 
+\item{assay}{assay to use for obtaining scaled data, preferably with}
+
 \item{reduction}{reduction to use for plotting (one of the `Seurat::Reductions(object)`)}
 
 \item{colors}{vector of three colors to use in the color scheme}
@@ -29,7 +31,7 @@ plotCoregulationProfileReduction(
 \item{guide}{option for `ggplot2::scale_color_gradientn` to control for presence of the color legend
 the same universe of genes in the scaled data}
 
-\item{assary}{assay to use for obtaining scaled data, preferably with}
+\item{...}{additional arguments for Seurat::FeaturePlot}
 }
 \value{
 ggplot object (or a list of objects) with the coregulation profile plot

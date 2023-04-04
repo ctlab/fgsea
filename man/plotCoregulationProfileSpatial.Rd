@@ -20,7 +20,12 @@ plotCoregulationProfileSpatial(
 
 \item{title}{plot title}
 
-\item{assary}{assay to use for obtaining scaled data, preferably with
+\item{assay}{assay to use for obtaining scaled data, preferably with
+the same universe of genes in the scaled data}
+
+\item{colors}{vector of three colors to use in the color scheme}
+
+\item{guide}{option for `ggplot2::scale_color_gradientn` to control for presence of the color legend
 the same universe of genes in the scaled data}
 }
 \value{

@@ -1,15 +1,21 @@
 #' Plots expression profile of a gene set
 #' @param pathway Gene set to plot.
 #' @param E matrix with gene expression values
+#' @param center a logical value indicating whether the gene expression should be centered to have zero mean before the analysis takes place.
+#' The default is TRUE. The value is passed to \link[base]{scale}.
+#' @param scale a logical value indicating whether the gene expression should be scaled to have unit variance before the analysis takes place.
+#' The default is FALSE. The value is passed to \link[base]{scale}.
 #' @param titles sample titles to use for labels
 #' @param conditions sample grouping to use for coloring
 #' @return ggplot object with the coregulation profile plot
 #' @import data.table ggplot2
 #' @export
 plotCoregulationProfile <- function(pathway, E,
+                                    center=TRUE,
+                                    scale=FALSE,
                                     titles=colnames(E),
                                     conditions=NULL) {
-    E <- t(scale(t(E), scale = FALSE))
+    E <- t(base::scale(t(E), center=center, scale = scale))
 
     genes <- pathway
 
@@ -68,10 +74,15 @@ plotCoregulationProfile <- function(pathway, E,
 #' @param gesecaRes Table with geseca results.
 #' @param pathways Pathways to plot table, as in `geseca` function.
 #' @param E gene expression matrix, as in `geseca` function.
+#' @param center a logical value indicating whether the gene expression should be centered to have zero mean before the analysis takes place.
+#' The default is TRUE. The value is passed to \link[base]{scale}.
+#' @param scale a logical value indicating whether the gene expression should be scaled to have unit variance before the analysis takes place.
+#' The default is FALSE. The value is passed to \link[base]{scale}.
 #' @param colwidths Vector of five elements corresponding to column width for
 #'      grid.arrange. Can be both units and simple numeric vector, in latter case
 #'      it defines proportions, not actual sizes. If column width is set to zero, the column is not drawn.
 #' @param titles sample titles to use an axis labels. Default to `colnames(E)`
+#' @param colors vector of three colors to use in the color scheme
 #' @param pathwayLabelStyle list with style parameter adjustments for pathway labels.
 #'      For example, `list(size=10, color="red")` set the font size to 10 and color to red.
 #'      See `cowplot::draw_text` for possible options.
@@ -88,8 +99,11 @@ plotCoregulationProfile <- function(pathway, E,
 plotGesecaTable <- function(gesecaRes,
                             pathways,
                             E,
+                            center=TRUE,
+                            scale=FALSE,
                             colwidths=c(5, 3, 0.8, 1.2, 1.2),
                             titles=colnames(E),
+                            colors=c("blue", "white", "red"),
                             pathwayLabelStyle=NULL,
                             headerLabelStyle=NULL,
                             valueStyle=NULL,
@@ -118,7 +132,7 @@ plotGesecaTable <- function(gesecaRes,
     # ^^ works with #40, as there can't be no empty pathways in the results
 
 
-    E <- t(scale(t(E), scale = FALSE))
+    E <- t(base::scale(t(E), center=center, scale = scale))
     colnames(E) <- titles
 
     pathways <- lapply(pathways, function(p) {
@@ -127,7 +141,7 @@ plotGesecaTable <- function(gesecaRes,
 
 
     prjs <- t(do.call(cbind, lapply(pathways, function(p){
-        colSums(E[p, , drop=FALSE])/(length(p))
+        scale(colSums(E[p, , drop=FALSE]))
     })))
 
 
@@ -143,6 +157,17 @@ plotGesecaTable <- function(gesecaRes,
     maxValue <- max(prjspd$value)
     minValue <- min(prjspd$value)
 
+    color_legend <- cowplot::get_legend(
+        ggplot(prjspd[pathway %fin% names(pathways)[[1]]],
+               aes(x=sample, y=pathway, fill=value)) +
+            geom_tile() +
+            scale_fill_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
+                                 oob=scales::squish,
+                                 colors=colors,
+                                 # guide = guide,
+                                 name = "z-score"
+            ) +
+            theme(legend.position = "bottom"))
 
     ps <- lapply(names(pathways), function(pn) {
         p <- pathways[[pn]]
@@ -152,11 +177,17 @@ plotGesecaTable <- function(gesecaRes,
             ggplot(prjspd[pathway %fin% pn],
                    aes(x=sample, y=pathway, fill=value)) +
                 geom_tile(color = "black", size = min(10/ncol(E), 0.5)) +
-                scale_fill_gradient2(low = "blue",
-                                     high = "red",
-                                     mid = "white",
-                                     limit = c(minValue, maxValue),
-                                     space = "Lab") +
+                scale_fill_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
+                                     oob=scales::squish,
+                                     colors=colors,
+                                     # guide = guide,
+                                     name = "z-score"
+                ) +
+                # scale_fill_gradient2(low = "blue",
+                #                      high = "red",
+                #                      mid = "white",
+                #                      limit = c(minValue, maxValue),
+                #                      space = "Lab") +
                 theme(panel.background = element_blank(),
                       axis.line = element_blank(),
                       axis.text = element_blank(),
@@ -186,10 +217,15 @@ plotGesecaTable <- function(gesecaRes,
               axis.text.x = do.call(element_text, as.list(axisLabelStyle)))
 
     grobs <- c(
+        list(nullGrob(),
+             color_legend,
+             nullGrob(),
+             nullGrob(),
+             nullGrob()),
         list(cowplotText("Pathway",
                          modifyList(headerLabelStyle, pathwayLabelStyle[c("hjust", "x")])
         )),
-        lapply(c("Projection", "pctVar", "pval", "padj"), cowplotText, style=headerLabelStyle),
+        lapply(c("Profile", "pctVar", "pval", "padj"), cowplotText, style=headerLabelStyle),
         unlist(ps, recursive = FALSE),
         list(nullGrob(),
              sampleTitle,
@@ -204,7 +240,7 @@ plotGesecaTable <- function(gesecaRes,
     p <- cowplot::plot_grid(plotlist=grobs[grobsToDraw],
                      ncol=sum(as.numeric(colwidths) != 0),
                      rel_widths=colwidths[as.numeric(colwidths) != 0],
-                     rel_heights=c(1, rep(1, length(pathways)), axisLabelHeightScale))
+                     rel_heights=c(1, 1, rep(1, length(pathways)), axisLabelHeightScale))
 
     p
 }
@@ -213,7 +249,10 @@ plotGesecaTable <- function(gesecaRes,
 #' @param pathway Gene set to plot or a list of gene sets (see details below)
 #' @param object Seurat object
 #' @param title plot title
-#' @param assary assay to use for obtaining scaled data, preferably with
+#' @param assay assay to use for obtaining scaled data, preferably with
+#' the same universe of genes in the scaled data
+#' @param colors vector of three colors to use in the color scheme
+#' @param guide option for `ggplot2::scale_color_gradientn` to control for presence of the color legend
 #' the same universe of genes in the scaled data
 #' @return ggplot object (or a list of objects) with the coregulation profile plot
 #'
@@ -303,11 +342,12 @@ addGesecaScores <- function(pathways,
 #' @param pathway Gene set to plot or a list of gene sets (see details below)
 #' @param object Seurat object
 #' @param title plot title
-#' @param assary assay to use for obtaining scaled data, preferably with
+#' @param assay assay to use for obtaining scaled data, preferably with
 #' @param reduction reduction to use for plotting (one of the `Seurat::Reductions(object)`)
 #' @param colors vector of three colors to use in the color scheme
 #' @param guide option for `ggplot2::scale_color_gradientn` to control for presence of the color legend
 #' the same universe of genes in the scaled data
+#' @param ... additional arguments for Seurat::FeaturePlot
 #' @return ggplot object (or a list of objects) with the coregulation profile plot
 #'
 #' When the input is a list of pathways, pathway names are used for titles.
