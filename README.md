@@ -1,6 +1,4 @@
 [![R-CMD-check](https://github.com/ctlab/fgsea/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ctlab/fgsea/actions/workflows/R-CMD-check.yaml)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ctlab/fgsea?branch=master&svg=true)](https://ci.appveyor.com/project/assaron/fgsea)
-[![codecov](https://codecov.io/gh/ctlab/fgsea/branch/master/graph/badge.svg)](https://codecov.io/gh/ctlab/fgsea)
 
 # fgsea 
 
