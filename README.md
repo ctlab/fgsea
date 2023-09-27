@@ -1,8 +1,8 @@
-[![Travis-CI Build Status](https://travis-ci.org/ctlab/fgsea.svg?branch=master)](https://travis-ci.org/ctlab/fgsea)
+[![R-CMD-check](https://github.com/ctlab/fgsea/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ctlab/fgsea/actions/workflows/R-CMD-check.yaml)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ctlab/fgsea?branch=master&svg=true)](https://ci.appveyor.com/project/assaron/fgsea)
 [![codecov](https://codecov.io/gh/ctlab/fgsea/branch/master/graph/badge.svg)](https://codecov.io/gh/ctlab/fgsea)
 
-# fgsea ![](http://jb.gg/badges/research-flat-square.svg)
+# fgsea 
 
 `fgsea` is an R-package for fast preranked gene set enrichment analysis (GSEA). This package allows to quickly and accurately calculate arbitrarily low GSEA P-values for a collection of gene sets. P-value estimation is based on an adaptive multi-level split Monte-Carlo scheme. 
 See [the preprint](https://www.biorxiv.org/content/10.1101/060012v3) for algorithmic details.
