@@ -208,3 +208,30 @@ test_that("fgsea skips pathways containing all the possible genes", {
     fr <- fgseaSimple(list(p=names(exampleRanks)), exampleRanks, nperm = 1, maxSize=Inf)
     expect_true(!is.null(fr))
 })
+
+test_that("leadingEdge interacts correctly with scoreType", {
+    data(examplePathways)
+    data(exampleRanks)
+    set.seed(42)
+    nperm <- 100
+    fr <- fgseaSimple(examplePathways, exampleRanks, nperm=nperm, minSize=15, maxSize=50)
+    fr <- fr[order(-abs(NES))]
+
+    posP <- head(fr[ES > 0, pathway], 1)
+    negP <- head(fr[ES < 0, pathway], 1)
+
+    pp <- examplePathways[c(posP, negP)]
+
+    frStd <- fgseaSimple(pp, exampleRanks, nperm=nperm, scoreType = "std")
+    expect_true(exampleRanks[frStd$leadingEdge[[1]][1] ] > 0)
+    expect_true(exampleRanks[frStd$leadingEdge[[2]][1] ] < 0)
+
+
+    frPos <- fgseaSimple(pp, exampleRanks, nperm=nperm, scoreType = "pos")
+    expect_true(exampleRanks[frPos$leadingEdge[[1]][1] ] > 0)
+    expect_true(exampleRanks[frPos$leadingEdge[[2]][1] ] > 0)
+
+    frNeg <- fgseaSimple(pp, exampleRanks, nperm=nperm, scoreType = "neg")
+    expect_true(exampleRanks[frNeg$leadingEdge[[1]][1] ] < 0)
+    expect_true(exampleRanks[frNeg$leadingEdge[[2]][1] ] < 0)
+})

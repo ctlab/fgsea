@@ -180,6 +180,16 @@ calcGseaStat <- function(stats,
         } else {
             NULL
         }
+        switch(scoreType,
+               std = leadingEdge <- if (maxP > -minP) {
+                   S[seq_along(S) <= which.max(bottoms)]
+               } else if (maxP < -minP) {
+                   rev(S[seq_along(S) >= which.min(bottoms)])
+               } else {
+                   NULL
+               },
+               pos = leadingEdge <- S[seq_along(S) <= which.max(bottoms)],
+               neg = leadingEdge <- rev(S[seq_along(S) >= which.min(bottoms)]))
 
         res <- c(res, list(leadingEdge=leadingEdge))
     }
