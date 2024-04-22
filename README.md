@@ -100,4 +100,4 @@ plotGseaTable(examplePathways[topPathways], exampleRanks, fgseaRes,
               gseaParam=0.5)
 ```
 
-<img src="https://ctlab.itmo.ru/files/software/fgsea/readme_enrichmentPlot.png">
+<img src="https://alserglab.wustl.edu/files/fgsea/readme_enrichmentPlot.png">

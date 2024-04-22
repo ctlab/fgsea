@@ -208,7 +208,7 @@ We also thank the authors for providing the corresponding Seurat object
 used for the publication.
 
 ```{r fig.width=8, fig.height=3.5}
-obj <- readRDS(url("https://ctlab.itmo.ru/files/software/fgsea/GSE116240.rds"))
+obj <- readRDS(url("https://alserglab.wustl.edu/files/fgsea/GSE116240.rds"))
 obj
 
 newIds <- c("0"="Adventitial MF",
@@ -308,7 +308,7 @@ sample from Ravi et al (https://pubmed.ncbi.nlm.nih.gov/35700707/).
 ```{r message=FALSE}
 library(Seurat)
 
-obj <- readRDS(url("https://ctlab.itmo.ru/files/software/fgsea/275_T_seurat.rds"))
+obj <- readRDS(url("https://alserglab.wustl.edu/files/fgsea/275_T_seurat.rds"))
 ```
 
 
