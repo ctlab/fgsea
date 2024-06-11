@@ -47,13 +47,20 @@ test_that("GESECA: works with pathways of one gene", {
 
 })
 
-test_that("GESECA: throws a warning when there are duplicate gene names", {
+test_that("GESECA checks gene names", {
     data("exampleExpressionMatrix")
     data("examplePathways")
     E <- exampleExpressionMatrix
     rownames(E)[1] <- rownames(E)[2]
 
-    expect_warning(geseca(E=E, pathways=examplePathways, minSize=15))
+    expect_error(geseca(E=E, pathways=examplePathways, minSize=15))
+
+    E <- exampleExpressionMatrix
+    rownames(E)[1] <- NA
+    expect_error(geseca(E=E, pathways=examplePathways, minSize=15))
+
+    E <- unname(exampleExpressionMatrix)
+    expect_error(geseca(E=E, pathways=examplePathways, minSize=15))
 })
 
 

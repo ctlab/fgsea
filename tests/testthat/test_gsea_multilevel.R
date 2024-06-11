@@ -75,13 +75,13 @@ test_that("fgseaMultilevel works with zero pathways", {
 })
 
 
-test_that("fgseaMultilevel throws a warning when there are duplicate gene names", {
+test_that("fgseaMultilevel throws an error when there are duplicate gene names", {
     data(examplePathways)
     data(exampleRanks)
     exampleRanks.dupNames <- exampleRanks
     names(exampleRanks.dupNames)[41] <- names(exampleRanks.dupNames)[42]
 
-    expect_warning(fgseaMultilevel(examplePathways, exampleRanks.dupNames, sampleSize=100, minSize=10, maxSize=50, nproc=1))
+    expect_error(fgseaMultilevel(examplePathways, exampleRanks.dupNames, sampleSize=100, minSize=10, maxSize=50, nproc=1))
 
 })
 

@@ -9,14 +9,19 @@ checkGesecaArgs <- function(E, pathways){
         stop("E rows should be named")
     }
 
+    # Error if stats names are NA
+    if (any(is.na(rownames(E)))) {
+        stop("NAs in rownames(E) are not allowed")
+    }
+
+    # Error for duplicate gene names
+    if (any(duplicated(rownames(E)))) {
+        stop("Duplicate rownames(E) are not allowed")
+    }
+
     # Error if E has non-finite values
     if (any(!is.finite(E))){
         stop("Not all E values are finite numbers")
-    }
-
-    # Warning message for duplicate gene names
-    if (any(duplicated(rownames(E)))) {
-        warning("There are duplicate gene names, geseca may produce unexpected results.")
     }
 }
 

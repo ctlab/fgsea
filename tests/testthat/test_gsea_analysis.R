@@ -114,13 +114,20 @@ test_that("Ties detection in ranking works", {
                               minSize=10, maxSize=50, BPPARAM=SerialParam()))
 })
 
-test_that("fgseaSimple throws a warning when there are duplicate gene names", {
+test_that("fgseaSimple correctly checks gene names", {
     data(examplePathways)
     data(exampleRanks)
     exampleRanks.dupNames <- exampleRanks
     names(exampleRanks.dupNames)[41] <- names(exampleRanks.dupNames)[42]
 
-    expect_warning(fgseaSimple(examplePathways, exampleRanks.dupNames, nperm=100, minSize=10, maxSize=50, nproc=1))
+    expect_error(fgseaSimple(examplePathways, exampleRanks.dupNames, nperm=100, minSize=10, maxSize=50, nproc=1))
+
+    ranks <- exampleRanks
+    names(ranks)[41] <- NA
+    expect_error(fgseaSimple(examplePathways, ranks, nperm=100, minSize=10, maxSize=50, nproc=1))
+
+    ranks <- unname(exampleRanks)
+    expect_error(fgseaSimple(examplePathways, ranks, nperm=100, minSize=10, maxSize=50, nproc=1))
 
 })
 
@@ -167,7 +174,7 @@ test_that("fgseaSimple throws a warning when there are unbalanced gene-level sta
     expect_warning(fgseaSimple(pathway, ranks, nperm = 200, minSize = 15, maxSize = 500))
 })
 
-test_that("fgseaSimple and fgseaMultilevel properly handle duplicated in gene sets", {
+test_that("fgseaSimple and fgseaMultilevel properly handle duplicated genes in gene sets", {
     data(exampleRanks)
     data(examplePathways)
 

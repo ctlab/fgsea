@@ -49,6 +49,16 @@ preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam
         stop("stats should be named")
     }
 
+    # Error if stats names are NA
+    if (any(is.na(names(stats)))) {
+        stop("NAs in names(stats) are not allowed")
+    }
+
+    # Error for duplicate gene names
+    if (any(duplicated(names(stats)))) {
+        stop("Duplicate names(stats) are not allowed")
+    }
+
     # Error if stats are non-finite
     if (any(!is.finite(stats))){
         stop("Not all stats values are finite numbers")
@@ -61,11 +71,6 @@ preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam
                 paste(round(ties * 100 / length(stats), digits = 2)),
                 "% of the list).\n",
                 "The order of those tied genes will be arbitrary, which may produce unexpected results.")
-    }
-
-    # Warning message for duplicate gene names
-    if (any(duplicated(names(stats)))) {
-        warning("There are duplicate gene names, fgsea may produce unexpected results.")
     }
 
     if (all(stats > 0) & scoreType == "std"){
