@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.31.2
+* fora() provides fold enrichment scores for more effective prioritisation of results
+
 CHANGES IN VERSION 1.25.1
 * introduced plotEnrichmentData() function for more flexible plotting
 * update GESECA plot behavior
