@@ -24,6 +24,7 @@ The columns are the following:
  \item pathway -- name of the pathway as in `names(pathway)`;
  \item pval -- an enrichment p-value from hypergeometric test;
  \item padj -- a BH-adjusted p-value;
+ \item foldEnrichment -- degree of enrichment relative to background;
  \item overlap -- size of the overlap;
  \item size -- size of the gene set;
  \item leadingEdge -- vector with overlapping genes.
