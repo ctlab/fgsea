@@ -69,7 +69,7 @@ fora <- function(pathways, genes, universe, minSize=1, maxSize=length(universe)-
         n=length(universe)-sapply(pathwaysFiltered, length),
         k=length(genesFiltered))
 
-    overlapsT$es=(overlapsT$q/overlapsT$k)/(overlapsT$m/length(universe))
+    overlapsT[, es := (q/k)/(m/length(universe))]
 
     # q-1 because we want probability of having >=q white balls
     pathways.pvals <- with(overlapsT,
