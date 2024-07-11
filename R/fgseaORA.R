@@ -10,6 +10,7 @@
 #'  \item pathway -- name of the pathway as in `names(pathway)`;
 #'  \item pval -- an enrichment p-value from hypergeometric test;
 #'  \item padj -- a BH-adjusted p-value;
+#'  \item foldEnrichment -- degree of enrichment relative to background;
 #'  \item overlap -- size of the overlap;
 #'  \item size -- size of the gene set;
 #'  \item leadingEdge -- vector with overlapping genes.
@@ -43,6 +44,7 @@ fora <- function(pathways, genes, universe, minSize=1, maxSize=length(universe)-
         return(data.table(pathway=character(),
                           pval=numeric(),
                           padj=numeric(),
+                          foldEnrichment=numeric(),
                           overlap=integer(),
                           size=integer(),
                           overlapGenes=list()))
@@ -65,7 +67,9 @@ fora <- function(pathways, genes, universe, minSize=1, maxSize=length(universe)-
         q=sapply(overlaps, length),
         m=sapply(pathwaysFiltered, length),
         n=length(universe)-sapply(pathwaysFiltered, length),
-        k=length(genesFiltered))
+        k=length(genesFiltered),
+        es=(q/k)/(m/length(universe)))
+
 
     # q-1 because we want probability of having >=q white balls
     pathways.pvals <- with(overlapsT,
@@ -74,6 +78,7 @@ fora <- function(pathways, genes, universe, minSize=1, maxSize=length(universe)-
     res <- data.table(pathway=names(pathwaysFiltered),
                       pval=pathways.pvals,
                       padj=p.adjust(pathways.pvals, method="BH"),
+                      foldEnrichment=T$es,
                       overlap=overlapsT$q,
                       size=overlapsT$m,
                       overlapGenes=overlapGenes)
