@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.31.3
+* check for empty strings in gene names
+
 CHANGES IN VERSION 1.31.2
 * fora() provides fold enrichment scores for more effective prioritisation of results
 

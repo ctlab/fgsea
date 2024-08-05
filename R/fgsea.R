@@ -39,26 +39,6 @@ fgsea <- function(pathways, stats, minSize = 1, maxSize = length(stats)-1, gseaP
 
 
 preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam, scoreType){
-    # Error if pathways is not a list
-    if (!is.list(pathways)) {
-        stop("pathways should be a list with each element containing names of the stats argument")
-    }
-
-    # Error if stats is not named
-    if (is.null(names(stats))) {
-        stop("stats should be named")
-    }
-
-    # Error if stats names are NA
-    if (any(is.na(names(stats)))) {
-        stop("NAs in names(stats) are not allowed")
-    }
-
-    # Error for duplicate gene names
-    if (any(duplicated(names(stats)))) {
-        stop("Duplicate names(stats) are not allowed")
-    }
-
     # Error if stats are non-finite
     if (any(!is.finite(stats))){
         stop("Not all stats values are finite numbers")
@@ -81,21 +61,11 @@ preparePathwaysAndStats <- function(pathways, stats, minSize, maxSize, gseaParam
     stats <- sort(stats, decreasing=TRUE)
     stats <- abs(stats) ^ gseaParam
 
+    res <- preparePathways(pathways, universe=names(stats), minSize, maxSize)
 
-    minSize <- max(minSize, 1)
-    maxSize <- min(maxSize, length(stats)-1)
+    res$stats <- stats
 
-    pathwaysFiltered <- lapply(pathways, function(p) { unique(na.omit(fmatch(p, names(stats)))) })
-    pathwaysSizes <- sapply(pathwaysFiltered, length)
-
-    toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
-
-    pathwaysFiltered <- pathwaysFiltered[toKeep]
-    pathwaysSizes <- pathwaysSizes[toKeep]
-
-    list(filtered=pathwaysFiltered,
-         sizes=pathwaysSizes,
-         stats=stats)
+    res
 }
 
 

@@ -22,25 +22,12 @@
 #' data(exampleRanks)
 #' foraRes <- fora(examplePathways, genes=tail(names(exampleRanks), 200), universe=names(exampleRanks))
 fora <- function(pathways, genes, universe, minSize=1, maxSize=length(universe)-1) {
-    # Error if pathways is not a list
-    if (!is.list(pathways)) {
-        stop("pathways should be a list with each element containing genes from the universe")
-    }
+    pp <- preparePathways(pathways, universe, minSize, maxSize)
+    pathwaysFiltered <- pp$filtered
+    pathwaysSizes <- pp$sizes
 
-    # Warning message for duplicate gene names
-    if (any(duplicated(universe))) {
-        warning("There were duplicate genes in universe, they were collapsed")
-        universe <- unique(universe)
-    }
 
-    minSize <- max(minSize, 1)
-
-    pathwaysFiltered <- lapply(pathways, function(p) { unique(na.omit(fmatch(p, universe))) })
-    pathwaysSizes <- sapply(pathwaysFiltered, length)
-
-    toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
-
-    if (length(toKeep) == 0){
+    if (length(pathwaysFiltered) == 0){
         return(data.table(pathway=character(),
                           pval=numeric(),
                           padj=numeric(),
@@ -50,13 +37,11 @@ fora <- function(pathways, genes, universe, minSize=1, maxSize=length(universe)-
                           overlapGenes=list()))
     }
 
-    pathwaysFiltered <- pathwaysFiltered[toKeep]
-    pathwaysSizes <- pathwaysSizes[toKeep]
-
 
     if (!all(genes %in% universe)) {
         warning("Not all of the input genes belong to the universe, such genes were removed")
     }
+
     genesFiltered <- unique(na.omit(fmatch(genes, universe)))
 
     overlaps <- lapply(pathwaysFiltered, intersect, genesFiltered)

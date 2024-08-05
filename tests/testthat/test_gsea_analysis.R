@@ -126,6 +126,10 @@ test_that("fgseaSimple correctly checks gene names", {
     names(ranks)[41] <- NA
     expect_error(fgseaSimple(examplePathways, ranks, nperm=100, minSize=10, maxSize=50, nproc=1))
 
+    ranks <- exampleRanks
+    names(ranks)[41] <- ""
+    expect_error(fgseaSimple(examplePathways, ranks, nperm=100, minSize=10, maxSize=50, nproc=1))
+
     ranks <- unname(exampleRanks)
     expect_error(fgseaSimple(examplePathways, ranks, nperm=100, minSize=10, maxSize=50, nproc=1))
 

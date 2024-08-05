@@ -26,18 +26,9 @@ checkGesecaArgs <- function(E, pathways){
 }
 
 gesecaPreparePathways <- function(E, pathways, minSize, maxSize){
-    minSize <- max(minSize, 1)
-    maxSize <- min(nrow(E) - 1, maxSize)
+    res <- preparePathways(pathways, universe = rownames(E), minSize, maxSize)
 
-    pathwaysFiltered <- lapply(pathways, function(p) {unique(na.omit(fmatch(p, rownames(E))))})
-    pathwaysSizes <- sapply(pathwaysFiltered, length)
-
-    toKeep <- which(minSize <= pathwaysSizes & pathwaysSizes <= maxSize)
-    pathwaysFiltered <- pathwaysFiltered[toKeep]
-    pathwaysSizes <- pathwaysSizes[toKeep]
-
-    return(list(filtered=pathwaysFiltered,
-                sizes=pathwaysSizes))
+    return(res)
 }
 
 
