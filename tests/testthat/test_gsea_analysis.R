@@ -220,6 +220,15 @@ test_that("fgsea skips pathways containing all the possible genes", {
     expect_true(!is.null(fr))
 })
 
+test_that("fgseaMultilevel handels superdiscrete cases (like issue #151)", {
+    set.seed(42)
+    stats <- rep(1, 5000)
+    names(stats) <- paste0("g", seq_along(stats))
+    system.time(res <- fgseaMultilevel(pathways=list(p=names(stats)[1:10]),
+                           stats=stats, scoreType = "pos", eps=0, sampleSize = 21))
+    expect_true(is.na(res$log2err))
+})
+
 test_that("leadingEdge interacts correctly with scoreType", {
     data(examplePathways)
     data(exampleRanks)

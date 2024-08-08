@@ -124,7 +124,13 @@ void EsRuler::extend(double ES, int seed, double eps) {
             }
         }
 
+        double prevTopScore = enrichmentScores.back();
         duplicateSamples();
+        if (enrichmentScores.back() <= prevTopScore) {
+            // couldn't advance the median
+            // :TODO: should be more accurately addressed
+            break;
+        }
         if (eps != 0){
             unsigned long k = enrichmentScores.size() / ((sampleSize + 1) / 2);
             if (k > - log2(0.5 * eps)) {
@@ -139,8 +145,12 @@ pair<double, bool> EsRuler::getPvalue(double ES, double eps, bool sign) {
     unsigned long halfSize = (sampleSize + 1) / 2;
 
     auto it = enrichmentScores.begin();
+    bool goodError = true;
     if (ES >= enrichmentScores.back()){
         it = enrichmentScores.end() - 1;
+        if (ES > enrichmentScores.back() + 1e-10) {
+            goodError = false; // went beyond the ruler
+        }
     }
     else{
         it = lower_bound(enrichmentScores.begin(), enrichmentScores.end(), ES);
@@ -156,11 +166,11 @@ pair<double, bool> EsRuler::getPvalue(double ES, double eps, bool sign) {
     double adjLogPval = k * adjLog + betaMeanLog(remainder + 1, sampleSize);
 
     if (sign) {
-        return make_pair(max(0.0, min(1.0, exp(adjLogPval))), true);
+        return make_pair(max(0.0, min(1.0, exp(adjLogPval))), goodError);
     } else {
         pair<double, bool> correction = calcLogCorrection(probCorrector, indx, sampleSize);
         double resLog = adjLogPval + correction.first;
-        return make_pair(max(0.0, min(1.0, exp(resLog))), correction.second);
+        return make_pair(max(0.0, min(1.0, exp(resLog))), goodError && correction.second);
     }
 }
 
