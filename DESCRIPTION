@@ -4,6 +4,8 @@ Version: 1.31.3
 Authors@R: c(person("Gennady", "Korotkevich", role = "aut"),
              person("Vladimir", "Sukhov", role = "aut"),
              person("Nikolay", "Budin", role = "ctb"),
+             person("Nikita", "Gusak", role = "ctb"),
+             person("Zieman", "Mark", role = "ctb"),
 			 person("Alexey", "Sergushichev", email = "alsergbox@gmail.com", role = c("aut", "cre")))
 Description: The package implements an algorithm for fast gene set enrichment
     analysis. Using the fast algorithm allows to make more permutations and get

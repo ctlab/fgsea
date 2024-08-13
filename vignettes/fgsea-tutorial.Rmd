@@ -164,14 +164,14 @@ head(fgseaRes)
 enrichment tests, based on the hypergeometric test.
 
 `fora` requires a foreground set of genes of interest, a background set consisting of all
-robustly detected genes, and some pathways.
+robustly detected genes (also called universe), and some pathways.
 
 In the following example, the foreground (`fg`) consists of the 500 genes with the highest
 `stat` value.
 
 ```{r}
-fg <-  names(head(exampleRanks[order(-exampleRanks)],500))
+fg <-  names(head(exampleRanks[order(exampleRanks, decreasing=TRUE)],500))
 bg <- names(exampleRanks)
-ora <- fora(genes=fg, universe=bg, pathways=examplePathways)
-head(ora)
+foraRes <- fora(genes=fg, universe=bg, pathways=examplePathways)
+head(foraRes)
 ```
