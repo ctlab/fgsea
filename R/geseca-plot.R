@@ -293,7 +293,7 @@ plotCoregulationProfileSpatial <- function(pathway,
     }
 
 
-    obj2 <- fgsea:::addGesecaScores(list(pathway = pathway), object,
+    obj2 <- addGesecaScores(list(pathway = pathway), object,
                                     assay = assay, scale = TRUE)
     ps <- Seurat::SpatialFeaturePlot(obj2, features = "pathway",
                                      combine = FALSE, image.alpha = 0, ...)
