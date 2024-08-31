@@ -254,6 +254,7 @@ plotGesecaTable <- function(gesecaRes,
 #' @param colors vector of three colors to use in the color scheme
 #' @param guide option for `ggplot2::scale_color_gradientn` to control for presence of the color legend
 #' the same universe of genes in the scaled data
+#' @param ... optional arguments for \link[Seurat]{SpatialFeaturePlot}
 #' @return ggplot object (or a list of objects) with the coregulation profile plot
 #'
 #' When the input is a list of pathways, pathway names are used for titles.
@@ -266,13 +267,14 @@ plotCoregulationProfileSpatial <- function(pathway,
                                            title=NULL,
                                            assay=DefaultAssay(object),
                                            colors=c("darkblue", "lightgrey", "darkred"),
-                                           guide="colourbar") {
+                                           guide="colourbar", ...) {
     stopifnot(requireNamespace("Seurat"))
     # TODO duplicated code with plotCoregulationProfileReduction
     if (is.list(pathway)) {
         if (is.null(title)) {
             titles <- names(pathway)
-        } else {
+        }
+        else {
             if (length(title) != length(pathway)) {
                 stop("Length of the specified titles does not match count of pathways")
             }
@@ -280,38 +282,37 @@ plotCoregulationProfileSpatial <- function(pathway,
         }
         ps <- lapply(seq_along(pathway), function(i)
             plotCoregulationProfileSpatial(pathway[[i]],
-                                           object=object,
-                                           title=titles[i],
-                                           assay=assay,
-                                           colors=colors))
+                                           object = object,
+                                           title = titles[i],
+                                           assay = assay,
+                                           colors = colors,
+                                           ...))
         names(ps) <- names(pathway)
+        ps <- unlist(ps, recursive = FALSE)
         return(ps)
     }
 
 
-
-    obj2 <- addGesecaScores(list(pathway=pathway), object, assay=assay,
-                            scale=TRUE)
-
-    p <- Seurat::SpatialFeaturePlot(obj2, features = "pathway",
-                                    combine = FALSE, image.alpha = 0)[[1]]
-    p$scales$scales[p$scales$find("fill")] <- NULL
-
+    obj2 <- fgsea:::addGesecaScores(list(pathway = pathway), object,
+                                    assay = assay, scale = TRUE)
+    ps <- Seurat::SpatialFeaturePlot(obj2, features = "pathway",
+                                     combine = FALSE, image.alpha = 0, ...)
     # suppress message of replacing existing color palette
-    suppressMessages({
-        p2 <- p +
-            scale_fill_gradientn(limits=c(-3, 3), breaks=c(-3, 0, 3),
-                                 oob=scales::squish,
-                                 colors=colors,
-                                 guide = guide,
-                                 name = "z-score"
-            ) + theme(legend.position = theme_get()$legend.position)
-    })
+    suppressMessages(ps <- lapply(ps, function(p){
+        res <- p + scale_fill_gradientn(limits = c(-3, 3),
+                                        breaks = c(-3, 0, 3),
+                                        oob = scales::squish,
+                                        colors = colors,
+                                        guide = guide,
+                                        name = "z-score")
+        res <- res + theme(legend.position = theme_get()$legend.position)
+        return(res)
+    }))
 
-    if (!is.null(title)) {
-        p2 <- p2 + ggtitle(title)
+    if (!is.null(title)){
+        ps <- lapply(ps, function(p) p + ggtitle(title))
     }
-    p2
+    return(ps)
 }
 
 addGesecaScores <- function(pathways,

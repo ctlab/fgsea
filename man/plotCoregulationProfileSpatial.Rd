@@ -10,7 +10,8 @@ plotCoregulationProfileSpatial(
   title = NULL,
   assay = DefaultAssay(object),
   colors = c("darkblue", "lightgrey", "darkred"),
-  guide = "colourbar"
+  guide = "colourbar",
+  ...
 )
 }
 \arguments{
@@ -27,6 +28,8 @@ the same universe of genes in the scaled data}
 
 \item{guide}{option for `ggplot2::scale_color_gradientn` to control for presence of the color legend
 the same universe of genes in the scaled data}
+
+\item{...}{optional arguments for \link[Seurat]{SpatialFeaturePlot}}
 }
 \value{
 ggplot object (or a list of objects) with the coregulation profile plot
