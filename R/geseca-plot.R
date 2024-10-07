@@ -47,9 +47,9 @@ plotCoregulationProfile <- function(pathway, E,
         geom_point(alpha = 0.1) +
         geom_path(alpha = 0.2) +
         geom_line(data = pointDt, aes(x = x, y = y),
-                  group = "mean", color = "#13242a", size = 1.5) +
-        geom_hline(yintercept = min(pointDt$y), color = "#495057", linetype = "dashed", size = 1) +
-        geom_hline(yintercept = max(pointDt$y), color = "#495057", linetype = "dashed", size = 1) +
+                  group = "mean", color = "#13242a", linewidth = 1.5) +
+        geom_hline(yintercept = min(pointDt$y), color = "#495057", linetype = "dashed", linewidth = 1) +
+        geom_hline(yintercept = max(pointDt$y), color = "#495057", linetype = "dashed", linewidth = 1) +
         (if (!is.null(conditions)) {
             geom_point(shape=21, size=4,
                        data = pointDt,
