@@ -11,6 +11,7 @@ plotCoregulationProfileSpatial(
   assay = DefaultAssay(object),
   colors = c("darkblue", "lightgrey", "darkred"),
   guide = "colourbar",
+  image.alpha = 0,
   ...
 )
 }
@@ -28,6 +29,8 @@ the same universe of genes in the scaled data}
 
 \item{guide}{option for `ggplot2::scale_color_gradientn` to control for presence of the color legend
 the same universe of genes in the scaled data}
+
+\item{image.alpha}{adjust the opacity of the background images}
 
 \item{...}{optional arguments for \link[Seurat]{SpatialFeaturePlot}}
 }

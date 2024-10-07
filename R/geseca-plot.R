@@ -254,6 +254,7 @@ plotGesecaTable <- function(gesecaRes,
 #' @param colors vector of three colors to use in the color scheme
 #' @param guide option for `ggplot2::scale_color_gradientn` to control for presence of the color legend
 #' the same universe of genes in the scaled data
+#' @param image.alpha adjust the opacity of the background images
 #' @param ... optional arguments for \link[Seurat]{SpatialFeaturePlot}
 #' @return ggplot object (or a list of objects) with the coregulation profile plot
 #'
