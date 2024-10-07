@@ -267,7 +267,9 @@ plotCoregulationProfileSpatial <- function(pathway,
                                            title=NULL,
                                            assay=DefaultAssay(object),
                                            colors=c("darkblue", "lightgrey", "darkred"),
-                                           guide="colourbar", ...) {
+                                           guide="colourbar",
+                                           image.alpha = 0,
+                                           ...) {
     stopifnot(requireNamespace("Seurat"))
     # TODO duplicated code with plotCoregulationProfileReduction
     if (is.list(pathway)) {
@@ -286,6 +288,7 @@ plotCoregulationProfileSpatial <- function(pathway,
                                            title = titles[i],
                                            assay = assay,
                                            colors = colors,
+                                           image.alpha = image.alpha,
                                            ...))
         names(ps) <- names(pathway)
         ps <- unlist(ps, recursive = FALSE)
@@ -296,7 +299,7 @@ plotCoregulationProfileSpatial <- function(pathway,
     obj2 <- addGesecaScores(list(pathway = pathway), object,
                                     assay = assay, scale = TRUE)
     ps <- Seurat::SpatialFeaturePlot(obj2, features = "pathway",
-                                     combine = FALSE, image.alpha = 0, ...)
+                                     combine = FALSE, image.alpha = image.alpha, ...)
     # suppress message of replacing existing color palette
     suppressMessages(ps <- lapply(ps, function(p){
         res <- p + scale_fill_gradientn(limits = c(-3, 3),

@@ -349,8 +349,20 @@ Finally, let us plot spatial expression of the top four pathways:
 topPathways <- gesecaRes[, pathway] |> head(4)
 titles <- sub("HALLMARK_", "", topPathways)
 
+pt.size.factor <- 1.6
+
+
+# Starting from Seurat version 5.1.0, the scaling method for spatial plots was changed.
+# As mentioned here: https://github.com/satijalab/seurat/issues/9049
+# This code provides a workaround to adapt to the new scaling behavior.
+if (packageVersion("Seurat") >= "5.1.0"){
+    sfactors <- ScaleFactors(obj@images$slice1)
+    pt.size.factor <- 1.5 * sfactors$fiducial / sfactors$hires
+}
+
 ps <- plotCoregulationProfileSpatial(pathways[topPathways], obj,
-                                       title=titles)
+                                     title=titles, 
+                                     pt.size.factor=pt.size.factor)
 cowplot::plot_grid(plotlist=ps, ncol=2)
 ```
 
@@ -363,8 +375,15 @@ is more characteristic to the "normal" tissue region:
 ```{r fig.width=5, fig.height=3.5, out.width="50%"}
 plotCoregulationProfileSpatial(pathways$HALLMARK_OXIDATIVE_PHOSPHORYLATION,
                                obj,
-                               title=sprintf("HALLMARK_OXIDATIVE_PHOSPHORYLATION (pval=%.2g)",
+                               pt.size.factor=pt.size.factor,
+                               title=sprintf("HALLMARK_OXIDATIVE_PHOSPHORYLATION\n(pval=%.2g)",
                                              gesecaRes[
                                                  match("HALLMARK_OXIDATIVE_PHOSPHORYLATION", pathway),
                                                  pval]))
+```
+
+## Session info
+
+```{r echo=TRUE}
+sessionInfo()
 ```
