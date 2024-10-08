@@ -1,3 +1,6 @@
+CHANGES IN VERSION 1.31.6
+* plotCoregulationSpatial supports multiple samples
+
 CHANGES IN VERSION 1.31.3
 * check for empty strings in gene names
 * minor fix in leading edge calculation
