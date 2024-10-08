@@ -175,3 +175,9 @@ bg <- names(exampleRanks)
 foraRes <- fora(genes=fg, universe=bg, pathways=examplePathways)
 head(foraRes)
 ```
+
+## Session info
+
+```{r}
+sessionInfo()
+```

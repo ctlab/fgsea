@@ -94,7 +94,7 @@ plotGseaTable <- function(pathways, stats, fgseaRes,
             ggplot() +
                 geom_segment(aes(x=p, xend=p,
                                  y=0, yend=statsAdj[p]),
-                             size=0.2) +
+                             linewidth=0.2) +
                 scale_x_continuous(limits=c(0, length(statsAdj)),
                                    expand=c(0, 0)) +
                 scale_y_continuous(limits=c(-1, 1),
